@@ -4,124 +4,395 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123568">
+  <meta name="theme-color" content="#0d2147">
   <meta name="description" content="Agile Hub brings hub operations, sales, inventory, commissions, payroll and reporting into one workspace.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ page_title }} · Operations, made clear">
+  <meta property="og:description" content="One role-aware workspace for hub operations, sales, inventory, commissions, payroll and reporting.">
   <title>{{ page_title }} · Operations, made clear</title>
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body class="landing">
+  <!-- Icon sprite: referenced below with <use href="#i-...">. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-trend" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-8"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 21V12"/><path d="M19 21V12"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.2"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="M2 13l10 5 10-5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></symbol>
+  </svg>
+
   <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="landing-header">
     <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home">
       <img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub">
     </a>
     <nav class="landing-nav" aria-label="Main navigation">
-      <a href="#about">About</a>
       <a href="#features">Platform</a>
-      <a href="#contact">Contact</a>
+      <a href="#how">How it works</a>
+      <a href="#roles">Roles</a>
+      <a href="#security">Security</a>
+      <a href="#faq">FAQ</a>
     </nav>
     <a class="btn btn--secondary landing-header__login" href="{% url 'accounts:login' %}">Sign in</a>
   </header>
 
   <main id="main">
+    <!-- HERO -->
     <section class="landing-hero">
+      <div class="landing-hero__bg" aria-hidden="true"></div>
+
       <div class="landing-hero__content" data-reveal="up">
-        <span class="landing-eyebrow"><span></span> One workspace. Every operation.</span>
-        <h1>Run your hub with <span>clarity and confidence.</span></h1>
-        <p>Bring sales, stock, teams and financial operations together. Agile Hub helps your people spend less time chasing records and more time moving work forward.</p>
+        <span class="landing-pill"><span class="landing-pill__dot"></span> One workspace. Every operation.</span>
+        <h1>Run every hub with <span class="landing-gradient">clarity and confidence.</span></h1>
+        <p class="landing-hero__lead">Bring sales, stock, teams and financial operations together. Agile Hub helps your people spend less time chasing records and more time moving work forward.</p>
         <div class="landing-hero__actions">
-          <a class="btn btn--primary btn--lg" href="{% url 'accounts:login' %}">Open your workspace <span aria-hidden="true">→</span></a>
-          <a class="landing-text-link" href="#features">Explore the platform <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--primary btn--lg" href="{% url 'accounts:login' %}">Open your workspace <svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="landing-text-link" href="#how">See how it works</a>
         </div>
-        <div class="landing-hero__trust"><span class="landing-trust-mark" aria-hidden="true">✓</span> Role-based access · Hub-aware records · Auditable workflows</div>
+        <ul class="landing-hero__trust">
+          <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Role-based access</li>
+          <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Hub-aware records</li>
+          <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Auditable workflows</li>
+        </ul>
       </div>
-      <div class="landing-visual" aria-label="Illustration of an operations dashboard" data-reveal="right">
-        <div class="landing-orbit landing-orbit--one"></div>
-        <div class="landing-orbit landing-orbit--two"></div>
-        <div class="preview-card">
-          <div class="preview-card__top">
-            <div><span class="preview-kicker">OPERATIONS OVERVIEW</span><strong>Good work, in view.</strong></div>
-            <span class="preview-live"><i></i> Workspace view</span>
-          </div>
-          <div class="preview-stats">
-            <div><span>Sales</span><strong>Track</strong><small>Completed transactions</small></div>
-            <div><span>Inventory</span><strong>Know</strong><small>Stock by hub</small></div>
-            <div><span>People</span><strong>Support</strong><small>Teams and payments</small></div>
-          </div>
-          <div class="preview-chart">
-            <div class="preview-chart__heading"><span>Business activity</span><span>Across your hubs</span></div>
-            <div class="preview-chart__bars" aria-hidden="true">
-              <i style="--bar:38%"></i><i style="--bar:54%"></i><i style="--bar:46%"></i><i style="--bar:71%"></i><i style="--bar:62%"></i><i style="--bar:88%"></i><i style="--bar:74%"></i><i style="--bar:100%"></i>
+
+      <div class="landing-visual" data-reveal="right">
+        <div class="landing-orbit landing-orbit--one" aria-hidden="true"></div>
+        <div class="landing-orbit landing-orbit--two" aria-hidden="true"></div>
+
+        <div class="mock" role="img" aria-label="Illustration of an Agile Hub dashboard showing sample sales, stock and approvals">
+          <div class="mock__bar"><i></i><i></i><i></i><span>Agile Hub · Overview</span></div>
+          <div class="mock__body">
+            <aside class="mock__side">
+              <span class="is-active">Overview</span>
+              <span>Sales</span>
+              <span>Inventory</span>
+              <span>Payroll</span>
+              <span>Finance</span>
+            </aside>
+            <div class="mock__main">
+              <div class="mock__kpis">
+                <div><small>Sales today</small><strong>KES 128,400</strong><em class="is-up">▲ 12% vs last week</em></div>
+                <div><small>Items in stock</small><strong>342</strong><em>Across hubs</em></div>
+                <div><small>Pending approvals</small><strong>5</strong><em>Needs review</em></div>
+              </div>
+              <div class="mock__chart">
+                <header><span>Business activity</span><span>Last 9 weeks</span></header>
+                <div class="mock__bars">
+                  <i style="--bar:34%;--i:1"></i><i style="--bar:46%;--i:2"></i><i style="--bar:41%;--i:3"></i><i style="--bar:62%;--i:4"></i><i style="--bar:55%;--i:5"></i><i style="--bar:73%;--i:6"></i><i style="--bar:68%;--i:7"></i><i style="--bar:86%;--i:8"></i><i style="--bar:100%;--i:9"></i>
+                </div>
+              </div>
+              <ul class="mock__feed">
+                <li><svg class="landing-icon" aria-hidden="true"><use href="#i-trend"/></svg> Sale recorded <small>2 min ago</small></li>
+                <li><svg class="landing-icon" aria-hidden="true"><use href="#i-box"/></svg> Stock received <small>18 min ago</small></li>
+                <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Commission approved <small>1 hr ago</small></li>
+              </ul>
             </div>
-            <div class="preview-chart__axis"><span>One place for the full picture</span><span>Agile Hub</span></div>
           </div>
-          <div class="preview-activity"><span class="preview-activity__icon">✓</span><span><strong>Clear records, connected workflows</strong><small>Everyday operations stay organized</small></span><span class="preview-activity__arrow">↗</span></div>
         </div>
-        <div class="landing-float landing-float--top"><span>↗</span><div><strong>Connected</strong><small>Teams &amp; hubs</small></div></div>
-        <div class="landing-float landing-float--bottom"><span>✓</span><div><strong>Accountable</strong><small>Traceable activity</small></div></div>
-      </div>
-      <div class="landing-hero__glow"></div>
-    </section>
 
-    <section class="landing-strip" aria-label="Platform areas" data-reveal="up">
-      <span>BUILT FOR DAY-TO-DAY OPERATIONS</span>
-      <div><b>Sales</b><i></i><b>Inventory</b><i></i><b>Teams</b><i></i><b>Finance</b><i></i><b>Insights</b></div>
-    </section>
-
-    <section id="about" class="landing-section landing-about">
-      <div class="landing-section__eyebrow">A better way to work</div>
-      <div class="landing-about__grid" data-reveal="up">
-        <h2>Less fragmentation.<br><span>More momentum.</span></h2>
-        <div><p>Agile Hub is an operations workspace for organizations coordinating hubs, products, sales, staff and beneficiary businesses. It connects those day-to-day records in a single, role-aware system.</p><p>Teams get useful visibility while sensitive records remain scoped to the people and hubs that should see them.</p></div>
+        <div class="landing-float landing-float--top"><span><svg class="landing-icon" aria-hidden="true"><use href="#i-bell"/></svg></span><div><strong>Approval needed</strong><small>Payroll run · 1 step left</small></div></div>
+        <div class="landing-float landing-float--bottom"><span><svg class="landing-icon" aria-hidden="true"><use href="#i-shield"/></svg></span><div><strong>Accountable</strong><small>Every change traced</small></div></div>
+        <p class="landing-visual__caption">Illustrative preview with sample data</p>
       </div>
     </section>
 
+    <!-- MODULE STRIP -->
+    <section class="landing-marquee" aria-label="Platform areas" data-reveal="up">
+      <div class="landing-marquee__track">
+        <ul>
+          <li>Sales</li><li>Inventory</li><li>Products</li><li>Commissions</li><li>Payroll</li><li>Finance</li><li>Beneficiary businesses</li><li>Notifications</li><li>Audit trail</li><li>Reports</li>
+        </ul>
+        <ul aria-hidden="true">
+          <li>Sales</li><li>Inventory</li><li>Products</li><li>Commissions</li><li>Payroll</li><li>Finance</li><li>Beneficiary businesses</li><li>Notifications</li><li>Audit trail</li><li>Reports</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- WHY -->
+    <section id="about" class="landing-section landing-why">
+      <div class="landing-why__intro" data-reveal="up">
+        <span class="landing-eyebrow">A better way to work</span>
+        <h2>Less fragmentation. <span class="landing-gradient">More momentum.</span></h2>
+        <p>Agile Hub is an operations workspace for organizations coordinating hubs, products, sales, staff and beneficiary businesses. It connects those day-to-day records in a single, role-aware system.</p>
+      </div>
+      <div class="landing-why__grid">
+        <article class="landing-benefit" data-reveal="up"><span class="landing-card__icon" style="--tone:#2563eb;--tone-bg:#eaf1ff"><svg class="landing-icon" aria-hidden="true"><use href="#i-layers"/></svg></span><h3>One source of truth</h3><p>Sales, stock, people and money live together instead of in scattered sheets.</p></article>
+        <article class="landing-benefit" data-reveal="up"><span class="landing-card__icon" style="--tone:#087d9b;--tone-bg:#e4f8fc"><svg class="landing-icon" aria-hidden="true"><use href="#i-store"/></svg></span><h3>Hub-aware by design</h3><p>See the whole organization, or just the hub you are responsible for.</p></article>
+        <article class="landing-benefit" data-reveal="up"><span class="landing-card__icon" style="--tone:#6841bf;--tone-bg:#f0eaff"><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg></span><h3>Clear approval steps</h3><p>Commissions and payroll move through review before they are final.</p></article>
+        <article class="landing-benefit" data-reveal="up"><span class="landing-card__icon" style="--tone:#b16a0b;--tone-bg:#fff3df"><svg class="landing-icon" aria-hidden="true"><use href="#i-clock"/></svg></span><h3>Traceable activity</h3><p>Important changes leave a trail, so questions have answers.</p></article>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how" class="landing-section landing-how">
+      <div class="landing-head" data-reveal="up">
+        <div><span class="landing-eyebrow">How it works</span><h2>From set-up to insight in three steps.</h2></div>
+        <p>A simple rhythm your whole team can follow.</p>
+      </div>
+      <div class="landing-steps">
+        <article class="landing-step" data-reveal="up"><span class="landing-step__num">1</span><h3>Set up hubs and people</h3><p>Your administrator creates hubs, adds teams and assigns the right role to each person.</p></article>
+        <article class="landing-step" data-reveal="up"><span class="landing-step__num">2</span><h3>Record daily activity</h3><p>Capture sales, receive and issue stock, and log the work as it happens.</p></article>
+        <article class="landing-step" data-reveal="up"><span class="landing-step__num">3</span><h3>Review, approve and report</h3><p>Approve commissions and payroll, check finances and share clear summaries.</p></article>
+      </div>
+    </section>
+
+    <!-- FEATURES (BENTO) -->
     <section id="features" class="landing-section landing-features">
-      <div class="landing-section__heading">
-        <div><div class="landing-section__eyebrow">The platform</div><h2>Everything moving together.</h2></div>
+      <div class="landing-head" data-reveal="up">
+        <div><span class="landing-eyebrow">The platform</span><h2>Everything moving together.</h2></div>
         <p>Purposeful tools for the work behind a healthy operation.</p>
       </div>
-      <div class="landing-feature-grid">
-        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--blue">↗</span><h3>Sales that connect</h3><p>Capture transactions and keep payment, inventory and commission workflows in sync.</p><span class="landing-feature__number">01</span></article>
-        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--cyan">▤</span><h3>Inventory you can trust</h3><p>Follow stock by hub with recorded receipts, issues, adjustments and sales.</p><span class="landing-feature__number">02</span></article>
-        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--violet">◎</span><h3>Teams and payments</h3><p>Coordinate memberships, commissions and payroll through clear approval steps.</p><span class="landing-feature__number">03</span></article>
-        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--green">⌁</span><h3>Useful financial views</h3><p>Bring cash-flow records and operational summaries into view—with clear reporting limitations.</p><span class="landing-feature__number">04</span></article>
-        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--amber">◷</span><h3>Activity with context</h3><p>Keep an audit trail around important changes and financial actions.</p><span class="landing-feature__number">05</span></article>
-        <article class="landing-feature landing-feature--dark" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--white">◇</span><h3>Built for your role</h3><p>Relevant dashboards and hub-aware access help people focus on what they need.</p><a href="{% url 'accounts:login' %}">Enter Agile Hub <span aria-hidden="true">→</span></a><span class="landing-feature__number">06</span></article>
+
+      <div class="landing-bento">
+        <article class="landing-card landing-card--wide" data-reveal="up" style="--tone:#2563eb;--tone-bg:#eaf1ff">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-trend"/></svg></span>
+          <h3>Sales that connect</h3>
+          <p>Capture transactions and keep payment, inventory and commission workflows in sync.</p>
+          <ul class="mini-list" aria-hidden="true">
+            <li>Sale · Cash <span class="chip">Paid</span><strong>KES 4,200</strong></li>
+            <li>Sale · Mobile <span class="chip">Paid</span><strong>KES 9,850</strong></li>
+            <li>Sale · Credit <span class="chip chip--warn">Pending</span><strong>KES 2,600</strong></li>
+          </ul>
+        </article>
+
+        <article class="landing-card landing-card--wide" data-reveal="up" style="--tone:#087d9b;--tone-bg:#e4f8fc">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-box"/></svg></span>
+          <h3>Inventory you can trust</h3>
+          <p>Follow stock by hub with recorded receipts, issues, adjustments and sales.</p>
+          <div class="mini-meters" aria-hidden="true">
+            <div class="mini-meter"><span>Hub A</span><span class="mini-meter__track"><i style="--v:82%"></i></span><span>82%</span></div>
+            <div class="mini-meter"><span>Hub B</span><span class="mini-meter__track"><i style="--v:56%"></i></span><span>56%</span></div>
+            <div class="mini-meter mini-meter--low"><span>Hub C</span><span class="mini-meter__track"><i style="--v:24%"></i></span><span>Low</span></div>
+          </div>
+        </article>
+
+        <article class="landing-card" data-reveal="up" style="--tone:#6841bf;--tone-bg:#f0eaff">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-wallet"/></svg></span>
+          <h3>Commissions and payroll</h3>
+          <p>Coordinate commissions and payroll through clear approval steps.</p>
+          <div class="mini-steps" aria-hidden="true"><span class="is-done">Submitted</span><span class="is-done">Reviewed</span><span>Approved</span></div>
+        </article>
+
+        <article class="landing-card" data-reveal="up" style="--tone:#218357;--tone-bg:#e7f7ee">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-chart"/></svg></span>
+          <h3>Useful financial views</h3>
+          <p>Bring cash-flow records, assets and operational summaries into view, with clear reporting limitations.</p>
+          <div class="mini-spark" aria-hidden="true"><i style="--bar:35%"></i><i style="--bar:48%"></i><i style="--bar:42%"></i><i style="--bar:66%"></i><i style="--bar:58%"></i><i style="--bar:82%"></i><i style="--bar:100%"></i></div>
+        </article>
+
+        <article class="landing-card" data-reveal="up" style="--tone:#c2410c;--tone-bg:#ffedd5">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-store"/></svg></span>
+          <h3>Beneficiary businesses</h3>
+          <p>Keep track of the beneficiary businesses you support and the hubs that serve them.</p>
+        </article>
+
+        <article class="landing-card" data-reveal="up" style="--tone:#0e7490;--tone-bg:#cffafe">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-tag"/></svg></span>
+          <h3>One product catalogue</h3>
+          <p>Maintain products in one place so sales and inventory always refer to the same items.</p>
+        </article>
+
+        <article class="landing-card" data-reveal="up" style="--tone:#b16a0b;--tone-bg:#fff3df">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-bell"/></svg></span>
+          <h3>Timely notifications</h3>
+          <p>Let people know when something needs their attention, so work does not stall.</p>
+        </article>
+
+        <article class="landing-card" data-reveal="up" style="--tone:#be185d;--tone-bg:#fce7f3">
+          <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-clock"/></svg></span>
+          <h3>Activity with context</h3>
+          <p>Keep an audit trail around important changes and financial actions.</p>
+        </article>
       </div>
     </section>
 
-    <section class="landing-cta" data-reveal="up">
-      <div><span class="landing-section__eyebrow">Make room for better work</span><h2>Your operations, in sync.</h2><p>Sign in to pick up where your team left off.</p></div>
-      <a class="btn btn--light btn--lg" href="{% url 'accounts:login' %}">Go to Agile Hub <span aria-hidden="true">→</span></a>
-      <div class="landing-cta__orb"></div>
+    <!-- ROLES (CSS-only tabs) -->
+    <section id="roles" class="landing-section landing-roles">
+      <div class="landing-head" data-reveal="up">
+        <div><span class="landing-eyebrow">Built for every role</span><h2>The right view for the right person.</h2></div>
+        <p>Available views depend on the role your administrator assigns.</p>
+      </div>
+
+      <div class="landing-tabs" data-reveal="up">
+        <input type="radio" name="landing-role" id="role-admin" checked>
+        <input type="radio" name="landing-role" id="role-hub">
+        <input type="radio" name="landing-role" id="role-sales">
+        <input type="radio" name="landing-role" id="role-finance">
+
+        <div class="landing-tabs__list">
+          <label for="role-admin">Administrators</label>
+          <label for="role-hub">Hub managers</label>
+          <label for="role-sales">Sales agents</label>
+          <label for="role-finance">Finance team</label>
+        </div>
+
+        <div class="landing-tabs__panels">
+          <article class="landing-tabpanel" data-panel="admin">
+            <div>
+              <h3>Set up hubs, people and access</h3>
+              <p>Keep the whole organization organized and make sure everyone has exactly the access they need.</p>
+              <a class="btn btn--primary" href="{% url 'accounts:login' %}">Sign in <svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            </div>
+            <ul class="landing-tabpanel__list">
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Create hubs and assign teams</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Control who can see which records</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Review activity across every hub</li>
+            </ul>
+          </article>
+
+          <article class="landing-tabpanel" data-panel="hub">
+            <div>
+              <h3>Keep your hub running day to day</h3>
+              <p>Stay on top of stock, sales and your team without chasing paperwork.</p>
+              <a class="btn btn--primary" href="{% url 'accounts:login' %}">Sign in <svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            </div>
+            <ul class="landing-tabpanel__list">
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> See stock levels for your hub</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Record sales and stock movements</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Follow team commissions</li>
+            </ul>
+          </article>
+
+          <article class="landing-tabpanel" data-panel="sales">
+            <div>
+              <h3>Capture sales without the paperwork</h3>
+              <p>Log transactions quickly and always know where your commissions stand.</p>
+              <a class="btn btn--primary" href="{% url 'accounts:login' %}">Sign in <svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            </div>
+            <ul class="landing-tabpanel__list">
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Record transactions in moments</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Check commission status</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Get notified when action is needed</li>
+            </ul>
+          </article>
+
+          <article class="landing-tabpanel" data-panel="finance">
+            <div>
+              <h3>Clear, reviewable money records</h3>
+              <p>Review what needs approval and keep a dependable record of every financial action.</p>
+              <a class="btn btn--primary" href="{% url 'accounts:login' %}">Sign in <svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            </div>
+            <ul class="landing-tabpanel__list">
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Approve commissions and payroll</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Review cash-flow and asset records</li>
+              <li><svg class="landing-icon" aria-hidden="true"><use href="#i-check"/></svg> Follow the audit trail</li>
+            </ul>
+          </article>
+        </div>
+      </div>
     </section>
 
+    <!-- SECURITY -->
+    <section id="security" class="landing-security" data-reveal="up">
+      <div class="landing-security__lead">
+        <span class="landing-eyebrow">Security and trust</span>
+        <h2>Visibility for teams. Control for owners.</h2>
+        <p>Teams get useful visibility while sensitive records remain scoped to the people and hubs that should see them.</p>
+      </div>
+      <div class="landing-security__grid">
+        <div class="landing-security__item"><svg class="landing-icon" aria-hidden="true"><use href="#i-eye"/></svg><h3>Role-based access</h3><p>Each person sees the dashboards and records that match their role.</p></div>
+        <div class="landing-security__item"><svg class="landing-icon" aria-hidden="true"><use href="#i-layers"/></svg><h3>Hub-aware records</h3><p>Records stay scoped to the hubs that should see them.</p></div>
+        <div class="landing-security__item"><svg class="landing-icon" aria-hidden="true"><use href="#i-clock"/></svg><h3>Audit trail</h3><p>Important changes and financial actions leave a trace.</p></div>
+        <div class="landing-security__item"><svg class="landing-icon" aria-hidden="true"><use href="#i-lock"/></svg><h3>Protected sign-in</h3><p>Repeated failed sign-in attempts are automatically limited.</p></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="landing-section landing-faq-section">
+      <div class="landing-head" data-reveal="up">
+        <div><span class="landing-eyebrow">Questions</span><h2>Good to know.</h2></div>
+        <p>Quick answers before you sign in.</p>
+      </div>
+      <div class="landing-faq">
+        <details name="faq" data-reveal="up" open>
+          <summary>Who is Agile Hub for?</summary>
+          <p>Organizations that coordinate hubs, products, sales, staff and beneficiary businesses and want those records together in one role-aware system.</p>
+        </details>
+        <details name="faq" data-reveal="up">
+          <summary>How do I get an account?</summary>
+          <p>Accounts are created by your Agile Hub administrator. Reach out to them, or use the contact details below, for access or onboarding.</p>
+        </details>
+        <details name="faq" data-reveal="up">
+          <summary>Can one hub see another hub's records?</summary>
+          <p>Records are hub-aware. What each person can see depends on their role and the hubs they belong to.</p>
+        </details>
+        <details name="faq" data-reveal="up">
+          <summary>Is there a history of changes?</summary>
+          <p>Yes. Important changes and financial actions are kept in an audit trail so you can see what happened.</p>
+        </details>
+        <details name="faq" data-reveal="up">
+          <summary>Do I need to install anything?</summary>
+          <p>No. Agile Hub runs in your web browser on a computer, tablet or phone.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="landing-cta" data-reveal="up">
+      <div>
+        <span class="landing-eyebrow">Make room for better work</span>
+        <h2>Your operations, in sync.</h2>
+        <p>Sign in to pick up where your team left off.</p>
+      </div>
+      <a class="btn btn--light btn--lg" href="{% url 'accounts:login' %}">Go to Agile Hub <svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      <div class="landing-cta__orb" aria-hidden="true"></div>
+    </section>
+
+    <!-- CONTACT -->
     <section id="contact" class="landing-contact" data-reveal="up">
-      <div><div class="landing-section__eyebrow">Get in touch</div><h2>We’re here to help.</h2><p>For account access, onboarding or support, reach out to your Agile Hub administrator.</p></div>
+      <div>
+        <span class="landing-eyebrow">Get in touch</span>
+        <h2>We’re here to help.</h2>
+        <p>For account access, onboarding or support, reach out to your Agile Hub administrator.</p>
+      </div>
       <div class="landing-contact__details">
-        {% if contact_email %}<a href="mailto:{{ contact_email }}"><span>EMAIL</span><strong>{{ contact_email }}</strong><i aria-hidden="true">↗</i></a>{% endif %}
-        {% if contact_phone %}<a href="tel:{{ contact_phone }}"><span>PHONE</span><strong>{{ contact_phone }}</strong><i aria-hidden="true">↗</i></a>{% endif %}
+        {% if contact_email %}<a href="mailto:{{ contact_email }}"><span>EMAIL</span><strong>{{ contact_email }}</strong><svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>{% endif %}
+        {% if contact_phone %}<a href="tel:{{ contact_phone }}"><span>PHONE</span><strong>{{ contact_phone }}</strong><svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>{% endif %}
         {% if contact_location %}<div><span>LOCATION</span><strong>{{ contact_location }}</strong></div>{% endif %}
-        {% if not contact_email and not contact_phone and not contact_location %}<a href="{% url 'accounts:login' %}"><span>SUPPORT</span><strong>Contact your system administrator</strong><i aria-hidden="true">↗</i></a>{% endif %}
+        {% if not contact_email and not contact_phone and not contact_location %}<a href="{% url 'accounts:login' %}"><span>SUPPORT</span><strong>Contact your system administrator</strong><svg class="landing-icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>{% endif %}
       </div>
     </section>
   </main>
 
   <footer class="landing-footer">
-    <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home"><img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub"></a>
-    <span>Connected operations. Clearer decisions.</span>
-    <nav class="landing-footer__links" aria-label="Footer navigation">
-      <a href="#about">About</a>
-      <a href="#features">Platform</a>
-      <a href="#contact">Contact</a>
-      <a href="{% url 'accounts:login' %}">Workspace sign in <span aria-hidden="true">→</span></a>
-    </nav>
+    <div class="landing-footer__grid">
+      <div class="landing-footer__brand">
+        <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home"><img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub"></a>
+        <p>Connected operations. Clearer decisions.</p>
+      </div>
+      <nav aria-label="Footer platform links">
+        <h4>Platform</h4>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#roles">Roles</a>
+        <a href="#security">Security</a>
+      </nav>
+      <nav aria-label="Footer help links">
+        <h4>Help</h4>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+        <a href="{% url 'accounts:login' %}">Workspace sign in</a>
+      </nav>
+    </div>
     <div class="landing-footer__bottom">
       <small>© {% now "Y" %} Agile Hub. All rights reserved.</small>
       <small>Connected operations. Clearer decisions.</small>
     </div>
   </footer>
+
   <script type="module" src="{% static 'js/pages/landing-motion.js' %}"></script>
 </body>
 </html>
