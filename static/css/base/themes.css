@@ -1,0 +1,45 @@
+:root {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0e1728;
+  --color-surface: #162235;
+  --color-text: #edf3fc;
+  --color-muted: #aab8cc;
+  --color-border: #2d3e57;
+  --color-border-strong: #455a78;
+  --color-primary-soft: #1b3152;
+  --focus-ring: 0 0 0 3px rgba(96, 165, 250, .42);
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .select,
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .file-input {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+[data-theme="dark"] .table tbody tr:hover,
+[data-theme="dark"] .file-input::file-selector-button {
+  background: #202e44;
+}
+
+[data-theme="dark"] .topbar {
+  background: rgba(22, 34, 53, .92);
+}
+
+[data-theme="dark"] .table th {
+  background: #1c2a40;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

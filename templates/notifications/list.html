@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block content %}
+  <section class="card">
+    <div class="card__body stack">
+      {% for item in object_list %}
+        <article class="notification-row{% if not item.read_at %} notification-row--unread{% endif %}">
+          <div class="notification-row__main">
+            <h2 class="notification-row__title">
+              {% if item.target_url %}<a href="{{ item.target_url }}">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+            </h2>
+            <p>{{ item.message }}</p>
+            <small class="text-muted">{{ item.created_at|date:"M j, Y · H:i" }}</small>
+          </div>
+          {% if not item.read_at %}
+            <form method="post" action="{% url 'notifications:mark_read' item.pk %}">
+              {% csrf_token %}<button class="btn btn--sm btn--secondary" type="submit">Mark read</button>
+            </form>
+          {% endif %}
+        </article>
+      {% empty %}
+        {% include "partials/empty_state.html" with title="You’re all caught up" message="New approvals and updates will appear here." %}
+      {% endfor %}
+      {% include "partials/pagination.html" %}
+    </div>
+  </section>
+{% endblock %}

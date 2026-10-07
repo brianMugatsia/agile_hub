@@ -1,0 +1,14 @@
+{% if is_paginated %}
+<nav class="pagination" aria-label="Pagination">
+  <p class="pagination__info">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ paginator.count }}</p>
+  <ul class="pagination__list">
+    {% if page_obj.has_previous %}
+      <li><a class="pagination__link" rel="prev" href="{% querystring page=page_obj.previous_page_number %}">Previous</a></li>
+    {% endif %}
+    <li><span class="pagination__link is-current" aria-current="page">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+      <li><a class="pagination__link" rel="next" href="{% querystring page=page_obj.next_page_number %}">Next</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

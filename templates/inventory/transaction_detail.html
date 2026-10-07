@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Transaction</dt><dd>{{ transaction.get_kind_display }}</dd></div>
+      <div><dt>Hub</dt><dd>{{ transaction.hub }}</dd></div>
+      <div><dt>Product</dt><dd>{{ transaction.product }}</dd></div>
+      <div><dt>Direction</dt><dd>{{ transaction.get_direction_display }}</dd></div>
+      <div><dt>Quantity</dt><dd>{{ transaction.quantity }} {{ transaction.product.unit }}</dd></div>
+      <div><dt>Reference</dt><dd>{{ transaction.reference|default:"—" }}</dd></div>
+      <div><dt>Recorded</dt><dd>{{ transaction.created_at|date:"j M Y, H:i" }}</dd></div>
+      {% if transaction.notes %}<div><dt>Notes</dt><dd>{{ transaction.notes }}</dd></div>{% endif %}
+    </dl>
+  </div></section>
+{% endblock %}

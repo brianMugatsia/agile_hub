@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123568">
+  <meta name="description" content="Agile Hub brings hub operations, sales, inventory, commissions, payroll and reporting into one workspace.">
+  <title>{{ page_title }} · Operations, made clear</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="landing">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="landing-header">
+    <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home">
+      <img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub">
+    </a>
+    <nav class="landing-nav" aria-label="Main navigation">
+      <a href="#about">About</a>
+      <a href="#features">Platform</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn--secondary landing-header__login" href="{% url 'accounts:login' %}">Sign in</a>
+  </header>
+
+  <main id="main">
+    <section class="landing-hero">
+      <div class="landing-hero__content" data-reveal="up">
+        <span class="landing-eyebrow"><span></span> One workspace. Every operation.</span>
+        <h1>Run your hub with <span>clarity and confidence.</span></h1>
+        <p>Bring sales, stock, teams and financial operations together. Agile Hub helps your people spend less time chasing records and more time moving work forward.</p>
+        <div class="landing-hero__actions">
+          <a class="btn btn--primary btn--lg" href="{% url 'accounts:login' %}">Open your workspace <span aria-hidden="true">→</span></a>
+          <a class="landing-text-link" href="#features">Explore the platform <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="landing-hero__trust"><span class="landing-trust-mark" aria-hidden="true">✓</span> Role-based access · Hub-aware records · Auditable workflows</div>
+      </div>
+      <div class="landing-visual" aria-label="Illustration of an operations dashboard" data-reveal="right">
+        <div class="landing-orbit landing-orbit--one"></div>
+        <div class="landing-orbit landing-orbit--two"></div>
+        <div class="preview-card">
+          <div class="preview-card__top">
+            <div><span class="preview-kicker">OPERATIONS OVERVIEW</span><strong>Good work, in view.</strong></div>
+            <span class="preview-live"><i></i> Workspace view</span>
+          </div>
+          <div class="preview-stats">
+            <div><span>Sales</span><strong>Track</strong><small>Completed transactions</small></div>
+            <div><span>Inventory</span><strong>Know</strong><small>Stock by hub</small></div>
+            <div><span>People</span><strong>Support</strong><small>Teams and payments</small></div>
+          </div>
+          <div class="preview-chart">
+            <div class="preview-chart__heading"><span>Business activity</span><span>Across your hubs</span></div>
+            <div class="preview-chart__bars" aria-hidden="true">
+              <i style="--bar:38%"></i><i style="--bar:54%"></i><i style="--bar:46%"></i><i style="--bar:71%"></i><i style="--bar:62%"></i><i style="--bar:88%"></i><i style="--bar:74%"></i><i style="--bar:100%"></i>
+            </div>
+            <div class="preview-chart__axis"><span>One place for the full picture</span><span>Agile Hub</span></div>
+          </div>
+          <div class="preview-activity"><span class="preview-activity__icon">✓</span><span><strong>Clear records, connected workflows</strong><small>Everyday operations stay organized</small></span><span class="preview-activity__arrow">↗</span></div>
+        </div>
+        <div class="landing-float landing-float--top"><span>↗</span><div><strong>Connected</strong><small>Teams &amp; hubs</small></div></div>
+        <div class="landing-float landing-float--bottom"><span>✓</span><div><strong>Accountable</strong><small>Traceable activity</small></div></div>
+      </div>
+      <div class="landing-hero__glow"></div>
+    </section>
+
+    <section class="landing-strip" aria-label="Platform areas" data-reveal="up">
+      <span>BUILT FOR DAY-TO-DAY OPERATIONS</span>
+      <div><b>Sales</b><i></i><b>Inventory</b><i></i><b>Teams</b><i></i><b>Finance</b><i></i><b>Insights</b></div>
+    </section>
+
+    <section id="about" class="landing-section landing-about">
+      <div class="landing-section__eyebrow">A better way to work</div>
+      <div class="landing-about__grid" data-reveal="up">
+        <h2>Less fragmentation.<br><span>More momentum.</span></h2>
+        <div><p>Agile Hub is an operations workspace for organizations coordinating hubs, products, sales, staff and beneficiary businesses. It connects those day-to-day records in a single, role-aware system.</p><p>Teams get useful visibility while sensitive records remain scoped to the people and hubs that should see them.</p></div>
+      </div>
+    </section>
+
+    <section id="features" class="landing-section landing-features">
+      <div class="landing-section__heading">
+        <div><div class="landing-section__eyebrow">The platform</div><h2>Everything moving together.</h2></div>
+        <p>Purposeful tools for the work behind a healthy operation.</p>
+      </div>
+      <div class="landing-feature-grid">
+        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--blue">↗</span><h3>Sales that connect</h3><p>Capture transactions and keep payment, inventory and commission workflows in sync.</p><span class="landing-feature__number">01</span></article>
+        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--cyan">▤</span><h3>Inventory you can trust</h3><p>Follow stock by hub with recorded receipts, issues, adjustments and sales.</p><span class="landing-feature__number">02</span></article>
+        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--violet">◎</span><h3>Teams and payments</h3><p>Coordinate memberships, commissions and payroll through clear approval steps.</p><span class="landing-feature__number">03</span></article>
+        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--green">⌁</span><h3>Useful financial views</h3><p>Bring cash-flow records and operational summaries into view—with clear reporting limitations.</p><span class="landing-feature__number">04</span></article>
+        <article class="landing-feature" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--amber">◷</span><h3>Activity with context</h3><p>Keep an audit trail around important changes and financial actions.</p><span class="landing-feature__number">05</span></article>
+        <article class="landing-feature landing-feature--dark" data-reveal="up"><span class="landing-feature__icon landing-feature__icon--white">◇</span><h3>Built for your role</h3><p>Relevant dashboards and hub-aware access help people focus on what they need.</p><a href="{% url 'accounts:login' %}">Enter Agile Hub <span aria-hidden="true">→</span></a><span class="landing-feature__number">06</span></article>
+      </div>
+    </section>
+
+    <section class="landing-cta" data-reveal="up">
+      <div><span class="landing-section__eyebrow">Make room for better work</span><h2>Your operations, in sync.</h2><p>Sign in to pick up where your team left off.</p></div>
+      <a class="btn btn--light btn--lg" href="{% url 'accounts:login' %}">Go to Agile Hub <span aria-hidden="true">→</span></a>
+      <div class="landing-cta__orb"></div>
+    </section>
+
+    <section id="contact" class="landing-contact" data-reveal="up">
+      <div><div class="landing-section__eyebrow">Get in touch</div><h2>We’re here to help.</h2><p>For account access, onboarding or support, reach out to your Agile Hub administrator.</p></div>
+      <div class="landing-contact__details">
+        {% if contact_email %}<a href="mailto:{{ contact_email }}"><span>EMAIL</span><strong>{{ contact_email }}</strong><i aria-hidden="true">↗</i></a>{% endif %}
+        {% if contact_phone %}<a href="tel:{{ contact_phone }}"><span>PHONE</span><strong>{{ contact_phone }}</strong><i aria-hidden="true">↗</i></a>{% endif %}
+        {% if contact_location %}<div><span>LOCATION</span><strong>{{ contact_location }}</strong></div>{% endif %}
+        {% if not contact_email and not contact_phone and not contact_location %}<a href="{% url 'accounts:login' %}"><span>SUPPORT</span><strong>Contact your system administrator</strong><i aria-hidden="true">↗</i></a>{% endif %}
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home"><img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub"></a>
+    <span>Connected operations. Clearer decisions.</span>
+    <nav class="landing-footer__links" aria-label="Footer navigation">
+      <a href="#about">About</a>
+      <a href="#features">Platform</a>
+      <a href="#contact">Contact</a>
+      <a href="{% url 'accounts:login' %}">Workspace sign in <span aria-hidden="true">→</span></a>
+    </nav>
+    <div class="landing-footer__bottom">
+      <small>© {% now "Y" %} Agile Hub. All rights reserved.</small>
+      <small>Connected operations. Clearer decisions.</small>
+    </div>
+  </footer>
+  <script type="module" src="{% static 'js/pages/landing-motion.js' %}"></script>
+</body>
+</html>

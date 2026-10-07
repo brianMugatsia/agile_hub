@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <p class="text-muted">Projection values are planning assumptions, not posted transactions.</p>
+    <form method="get" class="form-grid" data-validate>
+      <input type="hidden" name="calculate" value="1">
+      {% if form.non_field_errors %}<div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="form-field{% if field.errors %} form-field--invalid{% endif %}">
+          {{ field.label_tag }}{{ field|add_class:"input" }}
+          {% for error in field.errors %}<span class="form-field__error" role="alert">{{ error }}</span>{% endfor %}
+        </div>
+      {% endfor %}
+      <div class="form-actions"><button class="btn btn--primary" type="submit">Build projection</button></div>
+    </form>
+  </div></section>
+  {% if periods %}<section class="card"><div class="card__body">{% include "components/data_table.html" with object_list=periods columns=columns %}</div></section>{% endif %}
+  <p class="finance-disclaimer">Projections are scenario estimates based solely on the entered growth assumptions.</p>
+{% endblock %}

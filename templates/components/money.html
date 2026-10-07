@@ -1,0 +1,4 @@
+{% load money_tags %}
+<span class="money" data-money="{{ amount|default:0 }}" data-currency="{{ currency|default:CURRENCY_CODE|default:'KES' }}">
+  {{ amount|kes }}
+</span>

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block page_actions %}
+  {% if can_edit %}<a class="btn" href="{% url 'accounts:user_edit' profile_user.pk %}">{% icon "edit" %} Edit</a>{% endif %}
+  {% if can_assign_role %}<a class="btn btn--primary" href="{% url 'accounts:user_role' profile_user.pk %}">{% icon "shield" %} Change role</a>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid--sidebar">
+  <section class="card">
+    <div class="card__header"><h2 class="card__title">Details</h2></div>
+    <div class="card__body">
+      <dl class="detail-list">
+        <div><dt>Full name</dt><dd>{{ profile_user.display_name }}</dd></div>
+        <div><dt>Username</dt><dd>{{ profile_user.username }}</dd></div>
+        <div><dt>Email</dt><dd>{{ profile_user.email }}</dd></div>
+        <div><dt>Phone</dt><dd>{{ profile_user.phone_number|default:"—" }}</dd></div>
+        <div><dt>Role</dt><dd><span class="badge badge--{{ profile_user.role|role_tone }}">{{ profile_user.get_role_display }}</span></dd></div>
+        <div><dt>Status</dt><dd>
+          {% if profile_user.is_active %}{% include "components/status_badge.html" with tone="success" label="Active" %}
+          {% else %}{% include "components/status_badge.html" with tone="danger" label="Inactive" %}{% endif %}
+        </dd></div>
+        <div><dt>Joined</dt><dd>{{ profile_user.date_joined|date:"d M Y" }}</dd></div>
+        <div><dt>Last sign-in</dt><dd>{{ profile_user.last_login|date:"d M Y, H:i"|default:"Never" }}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <aside class="stack">
+    <section class="card">
+      <div class="card__body profile-card">
+        {% include "components/avatar.html" with person=profile_user size="lg" %}
+        <h2 class="profile-card__name">{{ profile_user.display_name }}</h2>
+        <p class="text-muted">@{{ profile_user.username }}</p>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card__body stack">
+        <h2 class="card__title">Hub memberships</h2>
+        <p class="text-muted">Hub assignments are added in the next stage.</p>
+      </div>
+    </section>
+  </aside>
+</div>
+{% endblock %}

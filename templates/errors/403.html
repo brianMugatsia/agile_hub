@@ -1,0 +1,9 @@
+{% extends "base_auth.html" %}
+{% load ui_tags %}
+{% block title %}Access denied{% endblock %}
+{% block auth_content %}
+  <div class="auth-card__icon auth-card__icon--warning">{% icon "lock" %}</div>
+  <h1 class="auth-card__title">Access denied</h1>
+  <p class="auth-card__lead">Your role doesn't have permission to open this page.</p>
+  <a class="btn btn--primary btn--block" href="{% url 'core:dashboard' %}">Back to dashboard</a>
+{% endblock %}

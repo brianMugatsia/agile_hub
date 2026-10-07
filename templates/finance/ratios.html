@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="finance-summary">
+    {% include "components/stat_card.html" with label="Debt to assets" value=ratios.debt_to_assets %}
+    {% include "components/stat_card.html" with label="Liabilities to equity" value=ratios.liabilities_to_equity %}
+  </section>
+  <p class="finance-disclaimer">Ratios use recorded asset, liability, and equity values. Missing or zero denominators are shown as unavailable.</p>
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Total assets</dt><dd>{{ total_assets }}</dd></div>
+      <div><dt>Total liabilities</dt><dd>{{ total_liabilities }}</dd></div>
+      <div><dt>Total equity</dt><dd>{{ total_equity }}</dd></div>
+    </dl>
+  </div></section>
+{% endblock %}

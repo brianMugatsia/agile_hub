@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card card--narrow"><div class="card__body stack">
+    <h2>Commission settings</h2>
+    <p class="text-muted">Rates apply from their effective date to newly completed sales. Existing commission records keep their recorded rate.</p>
+    {% if form %}
+      <form method="post" data-validate data-loading>{% csrf_token %}{{ form.as_p }}<button class="btn btn--primary" type="submit">Save rate</button></form>
+    {% endif %}
+    {% if settings %}<ul class="stack">{% for setting in settings %}<li>{{ setting.rate|floatformat:2 }}% from {{ setting.effective_from }}{% if setting.is_active %} · Active{% endif %}</li>{% endfor %}</ul>{% endif %}
+  </div></section>
+{% endblock %}

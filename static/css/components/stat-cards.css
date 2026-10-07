@@ -1,0 +1,6 @@
+.stat-card { min-height: 7.5rem; }
+.stat-card__label { display: block; color: var(--color-muted); font-size: .875rem; font-weight: 600; }
+.stat-card__value { display: block; margin-top: .55rem; font-size: clamp(1.45rem, 2.5vw, 2rem); line-height: 1.15; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat-card__delta { display: inline-flex; align-items: center; gap: .25rem; margin-top: .5rem; color: var(--color-muted); font-size: .8rem; }
+.stat-card__delta--positive { color: var(--green-600); }
+.stat-card__delta--negative { color: var(--red-700); }

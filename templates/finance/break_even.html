@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block content %}
+  <section class="grid grid--2">
+    <article class="card"><div class="card__body">
+      <p class="text-muted">Enter planning assumptions. Results are estimates, not accounting records.</p>
+      <form method="get" data-validate>
+        <input type="hidden" name="calculate" value="1">
+        {% if form.non_field_errors %}<div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+          <div class="form-field{% if field.errors %} form-field--invalid{% endif %}">
+            {{ field.label_tag }}{{ field|add_class:"input" }}
+            {% for error in field.errors %}<span class="form-field__error" role="alert">{{ error }}</span>{% endfor %}
+          </div>
+        {% endfor %}
+        <div class="form-actions"><button class="btn btn--primary" type="submit">Calculate break-even</button></div>
+      </form>
+    </div></article>
+    {% if result %}<article class="card"><div class="card__body stack">
+      <h2 class="card__title">Break-even estimate</h2>
+      <p>Units to sell: <strong>{{ result.units }}</strong></p>
+      <p>Break-even revenue: <strong>{{ result.revenue }}</strong></p>
+    </div></article>{% endif %}
+  </section>
+  <p class="finance-disclaimer">Break-even is an estimate from the assumptions entered and does not include taxes, financing, or changing costs.</p>
+{% endblock %}

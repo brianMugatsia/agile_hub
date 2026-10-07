@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card card--narrow"><div class="card__body stack">
+    <h2>Cancel sale</h2>
+    <p>Only draft sales can be cancelled. Completed sales must be refunded through the refund workflow.</p>
+    <p>{{ sale }}</p>
+    <form method="post" data-validate data-loading>{% csrf_token %}
+      {% if form %}{{ form.as_p }}{% else %}<label class="field"><span class="field__label">Reason</span><textarea class="textarea" name="reason" required maxlength="1000"></textarea></label>{% endif %}
+      <button class="btn btn--danger" type="submit">Cancel sale</button>
+      <a class="btn btn--secondary" href="{% url 'sales:list' %}">Go back</a>
+    </form>
+  </div></section>
+{% endblock %}

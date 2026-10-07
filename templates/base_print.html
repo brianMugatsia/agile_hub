@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ page_title|default:"Agile Hub report" }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/print.css' %}">
+</head>
+<body>
+  <main class="page print-page">
+    <header class="page-header">
+      <div>
+        <p class="text-muted">Agile Hub</p>
+        <h1>{% block heading %}{{ page_title|default:"Report" }}{% endblock %}</h1>
+        {% block period %}{% endblock %}
+      </div>
+      <button type="button" class="btn btn--secondary" onclick="window.print()">Print</button>
+    </header>
+    {% block content %}{% endblock %}
+    <footer class="text-muted print-footer">Generated {{ generated_at|default:now|date:"j M Y, H:i" }}</footer>
+  </main>
+</body>
+</html>

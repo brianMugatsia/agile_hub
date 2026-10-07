@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Beneficiary</dt><dd>{{ beneficiary.user.display_name }}</dd></div>
+      <div><dt>Email</dt><dd>{{ beneficiary.user.email }}</dd></div>
+      <div><dt>Phone</dt><dd>{{ beneficiary.phone_number|default:"—" }}</dd></div>
+      <div><dt>National ID</dt><dd>{{ beneficiary.national_id|default:"—" }}</dd></div>
+      <div><dt>Hub</dt><dd>{{ beneficiary.hub|default:"—" }}</dd></div>
+      <div><dt>Address</dt><dd>{{ beneficiary.address|default:"—" }}</dd></div>
+    </dl>
+  </div></section>
+  {% if businesses %}<section class="card"><div class="card__header"><h2 class="card__title">Businesses</h2></div><div class="card__body">{% include "components/data_table.html" with object_list=businesses columns=business_columns %}</div></section>{% endif %}
+{% endblock %}

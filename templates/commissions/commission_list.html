@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block content %}
+  <section class="card">
+    <div class="card__body">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Created</th><th>Agent</th><th>Sale</th><th>Rate</th><th>Amount</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>
+            {% for item in object_list %}
+              <tr>
+                <td>{{ item.created_at|date:"Y-m-d" }}</td>
+                <td>{{ item.agent.display_name }}</td>
+                <td>{{ item.sale }}</td>
+                <td>{{ item.rate|floatformat:2 }}%</td>
+                <td>{{ item.amount }}</td>
+                <td><span class="badge badge--neutral">{{ item.get_status_display }}</span></td>
+                <td class="table__actions">
+                  {% if item.status == "PENDING" and perms.commissions.approve_salesagentcommission %}
+                    <form method="post" action="{% url 'commissions:approve' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                    </form>
+                  {% endif %}
+                  {% if item.status == "PENDING" and perms.commissions.reject_salesagentcommission %}
+                    <form method="post" action="{% url 'commissions:reject' item.pk %}" class="inline-action">
+                      {% csrf_token %}
+                      <label class="sr-only" for="reason-{{ item.pk }}">Rejection reason</label>
+                      <input class="input input--sm" id="reason-{{ item.pk }}" name="reason" required maxlength="255" placeholder="Reason">
+                      <button class="btn btn--sm btn--danger" type="submit">Reject</button>
+                    </form>
+                  {% endif %}
+                  {% if item.status == "APPROVED" and perms.commissions.pay_salesagentcommission %}
+                    <form method="post" action="{% url 'commissions:pay' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Mark paid</button>
+                    </form>
+                  {% endif %}
+                  {% if item.status != "REVERSED" and item.status != "REJECTED" and perms.commissions.reverse_salesagentcommission %}
+                    <form method="post" action="{% url 'commissions:reverse' item.pk %}" class="inline-action">
+                      {% csrf_token %}
+                      <label class="sr-only" for="reverse-{{ item.pk }}">Reversal reason</label>
+                      <input class="input input--sm" id="reverse-{{ item.pk }}" name="reason" required maxlength="255" placeholder="Reason">
+                      <button class="btn btn--sm btn--secondary" type="submit">Reverse</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7">{% include "partials/empty_state.html" with title="No commissions yet" message="Commissions are created when sales are completed." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "partials/pagination.html" %}
+    </div>
+  </section>
+{% endblock %}

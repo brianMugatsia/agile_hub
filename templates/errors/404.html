@@ -1,0 +1,9 @@
+{% extends "base_auth.html" %}
+{% load ui_tags %}
+{% block title %}Page not found{% endblock %}
+{% block auth_content %}
+  <div class="auth-card__icon">{% icon "search" %}</div>
+  <h1 class="auth-card__title">Page not found</h1>
+  <p class="auth-card__lead">The page you're looking for doesn't exist or you can't access it.</p>
+  <a class="btn btn--primary btn--block" href="{% url 'core:dashboard' %}">Back to dashboard</a>
+{% endblock %}

@@ -1,0 +1,16 @@
+<form class="filter-bar" method="get" role="search">
+  {% if filter_form %}
+    {% for field in filter_form %}
+      <div class="field">
+        {{ field.label_tag }}
+        {{ field }}
+        {% for error in field.errors %}<span class="field__error">{{ error }}</span>{% endfor %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <label class="sr-only" for="filter-query">Search records</label>
+    <input class="input" id="filter-query" type="search" name="q" value="{{ request.GET.q }}" placeholder="Search records">
+  {% endif %}
+  <button class="btn btn--secondary" type="submit">Apply filters</button>
+  {% if request.GET %}<a class="btn btn--ghost" href="{{ request.path }}">Clear</a>{% endif %}
+</form>

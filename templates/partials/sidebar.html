@@ -1,0 +1,26 @@
+{% load static ui_tags %}
+<aside class="sidebar" id="sidebar" aria-label="Main navigation">
+  <div class="sidebar__brand">
+    <img class="sidebar__logo" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub">
+    <div class="sidebar__brand-text">
+      <span>Operations, connected.</span>
+    </div>
+    <button type="button" class="icon-btn icon-btn--light sidebar__close" data-sidebar-close aria-label="Close menu">
+      {% icon "x" %}
+    </button>
+  </div>
+  <nav class="sidebar__nav">
+    {% for section in nav_sections %}
+      <p class="sidebar__heading">{{ section.title }}</p>
+      <ul class="sidebar__list">
+        {% for item in section.items %}
+          <li>
+            <a class="sidebar__link{% if item.active %} is-active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
+              {% icon item.icon %}<span>{{ item.label }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </nav>
+</aside>

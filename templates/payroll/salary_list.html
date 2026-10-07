@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block page_actions %}
+  {% if perms.payroll.add_salaryrecord %}
+    <a class="btn btn--primary" href="{% url 'payroll:salary_create' %}">{% icon "plus" %}<span>Prepare salary</span></a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <div class="card__body">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Worker</th><th>Period</th><th>Gross</th><th>Deductions</th><th>Net</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>
+            {% for item in object_list %}
+              <tr>
+                <td>{{ item.worker.user.display_name }}</td>
+                <td>{{ item.period_start|date:"Y-m" }}</td>
+                <td>{{ item.gross_amount }}</td>
+                <td>{{ item.deductions }}</td>
+                <td>{{ item.net_amount }}</td>
+                <td><span class="badge badge--neutral">{{ item.get_status_display }}</span></td>
+                <td class="table__actions">
+                  {% if item.status == "PENDING" and perms.payroll.approve_salaryrecord %}
+                    <form method="post" action="{% url 'payroll:salary_approve' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                    </form>
+                  {% endif %}
+                  {% if item.status == "APPROVED" and perms.payroll.pay_salaryrecord %}
+                    <form method="post" action="{% url 'payroll:salary_pay' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Record payment</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7">{% include "partials/empty_state.html" with title="No salary records" message="Prepared salaries will appear here for review and payment." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "partials/pagination.html" %}
+    </div>
+  </section>
+{% endblock %}

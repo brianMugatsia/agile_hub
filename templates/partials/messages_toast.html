@@ -1,0 +1,15 @@
+{% load ui_tags %}
+<div class="toast-region" aria-live="polite" aria-atomic="false">
+  {% for message in messages %}
+    <div class="toast toast--{{ message.level_tag|default:'info' }}" role="status" data-toast>
+      <span class="toast__icon">
+        {% if message.level_tag == "success" %}{% icon "check-circle" %}
+        {% elif message.level_tag == "danger" %}{% icon "alert-circle" %}
+        {% elif message.level_tag == "warning" %}{% icon "alert-triangle" %}
+        {% else %}{% icon "info" %}{% endif %}
+      </span>
+      <p class="toast__text">{{ message }}</p>
+      <button type="button" class="toast__close" data-toast-close aria-label="Dismiss notification">{% icon "x" %}</button>
+    </div>
+  {% endfor %}
+</div>

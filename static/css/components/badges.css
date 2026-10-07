@@ -1,0 +1,19 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  color: var(--color-muted);
+  background: #eef1ef;
+  font-size: .75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.badge--brand { color: var(--brand-blue-600); background: var(--brand-blue-100); }
+.badge--success { color: #0f5132; background: #d1e7dd; }
+.badge--warning { color: var(--yellow-800); background: var(--yellow-100); }
+.badge--danger { color: var(--red-700); background: var(--red-100); }
+.badge--info { color: var(--blue-700); background: var(--blue-100); }
+.badge--earth { color: var(--brown-700); background: var(--brown-100); }
+.badge--dark { color: #fff; background: var(--brand-blue-900); }
+.badge--neutral { color: #3d4944; background: #e8ecea; }

@@ -1,0 +1,44 @@
+/* Cascade layers keep specificity predictable: later layers always win. */
+@layer reset, tokens, base, layout, components, pages, utilities;
+
+@import url("base/reset.css") layer(reset);
+@import url("base/tokens.css") layer(tokens);
+@import url("base/themes.css") layer(tokens);
+@import url("base/typography.css") layer(base);
+
+@import url("layout/app-shell.css") layer(layout);
+@import url("layout/sidebar.css") layer(layout);
+@import url("layout/topbar.css") layer(layout);
+@import url("layout/grid.css") layer(layout);
+@import url("layout/page.css") layer(layout);
+@import url("layout/auth.css") layer(layout);
+
+@import url("components/icons.css") layer(components);
+@import url("components/buttons.css") layer(components);
+@import url("components/cards.css") layer(components);
+@import url("components/forms.css") layer(components);
+@import url("components/tables.css") layer(components);
+@import url("components/badges.css") layer(components);
+@import url("components/alerts.css") layer(components);
+@import url("components/toasts.css") layer(components);
+@import url("components/pagination.css") layer(components);
+@import url("components/filters.css") layer(components);
+@import url("components/empty-state.css") layer(components);
+@import url("components/charts.css") layer(components);
+@import url("components/dropdown.css") layer(components);
+@import url("components/loader.css") layer(components);
+@import url("components/modals.css") layer(components);
+@import url("components/stat-cards.css") layer(components);
+@import url("components/tabs.css") layer(components);
+
+@import url("pages/dashboard.css") layer(pages);
+@import url("pages/sales.css") layer(pages);
+@import url("pages/commissions.css") layer(pages);
+@import url("pages/payroll.css") layer(pages);
+@import url("pages/finance.css") layer(pages);
+@import url("pages/reports.css") layer(pages);
+@import url("pages/landing.css") layer(pages);
+@import url("pages/ui-refresh.css") layer(pages);
+@import url("utilities/display.css") layer(utilities);
+@import url("utilities/text.css") layer(utilities);
+@import url("utilities/spacing.css") layer(utilities);

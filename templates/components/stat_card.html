@@ -1,0 +1,7 @@
+<article class="card stat-card">
+  <div class="card__body">
+    <span class="stat-card__label">{{ label }}</span>
+    <strong class="stat-card__value">{{ value|default:"—" }}</strong>
+    {% if hint %}<span class="stat-card__delta">{{ hint }}</span>{% endif %}
+  </div>
+</article>

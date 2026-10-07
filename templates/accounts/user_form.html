@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card card--wide">
+  <div class="card__body">
+    <form method="post"{% if multipart %} enctype="multipart/form-data"{% endif %} class="stack" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="form-grid">
+        {% for field in form %}
+          <div{% if field.name == "profile_photo" or field.name == "role" or field.name == "password1" or field.name == "password2" %} class="field--full"{% endif %}>
+            {% include "components/form_field.html" %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="cluster">
+        <button class="btn btn--primary" type="submit">{{ submit_label }}</button>
+        <a class="btn btn--ghost" href="{% url 'accounts:user_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block content %}
+  <section class="grid grid--2">
+    <article class="card"><div class="card__body stack">
+      <h2 class="card__title">Account security</h2>
+      <p class="text-muted">Keep your account details and password up to date.</p>
+      <a class="btn btn--secondary" href="{% url 'accounts:profile' %}">Manage profile</a>
+      <a class="link-row" href="{% url 'accounts:password_change' %}">Change password</a>
+    </div></article>
+    <article class="card"><div class="card__body stack">
+      <h2 class="card__title">Administration</h2>
+      <p class="text-muted">Manage user access and hub operations using the permissions assigned to your account.</p>
+      <a class="link-row" href="{% url 'accounts:user_list' %}">Manage users</a>
+      <a class="link-row" href="{% url 'hubs:list' %}">Manage hubs</a>
+    </div></article>
+  </section>
+{% endblock %}

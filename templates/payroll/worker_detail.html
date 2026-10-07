@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Employee code</dt><dd>{{ worker.employee_code }}</dd></div>
+      <div><dt>Name</dt><dd>{{ worker.user.display_name }}</dd></div>
+      <div><dt>Hub</dt><dd>{{ worker.hub }}</dd></div>
+      <div><dt>Position</dt><dd>{{ worker.job_title }}</dd></div>
+      <div><dt>Monthly salary</dt><dd>{{ worker.monthly_salary }}</dd></div>
+      <div><dt>Hired</dt><dd>{{ worker.hired_on|date:"j M Y" }}</dd></div>
+      <div><dt>Status</dt><dd>{% if worker.is_active %}Active{% else %}Inactive{% endif %}</dd></div>
+    </dl>
+  </div></section>
+{% endblock %}

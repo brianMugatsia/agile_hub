@@ -1,0 +1,28 @@
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.card--narrow { max-width: 34rem; }
+.card--wide { max-width: 52rem; }
+.card__header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-border); }
+.card__title { font-size: 1.05rem; }
+.card__body { padding: 1.25rem; }
+.card__footer { padding: .9rem 1.25rem; border-top: 1px solid var(--color-border); }
+
+.detail-list { display: grid; gap: 0; }
+.detail-list > div {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: .75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.detail-list > div:last-child { border-bottom: 0; }
+.detail-list dt { color: var(--color-muted); font-size: .875rem; }
+.detail-list dd { overflow-wrap: anywhere; }
+@media (max-width: 520px) { .detail-list > div { grid-template-columns: minmax(0, 1fr); gap: .15rem; } }
+
+.profile-card { display: grid; justify-items: center; gap: .4rem; text-align: center; }
+.profile-card__name { margin-top: .4rem; }

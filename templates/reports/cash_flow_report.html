@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="finance-summary">{% include "components/stat_card.html" with label="Inflows" value=total_inflows %}{% include "components/stat_card.html" with label="Outflows" value=total_outflows %}{% include "components/stat_card.html" with label="Net cash flow" value=net_cash_flow %}</section>
+  <p class="finance-disclaimer">This operational cash-flow summary reflects entered transactions and should be reconciled against bank and mobile-money statements.</p>
+  <section class="card"><div class="card__body">{% include "components/data_table.html" %}</div></section>
+{% endblock %}

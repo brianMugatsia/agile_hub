@@ -1,0 +1,28 @@
+{% load ui_tags %}
+<header class="topbar">
+  <button type="button" class="icon-btn topbar__menu" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu">
+    {% icon "menu" %}
+  </button>
+  <div class="topbar__spacer"></div>
+  <button type="button" class="icon-btn" data-theme-toggle aria-pressed="false" aria-label="Switch to dark theme">
+    {% icon "moon" %}
+  </button>
+  <details class="user-menu" data-dropdown>
+    <summary class="user-menu__trigger">
+      {% include "components/avatar.html" with person=user %}
+      <span class="user-menu__text">
+        <strong>{{ user.display_name }}</strong>
+        <small>{{ user.get_role_display }}</small>
+      </span>
+      {% icon "chevron-down" %}
+    </summary>
+    <div class="user-menu__panel">
+      <a href="{% url 'accounts:profile' %}">{% icon "user" %} My profile</a>
+      <a href="{% url 'accounts:password_change' %}">{% icon "lock" %} Change password</a>
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit">{% icon "log-out" %} Sign out</button>
+      </form>
+    </div>
+  </details>
+</header>

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+  <form class="filter-bar" method="get">
+    <label class="field"><span class="field__label">From</span><input class="input" type="date" name="start"></label>
+    <label class="field"><span class="field__label">To</span><input class="input" type="date" name="end"></label>
+    <button class="btn btn--secondary" type="submit">Filter events</button>
+  </form>
+  <section class="card"><div class="card__body">{% include "components/data_table.html" %}</div></section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Action</dt><dd>{{ event.action }}</dd></div>
+      <div><dt>Summary</dt><dd>{{ event.summary }}</dd></div>
+      <div><dt>Actor</dt><dd>{{ event.actor|default:"System" }}</dd></div>
+      <div><dt>Object</dt><dd>{{ event.object_type }} {{ event.object_id }}</dd></div>
+      <div><dt>Time</dt><dd>{{ event.created_at|date:"j M Y, H:i:s T" }}</dd></div>
+      {% if event.changes %}<div><dt>Changes</dt><dd><pre>{{ event.changes|pprint }}</pre></dd></div>{% endif %}
+    </dl>
+  </div></section>
+{% endblock %}

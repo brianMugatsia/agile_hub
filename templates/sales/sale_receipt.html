@@ -1,0 +1,17 @@
+{% extends "base_print.html" %}
+{% block title %}Receipt {{ sale.pk }}{% endblock %}
+{% block heading %}Sale receipt{% endblock %}
+{% block period %}<p>Sale {{ sale.pk }} · {{ sale.completed_at|date:"j M Y, H:i" }}</p>{% endblock %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Hub</dt><dd>{{ sale.hub }}</dd></div>
+      <div><dt>Agent</dt><dd>{{ sale.agent.display_name }}</dd></div>
+      <div><dt>Customer</dt><dd>{{ sale.customer_name|default:"—" }}</dd></div>
+      <div><dt>Payment</dt><dd>{{ sale.get_payment_method_display }}{% if sale.payment_reference %} · {{ sale.payment_reference }}{% endif %}</dd></div>
+    </dl>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Total</th></tr></thead><tbody>
+      {% for item in sale.items.all %}<tr><td>{{ item.product.name }}</td><td>{{ item.quantity }} {{ item.product.unit }}</td><td>{{ item.unit_price }}</td><td>{{ item.line_total }}</td></tr>{% endfor %}
+    </tbody><tfoot><tr><th colspan="3">Total</th><th>{{ sale.total }}</th></tr></tfoot></table></div>
+  </div></section>
+{% endblock %}

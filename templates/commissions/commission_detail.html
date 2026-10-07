@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <dl class="detail-list">
+      <div><dt>Agent</dt><dd>{{ commission.agent.display_name }}</dd></div>
+      <div><dt>Sale</dt><dd><a href="{% url 'sales:list' %}">{{ commission.sale }}</a></dd></div>
+      <div><dt>Commission rate</dt><dd>{{ commission.rate|floatformat:2 }}%</dd></div>
+      <div><dt>Base amount</dt><dd>{{ commission.base_amount }}</dd></div>
+      <div><dt>Amount</dt><dd>{{ commission.amount }}</dd></div>
+      <div><dt>Status</dt><dd>{{ commission.get_status_display }}</dd></div>
+      <div><dt>Created</dt><dd>{{ commission.created_at|date:"j M Y, H:i" }}</dd></div>
+      {% if commission.notes %}<div><dt>Notes</dt><dd>{{ commission.notes|linebreaksbr }}</dd></div>{% endif %}
+    </dl>
+  </div></section>
+{% endblock %}

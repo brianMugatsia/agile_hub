@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block content %}
+  <section class="card">
+    <div class="card__header"><h2 class="card__title">Commission history</h2></div>
+    <div class="card__body">
+      <dl class="detail-list">
+        <div><dt>Agent</dt><dd>{{ agent.display_name|default:request.user.display_name }}</dd></div>
+        <div><dt>Earned</dt><dd>{{ earned_total|default:"0.00" }}</dd></div>
+        <div><dt>Paid</dt><dd>{{ paid_total|default:"0.00" }}</dd></div>
+        <div><dt>Pending</dt><dd>{{ pending_total|default:"0.00" }}</dd></div>
+      </dl>
+      {% include "components/data_table.html" with object_list=commissions columns=columns %}
+    </div>
+  </section>
+{% endblock %}

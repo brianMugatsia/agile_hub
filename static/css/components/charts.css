@@ -1,0 +1,7 @@
+.chart-card { min-width: 0; }
+.chart-card__body { min-height: 15rem; position: relative; }
+.chart-card canvas { display: block; width: 100% !important; max-height: 22rem; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; color: var(--color-muted); font-size: .875rem; }
+.chart-legend__item { display: inline-flex; align-items: center; gap: .45rem; }
+.chart-legend__swatch { width: .7rem; height: .7rem; border-radius: 2px; background: var(--color-primary); }
+.chart-empty { display: grid; min-height: 12rem; place-items: center; color: var(--color-muted); text-align: center; }

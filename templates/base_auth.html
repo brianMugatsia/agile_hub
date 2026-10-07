@@ -1,0 +1,30 @@
+{% load static ui_tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}Sign in{% endblock %} · Agile Hub</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="auth-body">
+  <div class="auth">
+    <aside class="auth__brand" aria-hidden="true">
+      <div class="auth__brand-inner">
+        <img class="auth__logo" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub">
+        <p>Sales, stock, commissions and payroll for your agricultural hub, in one place.</p>
+        <ul class="auth__points">
+          <li>Sunflower oil, feeds, fertilizer, chicken waste and gas</li>
+          <li>Transparent sales-agent commissions</li>
+          <li>Workers' salaries managed separately</li>
+        </ul>
+      </div>
+    </aside>
+    <main class="auth__main" id="main">
+      <div class="auth-card">{% block auth_content %}{% endblock %}</div>
+    </main>
+  </div>
+  {% include "partials/messages_toast.html" %}
+  <script type="module" src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

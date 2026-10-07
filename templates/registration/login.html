@@ -1,0 +1,22 @@
+{% extends "base_auth.html" %}
+{% block title %}Sign in{% endblock %}
+{% block auth_content %}
+  <h1 class="auth-card__title">Welcome back</h1>
+  <p class="auth-card__lead">Sign in to manage your hub, sales and payments.</p>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert--danger" role="alert">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" class="stack" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% include "components/form_field.html" with field=form.username %}
+    {% include "components/form_field.html" with field=form.password %}
+    <button class="btn btn--primary btn--block" type="submit">Sign in</button>
+  </form>
+
+  <p class="auth-card__footer"><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
+{% endblock %}

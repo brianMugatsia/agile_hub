@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="grid grid--2">
+    <article class="card"><div class="card__body">
+      <dl class="detail-list">
+        <div><dt>Code</dt><dd>{{ hub.code }}</dd></div>
+        <div><dt>Name</dt><dd>{{ hub.name }}</dd></div>
+        <div><dt>Region</dt><dd>{{ hub.region|default:"—" }}</dd></div>
+        <div><dt>Address</dt><dd>{{ hub.address|default:"—" }}</dd></div>
+        <div><dt>Manager</dt><dd>{{ hub.manager.display_name|default:"—" }}</dd></div>
+        <div><dt>Status</dt><dd>{{ hub.get_status_display }}</dd></div>
+      </dl>
+    </div></article>
+    <article class="card"><div class="card__body stack">
+      <h2 class="card__title">Hub operations</h2>
+      <a class="link-row" href="{% url 'sales:list' %}">Sales</a>
+      <a class="link-row" href="{% url 'inventory:list' %}">Inventory movements</a>
+      <a class="link-row" href="{% url 'payroll:worker_list' %}">Workers</a>
+    </div></article>
+  </section>
+{% endblock %}

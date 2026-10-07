@@ -1,0 +1,9 @@
+{% extends "base_auth.html" %}
+{% load ui_tags %}
+{% block title %}Something went wrong{% endblock %}
+{% block auth_content %}
+  <div class="auth-card__icon auth-card__icon--warning">{% icon "alert-triangle" %}</div>
+  <h1 class="auth-card__title">Something went wrong</h1>
+  <p class="auth-card__lead">We hit an unexpected error. Please try again in a moment.</p>
+  <a class="btn btn--primary btn--block" href="{% url 'core:dashboard' %}">Back to dashboard</a>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    {% include "components/data_table.html" with object_list=low_stock_products columns=columns %}
+    {% if not low_stock_products %}{% include "partials/empty_state.html" with title="Stock levels look good" message="No active products are below their reorder level." %}{% endif %}
+  </div></section>
+{% endblock %}

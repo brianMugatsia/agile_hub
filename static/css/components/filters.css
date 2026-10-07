@@ -1,0 +1,11 @@
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+  padding: .9rem 1rem;
+}
+.filter-bar__field { min-width: 10rem; }
+.filter-bar__field--grow { flex: 1 1 16rem; }
+@media (max-width: 640px) { .filter-bar__field { flex: 1 1 100%; } }

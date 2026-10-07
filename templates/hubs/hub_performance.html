@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <form class="filter-bar" method="get">
+    <label class="field"><span class="field__label">From</span><input class="input" type="date" name="start" value="{{ period_start|date:'Y-m-d' }}"></label>
+    <label class="field"><span class="field__label">To</span><input class="input" type="date" name="end" value="{{ period_end|date:'Y-m-d' }}"></label>
+    <button class="btn btn--secondary" type="submit">Apply</button>
+  </form>
+  <section class="grid grid--3">
+    {% include "components/stat_card.html" with label="Completed sales" value=sales_count %}
+    {% include "components/stat_card.html" with label="Sales revenue" value=sales_total %}
+    {% include "components/stat_card.html" with label="Active agents" value=active_agents %}
+  </section>
+  {% if object_list %}{% include "components/data_table.html" %}{% endif %}
+{% endblock %}

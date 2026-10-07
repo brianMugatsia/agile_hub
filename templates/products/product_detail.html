@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="grid grid--2">
+    <article class="card"><div class="card__body">
+      <dl class="detail-list">
+        <div><dt>SKU</dt><dd>{{ product.sku }}</dd></div>
+        <div><dt>Product</dt><dd>{{ product.name }}</dd></div>
+        <div><dt>Category</dt><dd>{{ product.category|default:"—" }}</dd></div>
+        <div><dt>Unit</dt><dd>{{ product.unit }}</dd></div>
+        <div><dt>Cost price</dt><dd>{{ product.cost_price }}</dd></div>
+        <div><dt>Selling price</dt><dd>{{ product.selling_price }}</dd></div>
+        <div><dt>Stock aggregate</dt><dd>{{ product.stock_on_hand }}</dd></div>
+        <div><dt>Reorder level</dt><dd>{{ product.reorder_level }}</dd></div>
+      </dl>
+    </div></article>
+    <article class="card"><div class="card__body">
+      <h2 class="card__title">Description</h2>
+      <p>{{ product.description|default:"No product description has been added."|linebreaksbr }}</p>
+    </div></article>
+  </section>
+{% endblock %}

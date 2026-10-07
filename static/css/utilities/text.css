@@ -1,0 +1,3 @@
+.text-muted { color: var(--color-muted); }
+.text-right { text-align: right; }
+.nowrap { white-space: nowrap; }

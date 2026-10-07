@@ -1,0 +1,14 @@
+<article class="card chart-card">
+  <div class="card__header"><h2 class="card__title">{{ title|default:"Performance" }}</h2></div>
+  <div class="card__body chart-card__body">
+    {% if chart_data %}
+      <div class="chart-empty" role="img" aria-label="{{ title }} chart data">
+        {% for point in chart_data %}
+          <span class="badge badge--success" data-chart-value="{{ point.value|default:0 }}">{{ point.label }}: {{ point.value }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="chart-empty">{{ empty_message|default:"Chart data will appear when records are available." }}</p>
+    {% endif %}
+  </div>
+</article>

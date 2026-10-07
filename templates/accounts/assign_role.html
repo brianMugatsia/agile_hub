@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block content %}
+<section class="card card--narrow">
+  <div class="card__body stack">
+    <p>
+      <strong>{{ target.display_name }}</strong> is currently
+      <span class="badge badge--{{ target.role|role_tone }}">{{ target.get_role_display }}</span>.
+    </p>
+    <div class="alert alert--warning" role="note">
+      Changing a role takes effect immediately and changes what this person can see and do.
+    </div>
+    <form method="post" class="stack" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% include "components/form_field.html" with field=form.role %}
+      <div class="cluster">
+        <button class="btn btn--primary" type="submit">Update role</button>
+        <a class="btn btn--ghost" href="{% url 'accounts:user_detail' target.pk %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

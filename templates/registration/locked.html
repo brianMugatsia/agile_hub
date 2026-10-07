@@ -1,0 +1,12 @@
+{% extends "base_auth.html" %}
+{% load ui_tags %}
+{% block title %}Too many attempts{% endblock %}
+{% block auth_content %}
+  <div class="auth-card__icon auth-card__icon--warning">{% icon "lock" %}</div>
+  <h1 class="auth-card__title">Account temporarily locked</h1>
+  <p class="auth-card__lead">
+    There were too many failed sign-in attempts. Please wait a few minutes and try again,
+    or reset your password.
+  </p>
+  <a class="btn btn--primary btn--block" href="{% url 'accounts:password_reset' %}">Reset password</a>
+{% endblock %}

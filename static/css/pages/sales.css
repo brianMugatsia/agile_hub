@@ -1,0 +1,5 @@
+.sale-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--color-border); font-size: 1.15rem; font-weight: 700; }
+.sale-line-items { display: grid; gap: .75rem; }
+.sale-line-item { display: grid; grid-template-columns: minmax(0, 1fr) 7rem auto; align-items: end; gap: .75rem; padding: .9rem; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.sale-receipt { max-width: 40rem; margin-inline: auto; }
+@media (max-width: 640px) { .sale-line-item { grid-template-columns: minmax(0, 1fr); } }

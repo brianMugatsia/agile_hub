@@ -1,0 +1,14 @@
+<dialog id="{{ modal_id|default:'confirm-action' }}" class="modal" data-modal aria-labelledby="{{ modal_id|default:'confirm-action' }}-title">
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    <header class="modal__header">
+      <h2 id="{{ modal_id|default:'confirm-action' }}-title">{{ title|default:"Confirm action" }}</h2>
+      <button type="button" class="icon-btn" data-modal-close aria-label="Close">×</button>
+    </header>
+    <div class="modal__body"><p>{{ message|default:"Are you sure you want to continue?" }}</p></div>
+    <footer class="modal__footer">
+      <button type="button" class="btn btn--secondary" data-modal-close>Cancel</button>
+      <button type="submit" class="btn btn--danger">{{ confirm_label|default:"Confirm" }}</button>
+    </footer>
+  </form>
+</dialog>

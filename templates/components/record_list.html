@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block page_actions %}
+  {% if can_create %}
+    <a class="btn btn--primary" href="{% url create_url_name %}">
+      {% icon "plus" %}<span>{{ create_label }}</span>
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <div class="card__body">
+      {% if search_fields %}
+        <form class="filter-bar" method="get" role="search">
+          <label class="sr-only" for="record-search">Search records</label>
+          <input id="record-search" class="input" type="search" name="q" value="{{ search_query }}"
+                 placeholder="Search {{ page_title|lower }}…" autocomplete="off">
+          <button class="btn btn--secondary" type="submit">{% icon "search" %} Search</button>
+        </form>
+      {% endif %}
+      {% include "components/data_table.html" %}
+      {% include "partials/pagination.html" %}
+    </div>
+  </section>
+{% endblock %}

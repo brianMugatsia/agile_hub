@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block page_actions %}
+  {% if perms.accounts.add_user %}
+    <a class="btn btn--primary" href="{% url 'accounts:user_create' %}">{% icon "user-plus" %} New user</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="get" class="filter-bar card" role="search">
+  <div class="filter-bar__field filter-bar__field--grow">
+    <label class="sr-only" for="q">Search users</label>
+    <input id="q" name="q" type="search" class="input" placeholder="Search name, username, email or phone" value="{{ filters.q }}">
+  </div>
+  <div class="filter-bar__field">
+    <label class="sr-only" for="role">Role</label>
+    <select id="role" name="role" class="select">
+      <option value="">All roles</option>
+      {% for value, label in role_choices %}
+        <option value="{{ value }}"{% if filters.role == value %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-bar__field">
+    <label class="sr-only" for="status">Status</label>
+    <select id="status" name="status" class="select">
+      <option value="">Any status</option>
+      <option value="active"{% if filters.status == "active" %} selected{% endif %}>Active</option>
+      <option value="inactive"{% if filters.status == "inactive" %} selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+  <button class="btn btn--primary" type="submit">{% icon "search" %} Filter</button>
+  {% if filters.q or filters.role or filters.status %}
+    <a class="btn btn--ghost" href="{% url 'accounts:user_list' %}">Reset</a>
+  {% endif %}
+</form>
+
+<section class="card">
+  {% if users %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">User</th>
+            <th scope="col">Role</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Status</th>
+            <th scope="col">Last sign-in</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td>
+                <div class="cell-user">
+                  {% include "components/avatar.html" with person=u size="sm" %}
+                  <div>
+                    <a class="cell-user__name" href="{% url 'accounts:user_detail' u.pk %}">{{ u.display_name }}</a>
+                    <small>{{ u.email }}</small>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge badge--{{ u.role|role_tone }}">{{ u.get_role_display }}</span></td>
+              <td>{{ u.phone_number|default:"—" }}</td>
+              <td>
+                {% if u.is_active %}{% include "components/status_badge.html" with tone="success" label="Active" %}
+                {% else %}{% include "components/status_badge.html" with tone="danger" label="Inactive" %}{% endif %}
+              </td>
+              <td>{{ u.last_login|date:"d M Y, H:i"|default:"Never" }}</td>
+              <td class="text-right"><a class="btn btn--sm" href="{% url 'accounts:user_detail' u.pk %}">View</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    <div class="empty-state">
+      {% icon "users" "empty-state__icon" %}
+      <h2 class="empty-state__title">No users found</h2>
+      <p class="empty-state__text">Try a different search or clear the filters.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+  <form class="filter-bar" method="get"><label class="field"><span class="field__label">From</span><input class="input" type="date" name="start"></label><label class="field"><span class="field__label">To</span><input class="input" type="date" name="end"></label><button class="btn btn--secondary" type="submit">Apply</button></form>
+  <section class="finance-summary">{% include "components/stat_card.html" with label="Sales" value=revenue %}{% include "components/stat_card.html" with label="Operating costs" value=operating_costs %}{% include "components/stat_card.html" with label="Net" value=net_total %}</section>
+  <p class="finance-disclaimer">Operational summary only; this report is not audited and is not a double-entry financial statement.</p>
+  <section class="card"><div class="card__body">{% include "components/data_table.html" %}</div></section>
+{% endblock %}

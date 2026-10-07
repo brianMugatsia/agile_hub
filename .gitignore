@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Django
+*.log
+logs/*
+!logs/.gitkeep
+media/*
+!media/.gitkeep
+staticfiles/
+db.sqlite3
+demo.sqlite3
+demo.sqlite3-*
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Backups
+backups/*
+!backups/.gitkeep
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

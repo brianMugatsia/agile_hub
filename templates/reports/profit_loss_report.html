@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+  <form class="filter-bar" method="get"><label class="field"><span class="field__label">From</span><input class="input" type="date" name="start"></label><label class="field"><span class="field__label">To</span><input class="input" type="date" name="end"></label><button class="btn btn--secondary" type="submit">Apply</button></form>
+  <section class="finance-summary">{% include "components/stat_card.html" with label="Revenue" value=revenue %}{% include "components/stat_card.html" with label="Cost of goods" value=cost_of_goods %}{% include "components/stat_card.html" with label="Operating costs" value=operating_expenses %}{% include "components/stat_card.html" with label="Net result" value=net_profit %}</section>
+  <p class="finance-disclaimer">This operational summary is not a double-entry income statement or audited financial report.</p>
+{% endblock %}

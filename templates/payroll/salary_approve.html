@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card card--narrow"><div class="card__body stack">
+    <h2>Approve salary</h2>
+    <p>Approve {{ salary.worker }} for {{ salary.period_start|date:"F Y" }}?</p>
+    <p>Net pay: <strong>{{ salary.net_amount }}</strong></p>
+    <form method="post" data-confirm-action="salary">{% csrf_token %}
+      <button class="btn btn--primary" type="submit">Approve salary</button>
+      <a class="btn btn--secondary" href="{% url 'payroll:salary_list' %}">Cancel</a>
+    </form>
+  </div></section>
+{% endblock %}

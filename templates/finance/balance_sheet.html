@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load money_tags %}
+{% block content %}
+  <form method="get" class="filter-bar">
+    <label class="field"><span class="field__label">As at</span><input class="input" type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
+    <button class="btn btn--secondary" type="submit">Update report</button>
+  </form>
+  <section class="finance-summary">
+    {% include "components/stat_card.html" with label="Assets" value=total_assets %}
+    {% include "components/stat_card.html" with label="Liabilities" value=total_liabilities %}
+    {% include "components/stat_card.html" with label="Equity" value=total_equity %}
+  </section>
+  <p class="finance-disclaimer">Operational summary only; this is not a double-entry balance sheet or audited financial statement.</p>
+{% endblock %}

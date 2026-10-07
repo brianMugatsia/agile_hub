@@ -1,0 +1,52 @@
+:root {
+  /* Palette */
+  --green-50: #eef7f2;
+  --green-100: #d6ece1;
+  --green-500: #198754;
+  --green-600: #146c43;
+  --brown-100: #efe7e3;
+  --brown-500: #795548;
+  --brown-700: #5a3f35;
+  --yellow-100: #fdf3d0;
+  --yellow-500: #f4b400;
+  --yellow-800: #7a5b00;
+  --red-100: #fbe4e7;
+  --red-500: #dc3545;
+  --red-700: #a71d2a;
+  --blue-100: #dff0f8;
+  --blue-700: #0a5a85;
+  --brand-blue-50: #eff6ff;
+  --brand-blue-100: #dbeafe;
+  --brand-blue-500: #2563eb;
+  --brand-blue-600: #1d4ed8;
+  --brand-blue-900: #102a56;
+
+  /* Semantic colours */
+  --color-bg: #f4f7fc;
+  --color-surface: #ffffff;
+  --color-text: #18263d;
+  --color-muted: #617089;
+  --color-border: #e3eaf4;
+  --color-border-strong: #cbd7e7;
+  --color-primary: var(--brand-blue-500);
+  --color-primary-hover: var(--brand-blue-600);
+  --color-primary-soft: var(--brand-blue-50);
+  --color-danger: var(--red-500);
+
+  /* Spacing, radius, shadow */
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
+  --space-5: 1.5rem; --space-6: 2rem; --space-7: 3rem;
+  --radius-sm: 9px; --radius: 14px; --radius-lg: 22px;
+  --shadow-sm: 0 1px 3px rgba(22, 42, 74, .045);
+  --shadow: 0 8px 24px rgba(22, 42, 74, .065);
+  --shadow-lg: 0 24px 56px rgba(16, 35, 68, .2);
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, .32);
+
+  /* Type */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Layout */
+  --sidebar-w: 272px;
+  --topbar-h: 68px;
+}

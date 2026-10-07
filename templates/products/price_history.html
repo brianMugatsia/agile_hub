@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card"><div class="card__body">
+    <p class="text-muted">{{ product }}</p>
+    {% include "components/data_table.html" with object_list=price_history columns=columns %}
+  </div></section>
+{% endblock %}

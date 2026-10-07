@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card card--narrow"><div class="card__body stack">
+    <h2>Record commission payment</h2>
+    <p>Confirm payment of {{ commission.amount }} to {{ commission.agent.display_name }}.</p>
+    <form method="post" data-confirm-action="commission">{% csrf_token %}
+      <button class="btn btn--primary" type="submit">Mark as paid</button>
+      <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
+    </form>
+  </div></section>
+{% endblock %}

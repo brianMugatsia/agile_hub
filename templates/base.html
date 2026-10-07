@@ -1,0 +1,50 @@
+{% load static ui_tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="theme-color" content="#123568">
+  <title>{% block title %}{{ page_title|default:"Agile Hub" }}{% endblock %} · Agile Hub</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body data-currency="{{ CURRENCY_CODE|default:'KES' }}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app-shell" data-sidebar-state="closed">
+    {% include "partials/sidebar.html" %}
+    <div class="app-shell__backdrop" data-sidebar-close></div>
+    <div class="app-shell__main">
+      {% include "partials/topbar.html" %}
+      {% if DEMO_MODE %}
+        <div class="demo-banner" role="status">
+          <span class="demo-banner__dot" aria-hidden="true"></span>
+          <strong>Demo workspace</strong>
+          <span>Showing local sample data — not live business records.</span>
+          <a href="{% url 'core:home' %}">Public site</a>
+        </div>
+      {% elif DEVELOPMENT_MODE %}
+        <div class="development-banner" role="status">
+          <strong>Development database</strong>
+          <span>This workspace shows records from its configured development database; it is separate from production.</span>
+          <span>Add 30 sample sales with <code>python manage.py seed_demo_data --sales 30 --batch preview</code>.</span>
+        </div>
+      {% endif %}
+      <main id="main" class="page" tabindex="-1">
+        <header class="page-header">
+          <div class="page-header__text">
+            {% include "partials/breadcrumbs.html" %}
+            <h1 class="page-header__title">{% block heading %}{{ page_title }}{% endblock %}</h1>
+            {% block subheading %}{% endblock %}
+          </div>
+          <div class="page-header__actions">{% block page_actions %}{% endblock %}</div>
+        </header>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% include "partials/messages_toast.html" %}
+  <script type="module" src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

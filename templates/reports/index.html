@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block content %}
+  <section class="grid grid--3">
+    {% for label, url_name in report_links %}
+      <a class="card card--link" href="{% url url_name %}">
+        <div class="card__body">
+          <span class="stat-card__icon">{% icon "bar-chart" %}</span>
+          <h2 class="card__title">{{ label }}</h2>
+          <span class="text-muted">Open {{ label|lower }} data</span>
+        </div>
+      </a>
+    {% endfor %}
+  </section>
+{% endblock %}

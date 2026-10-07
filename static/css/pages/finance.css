@@ -1,0 +1,5 @@
+.finance-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); }
+.finance-table td, .finance-table th { font-variant-numeric: tabular-nums; }
+.finance-value { text-align: right; font-variant-numeric: tabular-nums; }
+.finance-total { border-top: 2px solid var(--color-border-strong); font-weight: 700; }
+.finance-disclaimer { padding: .85rem 1rem; border-left: 3px solid var(--yellow-500); background: var(--yellow-100); color: var(--yellow-800); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: .875rem; }
