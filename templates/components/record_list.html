@@ -7,19 +7,53 @@
       {% icon "plus" %}<span>{{ create_label }}</span>
     </a>
   {% endif %}
+  {% if import_url_name and can_import %}
+    <a class="btn btn--secondary" href="{% url import_url_name %}">Import Excel</a>
+  {% endif %}
+  {% if can_create_purchase_order %}
+    <a class="btn btn--secondary" href="{% url 'inventory:purchase_order_create' %}">Create reorder order</a>
+    <a class="btn btn--secondary" href="{% url 'inventory:purchase_orders' %}">Purchase orders</a>
+  {% endif %}
+  {% if export_url_name %}
+    <a class="btn btn--secondary" href="{% url export_url_name 'csv' %}{% if export_query %}?{{ export_query }}{% endif %}">Download CSV</a>
+    <a class="btn btn--secondary" href="{% url export_url_name 'xlsx' %}{% if export_query %}?{{ export_query }}{% endif %}">Download Excel</a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
   <section class="card">
     <div class="card__body">
-      {% if search_fields %}
-        <form class="filter-bar" method="get" role="search">
+      {% if search_fields or date_filter_field or filter_fields or filter_hubs %}
+        <form class="filter-bar" method="get" role="search" aria-label="Filter {{ page_title|lower }}">
+          {% if search_fields %}
           <label class="sr-only" for="record-search">Search records</label>
           <input id="record-search" class="input" type="search" name="q" value="{{ search_query }}"
                  placeholder="Search {{ page_title|lower }}…" autocomplete="off">
+          {% endif %}
+          {% if date_filter_field %}
+            <label class="field filter-bar__field"><span class="field__label">From</span><input class="input" type="date" name="start" value="{{ filter_start }}"></label>
+            <label class="field filter-bar__field"><span class="field__label">To</span><input class="input" type="date" name="end" value="{{ filter_end }}"></label>
+          {% endif %}
+          {% for field in filter_fields %}
+            <label class="field filter-bar__field">
+              <span class="field__label">{{ field.label }}</span>
+              <select class="select" name="{{ field.name }}">
+                <option value="">All {{ field.label|lower }}</option>
+                {% for value, label in field.choices %}<option value="{{ value }}"{% if field.selected == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </label>
+          {% endfor %}
+          {% if filter_hubs %}
+            <label class="field filter-bar__field">
+              <span class="field__label">Hub</span>
+              <select class="select" name="hub"><option value="">All hubs</option>{% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}</select>
+            </label>
+          {% endif %}
           <button class="btn btn--secondary" type="submit">{% icon "search" %} Search</button>
         </form>
       {% endif %}
+      {% if filter_error %}<p class="alert alert--danger" role="alert">{{ filter_error }}</p>{% endif %}
+      {% include "components/saved_filters.html" %}
       {% include "components/data_table.html" %}
       {% include "partials/pagination.html" %}
     </div>

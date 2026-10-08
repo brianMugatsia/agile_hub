@@ -16,7 +16,7 @@
 }
 .page-header__title { font-size: clamp(1.35rem, 2.4vw, 1.75rem); }
 .page-header__sub { margin-top: .35rem; color: var(--color-muted); }
-.page-header__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.page-header__actions { display: flex; flex-wrap: wrap; gap: .65rem; }
 
 .breadcrumbs ol { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .4rem; font-size: .8125rem; color: var(--color-muted); }
 .breadcrumbs li + li::before { content: "/"; margin-right: .4rem; color: var(--color-border-strong); }

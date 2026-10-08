@@ -1,48 +1,124 @@
 {% extends "base.html" %}
 {% load ui_tags %}
+{% load static %}
+
+{% block page_actions %}
+  {% if can_approve_commissions %}<a class="btn btn--secondary" href="{% url 'commissions:pending' %}">Pending approvals</a>{% endif %}
+  {% if can_view_commission_settings %}<a class="btn btn--secondary" href="{% url 'commissions:settings' %}">Commission settings</a>{% endif %}
+{% endblock %}
 
 {% block content %}
-  <section class="card">
+<div class="dash">
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="com-i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+    <symbol id="com-i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></symbol>
+    <symbol id="com-i-sheet" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3v18"/></symbol>
+  </svg>
+
+  <!-- HERO -->
+  <section class="dash-hero" aria-label="Commissions overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Commissions</span>
+      <h2 class="dash-hero__title">Every commission, <span class="dash-gradient">accounted for.</span></h2>
+      <p class="dash-hero__note">Search, filter and move commissions through approval, payment or reversal from one place.</p>
+    </div>
+
+  </section>
+
+  <section class="card dashboard-section dash-panel" aria-label="Commission exports">
+    <div class="card__body com-export">
+      <span class="com-export__label">Export current view</span>
+      <div class="com-export__buttons">
+        <a class="btn btn--secondary com-export__btn" href="{% url 'commissions:export' 'csv' %}{% if export_query %}?{{ export_query }}{% endif %}">
+          <svg class="dash-icon" aria-hidden="true"><use href="#com-i-download"/></svg> Download CSV
+        </a>
+        <a class="btn btn--secondary com-export__btn" href="{% url 'commissions:export' 'xlsx' %}{% if export_query %}?{{ export_query }}{% endif %}">
+          <svg class="dash-icon" aria-hidden="true"><use href="#com-i-sheet"/></svg> Download Excel
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {% include "components/saved_filters.html" %}
+
+  <!-- FILTERS -->
+  <section class="card dashboard-section dash-panel com-filters-card" data-spot>
+    <div class="card__body">
+      <form class="com-filters" method="get" role="search">
+        <div class="com-filters__search">
+          <label class="sr-only" for="commission-search">Search commissions</label>
+          <svg class="dash-icon" aria-hidden="true"><use href="#com-i-search"/></svg>
+          <input class="input" id="commission-search" type="search" name="q" value="{{ search_query }}" placeholder="Search commissions">
+        </div>
+        <label class="com-field"><span class="com-field__label">From</span><input class="input" type="date" name="start" value="{{ filter_start }}"></label>
+        <label class="com-field"><span class="com-field__label">To</span><input class="input" type="date" name="end" value="{{ filter_end }}"></label>
+        <label class="com-field"><span class="com-field__label">Status</span><select class="select" name="status"><option value="">All statuses</option>{% for value, label in filter_fields.0.choices %}<option value="{{ value }}"{% if filter_fields.0.selected == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <button class="btn btn--primary com-filters__btn" type="submit">Filter</button>
+      </form>
+      {% if filter_error %}<p class="alert alert--danger" role="alert">{{ filter_error }}</p>{% endif %}
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="card dashboard-section dash-panel" data-spot>
     <div class="card__body">
       <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>Created</th><th>Agent</th><th>Sale</th><th>Rate</th><th>Amount</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <table class="table com-table">
+          <colgroup>
+            <col class="com-col-created">
+            <col class="com-col-agent">
+            <col class="com-col-sale">
+            <col class="com-col-rate">
+            <col class="com-col-amount">
+            <col class="com-col-status">
+            <col class="com-col-actions">
+          </colgroup>
+          <thead><tr><th scope="col">Created</th><th scope="col">Agent</th><th scope="col">Sale</th><th scope="col">Rate</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>
             {% for item in object_list %}
               <tr>
                 <td>{{ item.created_at|date:"Y-m-d" }}</td>
-                <td>{{ item.agent.display_name }}</td>
-                <td>{{ item.sale }}</td>
-                <td>{{ item.rate|floatformat:2 }}%</td>
-                <td>{{ item.amount }}</td>
-                <td><span class="badge badge--neutral">{{ item.get_status_display }}</span></td>
+                <td><a class="com-agent com-agent--link" href="{% url 'commissions:agent_statement' item.agent_id %}"><span class="com-agent__avatar" aria-hidden="true">{{ item.agent.display_name|slice:":1"|upper }}</span><span class="com-agent__name">{{ item.agent.display_name }}</span></a></td>
+                <td><a class="com-list-sale" href="{% url 'commissions:detail' item.pk %}">{{ item.sale }}</a></td>
+                <td class="com-num">{{ item.rate|floatformat:2 }}%</td>
+                <td class="com-amount"><a href="{% url 'commissions:detail' item.pk %}">{{ item.amount }}</a></td>
+                <td><span class="com-badge" data-status="{{ item.status|lower }}">{{ item.get_status_display }}</span></td>
                 <td class="table__actions">
-                  {% if item.status == "PENDING" and perms.commissions.approve_salesagentcommission %}
-                    <form method="post" action="{% url 'commissions:approve' item.pk %}">
-                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
-                    </form>
-                  {% endif %}
-                  {% if item.status == "PENDING" and perms.commissions.reject_salesagentcommission %}
-                    <form method="post" action="{% url 'commissions:reject' item.pk %}" class="inline-action">
-                      {% csrf_token %}
-                      <label class="sr-only" for="reason-{{ item.pk }}">Rejection reason</label>
-                      <input class="input input--sm" id="reason-{{ item.pk }}" name="reason" required maxlength="255" placeholder="Reason">
-                      <button class="btn btn--sm btn--danger" type="submit">Reject</button>
-                    </form>
-                  {% endif %}
-                  {% if item.status == "APPROVED" and perms.commissions.pay_salesagentcommission %}
-                    <form method="post" action="{% url 'commissions:pay' item.pk %}">
-                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Mark paid</button>
-                    </form>
-                  {% endif %}
-                  {% if item.status != "REVERSED" and item.status != "REJECTED" and perms.commissions.reverse_salesagentcommission %}
-                    <form method="post" action="{% url 'commissions:reverse' item.pk %}" class="inline-action">
-                      {% csrf_token %}
-                      <label class="sr-only" for="reverse-{{ item.pk }}">Reversal reason</label>
-                      <input class="input input--sm" id="reverse-{{ item.pk }}" name="reason" required maxlength="255" placeholder="Reason">
-                      <button class="btn btn--sm btn--secondary" type="submit">Reverse</button>
-                    </form>
-                  {% endif %}
+                  <div class="com-actions">
+                    {% if item.status == "PENDING" and perms.commissions.approve_salesagentcommission %}
+                      <form method="post" action="{% url 'commissions:approve' item.pk %}">
+                        {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                      </form>
+                    {% endif %}
+                    {% if item.status == "PENDING" and perms.commissions.reject_salesagentcommission %}
+                      <form method="post" action="{% url 'commissions:reject' item.pk %}" class="inline-action">
+                        {% csrf_token %}
+                        <label class="sr-only" for="reason-{{ item.pk }}">Rejection reason</label>
+                        <input class="input input--sm" id="reason-{{ item.pk }}" name="reason" required maxlength="255" placeholder="Reason">
+                        <button class="btn btn--sm btn--danger" type="submit">Reject</button>
+                      </form>
+                    {% endif %}
+                    {% if item.status == "APPROVED" and perms.commissions.pay_salesagentcommission %}
+                      <form method="post" action="{% url 'commissions:pay' item.pk %}">
+                        {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Mark paid</button>
+                      </form>
+                    {% endif %}
+                    {% if item.status != "REVERSED" and item.status != "REJECTED" and perms.commissions.reverse_salesagentcommission %}
+                      <form method="post" action="{% url 'commissions:reverse' item.pk %}" class="inline-action">
+                        {% csrf_token %}
+                        <label class="sr-only" for="reverse-{{ item.pk }}">Reversal reason</label>
+                        <input class="input input--sm" id="reverse-{{ item.pk }}" name="reason" required maxlength="255" placeholder="Reason">
+                        <button class="btn btn--sm btn--secondary" type="submit">Reverse</button>
+                      </form>
+                    {% endif %}
+                  </div>
                 </td>
               </tr>
             {% empty %}
@@ -54,4 +130,7 @@
       {% include "partials/pagination.html" %}
     </div>
   </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

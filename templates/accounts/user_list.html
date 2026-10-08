@@ -8,10 +8,10 @@
 {% endblock %}
 
 {% block content %}
-<form method="get" class="filter-bar card" role="search">
+<form method="get" class="filter-bar card" role="search" aria-label="Filter users">
   <div class="filter-bar__field filter-bar__field--grow">
     <label class="sr-only" for="q">Search users</label>
-    <input id="q" name="q" type="search" class="input" placeholder="Search name, username, email or phone" value="{{ filters.q }}">
+    <input id="q" name="q" type="search" class="input" placeholder="Search name, username, email or phone" value="{{ filters.q }}" autocomplete="off">
   </div>
   <div class="filter-bar__field">
     <label class="sr-only" for="role">Role</label>

@@ -15,27 +15,29 @@ export function initSidebar() {
     const open = mobileQuery.matches && isOpen;
     shell.dataset.sidebarState = open ? "open" : "closed";
     toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
     sidebar.setAttribute("aria-hidden", String(mobileQuery.matches && !open));
     sidebar.inert = mobileQuery.matches && !open;
     document.body.classList.toggle("is-locked", open);
     return open;
   };
 
-  toggle.addEventListener("click", () => {
-    if (setOpen(shell.dataset.sidebarState !== "open")) closeButton?.focus();
-  });
+  const close = () => {
+    if (shell.dataset.sidebarState !== "open") return;
+    setOpen(false);
+    toggle.focus();
+  };
 
-  document.addEventListener("click", (event) => {
-    if (event.target instanceof Element && event.target.closest("[data-sidebar-close]")) {
-      setOpen(false);
-      toggle.focus();
-    }
+  toggle.addEventListener("click", () => {
+    const open = setOpen(shell.dataset.sidebarState !== "open");
+    if (open) closeButton?.focus();
   });
+  closeButton?.addEventListener("click", close);
+  shell.querySelector(".app-shell__backdrop")?.addEventListener("click", close);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && shell.dataset.sidebarState === "open") {
-      setOpen(false);
-      toggle.focus();
+      close();
       return;
     }
     if (event.key !== "Tab" || shell.dataset.sidebarState !== "open") return;

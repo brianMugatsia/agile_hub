@@ -2,7 +2,25 @@ function initLandingMotion() {
   const targets = document.querySelectorAll("[data-reveal]");
   const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  if (!targets.length || motionPreference.matches || !("IntersectionObserver" in window)) return;
+  if (motionPreference.matches) return;
+
+  const visual = document.querySelector(".landing-visual");
+  const mock = visual?.querySelector(".mock");
+  if (visual && mock && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    visual.addEventListener("pointermove", (event) => {
+      const bounds = visual.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+      const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+      visual.style.setProperty("--tilt-x", `${(x * 5).toFixed(2)}deg`);
+      visual.style.setProperty("--tilt-y", `${(y * -5).toFixed(2)}deg`);
+    });
+    visual.addEventListener("pointerleave", () => {
+      visual.style.removeProperty("--tilt-x");
+      visual.style.removeProperty("--tilt-y");
+    });
+  }
+
+  if (!targets.length || !("IntersectionObserver" in window)) return;
 
   const observer = new IntersectionObserver((entries, currentObserver) => {
     entries.forEach((entry) => {

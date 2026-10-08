@@ -5,23 +5,51 @@
 .field__help ul { padding-left: 1.1rem; list-style: disc; }
 .field__error { color: var(--red-700); font-size: .8125rem; font-weight: 500; }
 
+.form-field { display: grid; align-content: start; gap: .4rem; min-width: 0; }
+.form-field > label { color: var(--color-text); font-size: .875rem; font-weight: 600; }
+.form-field__help { color: var(--color-muted); font-size: .8125rem; line-height: 1.5; }
+.form-field__error { color: var(--red-700); font-size: .8125rem; font-weight: 550; }
+.form-field--invalid .input,
+.form-field--invalid .select,
+.form-field--invalid .textarea,
+.form-field :is(.input, .select, .textarea)[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.form-field--invalid :is(.input, .select, .textarea):focus,
+.form-field :is(.input, .select, .textarea)[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
+}
+
 .input, .select, .textarea, .file-input {
   width: 100%;
-  min-height: 2.6rem;
-  padding: .55rem .8rem;
+  min-height: 2.5rem;
+  padding: .45rem .7rem;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  transition: border-color .15s, box-shadow .15s;
+  border-radius: 8px;
+  font: inherit;
+  line-height: 1.35;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
 }
-.textarea { min-height: 6rem; resize: vertical; }
+.textarea { min-height: 5.5rem; resize: vertical; }
 .input::placeholder { color: #8a948f; }
-.input:focus, .select:focus, .textarea:focus, .file-input:focus {
+.input:hover, .select:hover, .textarea:hover, .file-input:hover {
+  border-color: var(--color-primary);
+}
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible, .file-input:focus-visible {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
+.input:disabled, .select:disabled, .textarea:disabled, .file-input:disabled {
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-bg) 60%, var(--color-surface));
+  cursor: not-allowed;
+}
+.input[type="search"] { min-width: 0; }
+.input[type="date"] { min-width: 8rem; }
+.input::file-selector-button { font: inherit; }
 .has-error .input, .has-error .select, .has-error .textarea { border-color: var(--color-danger); }
 
 .select {
@@ -47,4 +75,20 @@
 
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.25rem; }
 .form-grid .field--full { grid-column: 1 / -1; }
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin-top: .35rem;
+}
+.form-grid > .form-actions { grid-column: 1 / -1; }
 @media (max-width: 720px) { .form-grid { grid-template-columns: minmax(0, 1fr); } }
+
+[data-theme="dark"] .form-field--invalid .input,
+[data-theme="dark"] .form-field--invalid .select,
+[data-theme="dark"] .form-field--invalid .textarea,
+[data-theme="dark"] .form-field :is(.input, .select, .textarea)[aria-invalid="true"] {
+  border-color: #f87171;
+}
+[data-theme="dark"] .form-field__error { color: #fca5a5; }

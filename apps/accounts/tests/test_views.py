@@ -23,6 +23,35 @@ def test_wrong_password_shows_error(client, make_user):
     assert response.context["form"].errors
 
 
+def test_login_form_uses_styled_accessible_controls(client):
+    response = client.get(reverse("accounts:login"))
+
+    assert response.status_code == 200
+    assert b'class="input"' in response.content
+    assert b'placeholder="Username or email"' in response.content
+    assert b'autocomplete="current-password"' in response.content
+
+
+def test_user_registration_fields_include_styling_and_autocomplete(client, make_user, roles):
+    client.force_login(make_user(role=Role.SUPER_ADMIN))
+    response = client.get(reverse("accounts:user_create"))
+
+    assert response.status_code == 200
+    assert b'autocomplete="given-name"' in response.content
+    assert b'autocomplete="new-password"' in response.content
+    assert b'class="input"' in response.content
+
+
+def test_user_search_filter_keeps_query_and_modern_filter_controls(client, make_user, roles):
+    client.force_login(make_user(role=Role.ADMIN))
+    response = client.get(reverse("accounts:user_list"), {"q": "worker"})
+
+    assert response.status_code == 200
+    assert b'aria-label="Filter users"' in response.content
+    assert b'type="search"' in response.content
+    assert b'value="worker"' in response.content
+
+
 def test_dashboard_requires_login(client):
     response = client.get(reverse("core:dashboard"))
     assert response.status_code == 302

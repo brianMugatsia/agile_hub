@@ -1,20 +1,24 @@
 {% extends "base.html" %}
+{% load ui_tags %}
 {% block content %}
-  <section class="grid grid--2">
-    <article class="card"><div class="card__body">
-      <dl class="detail-list">
-        <div><dt>Sale ID</dt><dd>{{ sale.pk }}</dd></div>
-        <div><dt>Date</dt><dd>{{ sale.created_at|date:"j M Y, H:i" }}</dd></div>
-        <div><dt>Hub</dt><dd>{{ sale.hub }}</dd></div>
-        <div><dt>Agent</dt><dd>{{ sale.agent.display_name }}</dd></div>
-        <div><dt>Customer</dt><dd>{{ sale.customer_name|default:"—" }}</dd></div>
-        <div><dt>Payment method</dt><dd>{{ sale.get_payment_method_display }}</dd></div>
-        <div><dt>Status</dt><dd>{{ sale.get_status_display }}</dd></div>
-        <div><dt>Total</dt><dd>{{ sale.total }}</dd></div>
-      </dl>
-    </div></article>
-    <article class="card"><div class="card__header"><h2 class="card__title">Items</h2></div><div class="card__body">
-      {% include "components/data_table.html" with object_list=sale.items.all columns=item_columns %}
-    </div></article>
-  </section>
+  <div class="sale-detail">
+    <p><a class="btn btn--secondary" href="{% url 'sales:list' %}">Back to sales</a></p>
+    <section class="grid grid--2">
+      <article class="card"><div class="card__body">
+        <dl class="detail-list">
+          <div><dt>Sale ID</dt><dd>{{ sale.pk }}</dd></div>
+          <div><dt>Date</dt><dd>{{ sale.created_at|date:"j M Y, H:i" }}</dd></div>
+          <div><dt>Hub</dt><dd>{{ sale.hub }}</dd></div>
+          <div><dt>Agent</dt><dd>{{ sale.agent.display_name }}</dd></div>
+          <div><dt>Customer</dt><dd>{{ sale.customer_name|default:"—" }}</dd></div>
+          <div><dt>Payment method</dt><dd>{{ sale.get_payment_method_display }}</dd></div>
+          <div><dt>Status</dt><dd>{{ sale.get_status_display }}</dd></div>
+          <div><dt>Total</dt><dd>{{ sale.total }}</dd></div>
+        </dl>
+      </div></article>
+      <article class="card"><div class="card__header"><h2 class="card__title">Items</h2></div><div class="card__body">
+        {% include "components/data_table.html" with object_list=sale.items.all columns=item_columns %}
+      </div></article>
+    </section>
+  </div>
 {% endblock %}

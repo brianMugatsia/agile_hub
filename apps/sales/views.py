@@ -1,13 +1,17 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.urls import reverse
-from django.views.generic import FormView
+from django.views.generic import DetailView, FormView
 
 from apps.accounts.models import User
 from apps.accounts.roles import Role
 from apps.beneficiaries.models import Business
 from apps.core.generic import ScopedModelListView, hubs_for_user
+from apps.core.exports import ScopedModelExportView
+from apps.core.mixins import PageMixin
+from apps.core.scoping import scope_queryset
 from apps.hubs.models import HubMembership
 from apps.sales.services import complete_sale
 
@@ -27,9 +31,40 @@ class SaleListView(ScopedModelListView):
         {"label": "Status", "field": "status"},
     )
     search_fields = ("customer_name", "customer_phone", "payment_reference")
+    date_filter_field = "created_at"
     create_url_name = "sales:create"
     create_label = "Record sale"
     create_permission = "sales.add_sale"
+    export_url_name = "sales:export"
+
+
+class SaleExportView(ScopedModelExportView):
+    list_view_class = SaleListView
+
+
+class SaleDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
+    model = Sale
+    template_name = "sales/sale_detail.html"
+    context_object_name = "sale"
+    permission_required = "sales.view_sale"
+    page_title = "Sale details"
+
+    def get_queryset(self):
+        return scope_queryset(
+            Sale.objects.select_related("hub", "agent", "business", "created_by")
+            .prefetch_related("items__product"),
+            self.request.user,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["item_columns"] = (
+            {"label": "Product", "field": "product__name"},
+            {"label": "Quantity", "field": "quantity"},
+            {"label": "Unit price", "field": "unit_price"},
+            {"label": "Line total", "field": "line_total"},
+        )
+        return context
 
 
 class SaleCreateView(FormView):

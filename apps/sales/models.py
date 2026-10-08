@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.urls import reverse
 
 
 class Sale(models.Model):
@@ -49,6 +50,9 @@ class Sale(models.Model):
 
     def __str__(self):
         return f"Sale {self.pk}"
+
+    def get_absolute_url(self):
+        return reverse("sales:detail", kwargs={"pk": self.pk})
 
 
 class SaleItem(models.Model):

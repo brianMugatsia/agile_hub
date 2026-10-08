@@ -10,7 +10,9 @@
       {% for row in object_list %}
         <tr>
           {% for column in columns %}
-            <td>{{ row|get_attr:column.field|default:"—" }}</td>
+            {% with value=row|get_attr:column.field %}
+              <td>{% if forloop.first and row.get_absolute_url %}<a href="{{ row.get_absolute_url }}">{{ value|default:"—" }}</a>{% else %}{{ value|default:"—" }}{% endif %}</td>
+            {% endwith %}
           {% endfor %}
         </tr>
       {% empty %}

@@ -31,14 +31,17 @@
 @import url("components/stat-cards.css") layer(components);
 @import url("components/tabs.css") layer(components);
 
-@import url("pages/dashboard.css") layer(pages);
 @import url("pages/sales.css") layer(pages);
-@import url("pages/commissions.css") layer(pages);
 @import url("pages/payroll.css") layer(pages);
 @import url("pages/finance.css") layer(pages);
 @import url("pages/reports.css") layer(pages);
 @import url("pages/landing.css") layer(pages);
 @import url("pages/ui-refresh.css") layer(pages);
+@import url("pages/dashboard.css") layer(pages);
+@import url("pages/hub.css") layer(pages);
+@import url("pages/beneficiaries.css") layer(pages);
+@import url("pages/commissions.css") layer(pages);
+
 @import url("utilities/display.css") layer(utilities);
 @import url("utilities/text.css") layer(utilities);
 @import url("utilities/spacing.css") layer(utilities);

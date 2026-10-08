@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load ui_tags %}
+{% load static %}
 
 {% block heading %}Welcome, {{ user.first_name|default:user.username }}{% endblock %}
 
@@ -11,102 +12,158 @@
 {% endblock %}
 
 {% block content %}
-<section class="grid grid--3 dashboard-stats" aria-label="Business summary">
-  {% for label, value in dashboard_stats %}
-    <article class="card stat-card">
+<div class="dash">
+
+  <!-- HERO + DATE RANGE -->
+  <section class="dash-hero" data-reveal="up" aria-label="Activity date range">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span><span data-greeting>Welcome back</span></span>
+      <h2 class="dash-hero__title">Your business, <span class="dash-gradient">at a glance.</span></h2>
+      <p class="dash-hero__note">Dated activity uses this range. Current stock, business totals, and pending approval queues show their current state.</p>
+    </div>
+
+    <form method="get" class="dash-range" aria-label="Filter dashboard activity dates">
+      <div class="dash-range__field">
+        <label for="dashboard-start-date">From</label>
+        <input class="input" id="dashboard-start-date" type="date" name="start_date" value="{{ date_start|date:'Y-m-d' }}">
+      </div>
+      <div class="dash-range__field">
+        <label for="dashboard-end-date">To</label>
+        <input class="input" id="dashboard-end-date" type="date" name="end_date" value="{{ date_end|date:'Y-m-d' }}">
+      </div>
+      <button class="dash-range__btn" type="submit">
+        Apply dates
+        <svg class="dash-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+
+    {% if date_errors %}
+      <div class="dash-hero__errors" role="alert">
+        <p>Please correct the date range:</p>
+        <ul>{% for error in date_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- STATS -->
+  <section class="grid grid--3 dashboard-stats" aria-label="Business summary">
+    {% for label, value in dashboard_stats %}
+      <article class="card stat-card" data-reveal="up" data-spot style="--i: {{ forloop.counter0 }}">
+        <div class="card__body">
+          <span class="stat-card__icon" aria-hidden="true">
+            <svg class="dash-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-8"/></svg>
+          </span>
+          <span class="stat-card__label">{{ label }}</span>
+          <strong class="stat-card__value" data-count>{{ value }}</strong>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+
+  {% if recent_sales and perms.sales.view_sale %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
-        <span class="stat-card__label">{{ label }}</span>
-        <strong class="stat-card__value">{{ value }}</strong>
+        <div class="dashboard-section__heading"><h2 class="card__title">Recent sales</h2><a href="{% url 'sales:list' %}">View all sales</a></div>
+        {% include "components/data_table.html" with object_list=recent_sales columns=sales_columns %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if recent_stock and perms.inventory.view_inventorytransaction %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Stock by hub</h2><a href="{% url 'inventory:list' %}">View stock movements</a></div>
+        {% include "components/data_table.html" with object_list=recent_stock columns=stock_columns %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if recent_commissions and perms.commissions.view_salesagentcommission %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Your commissions</h2><a href="{% url 'commissions:list' %}">View commissions</a></div>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th scope="col">Sale</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Created</th></tr></thead>
+          <tbody>{% for row in recent_commissions %}<tr><td>{{ row.sale }}</td><td>{{ CURRENCY_CODE }} {{ row.amount|floatformat:2 }}</td><td>{{ row.get_status_display }}</td><td>{{ row.created_at|date:"j M Y" }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if recent_salaries and perms.payroll.view_salaryrecord %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Salary history</h2><a href="{% url 'payroll:salary_list' %}">View salary records</a></div>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th scope="col">Period</th><th scope="col">Gross</th><th scope="col">Net</th><th scope="col">Status</th></tr></thead>
+          <tbody>{% for row in recent_salaries %}<tr><td>{{ row.period_start|date:"M Y" }}</td><td>{{ CURRENCY_CODE }} {{ row.gross_amount|floatformat:2 }}</td><td>{{ CURRENCY_CODE }} {{ row.net_amount|floatformat:2 }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if recent_businesses and perms.beneficiaries.view_business %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Your businesses</h2><a href="{% url 'beneficiaries:list' %}">View businesses</a></div>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th scope="col">Business</th><th scope="col">Hub</th><th scope="col">Type</th><th scope="col">Status</th></tr></thead>
+          <tbody>{% for row in recent_businesses %}<tr><td>{{ row.name }}</td><td>{{ row.hub|default:"—" }}</td><td>{{ row.business_type|default:"—" }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if perms.commissions.view_salesagentcommission and perms.payroll.view_salaryrecord %}
+  {% if pending_commissions or pending_salaries %}
+    <section class="grid grid--2 dashboard-section">
+      {% if pending_commissions %}<article class="card dash-panel" data-reveal="up" data-spot><div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Commission approvals <span class="dash-count">{{ pending_commission_count }}</span></h2><a href="{% url 'commissions:list' %}">Review</a></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th scope="col">Agent</th><th scope="col">Hub</th><th scope="col">Amount</th></tr></thead>
+          <tbody>{% for row in pending_commissions %}<tr><td>{{ row.agent.display_name }}</td><td>{{ row.sale.hub.name }}</td><td>{{ CURRENCY_CODE }} {{ row.amount|floatformat:2 }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div></article>{% endif %}
+      {% if pending_salaries %}<article class="card dash-panel" data-reveal="up" data-spot style="--i: 1"><div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Salary approvals <span class="dash-count">{{ pending_salary_count }}</span></h2><a href="{% url 'payroll:salary_list' %}">Review</a></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th scope="col">Worker</th><th scope="col">Hub</th><th scope="col">Net pay</th></tr></thead>
+          <tbody>{% for row in pending_salaries %}<tr><td>{{ row.worker.user.display_name }}</td><td>{{ row.worker.hub.name }}</td><td>{{ CURRENCY_CODE }} {{ row.net_amount|floatformat:2 }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div></article>{% endif %}
+    </section>
+  {% endif %}
+  {% endif %}
+
+  <!-- SHORTCUTS -->
+  <section class="grid grid--2 dashboard-shortcuts">
+    <article class="card dash-panel" data-reveal="up" data-spot>
+      <div class="card__body stack">
+        <h2 class="card__title">Your account</h2>
+        <div class="dash-account">
+          <span class="dash-avatar" aria-hidden="true">{{ user.display_name|default:user.username|slice:":1"|upper }}</span>
+          <p>{{ user.display_name }}<br><span class="text-muted">{{ user.email }}</span></p>
+        </div>
+        <a class="btn btn--secondary btn--sm" href="{% url 'accounts:profile' %}">{% icon "user" %} My profile</a>
       </div>
     </article>
-  {% endfor %}
-</section>
-{% if recent_sales and perms.sales.view_sale %}
-  <section class="card dashboard-section">
-    <div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Recent sales</h2><a href="{% url 'sales:list' %}">View all sales</a></div>
-      {% include "components/data_table.html" with object_list=recent_sales columns=sales_columns %}
-    </div>
+    <article class="card dash-panel" data-reveal="up" data-spot style="--i: 1">
+      <div class="card__body stack">
+        <h2 class="card__title">Quick links</h2>
+        <a class="link-row" href="{% url 'accounts:password_change' %}">{% icon "lock" %} Change password</a>
+        {% if perms.accounts.view_user %}
+          <a class="link-row" href="{% url 'accounts:user_list' %}">{% icon "users" %} Manage users</a>
+        {% endif %}
+        {% if perms.accounts.export_reports %}
+          <a class="link-row" href="{% url 'reports:index' %}">{% icon "bar-chart" %} View reports</a>
+        {% endif %}
+      </div>
+    </article>
   </section>
-{% endif %}
-{% if recent_stock and perms.inventory.view_inventorytransaction %}
-  <section class="card dashboard-section">
-    <div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Stock by hub</h2><a href="{% url 'inventory:list' %}">View stock movements</a></div>
-      {% include "components/data_table.html" with object_list=recent_stock columns=stock_columns %}
-    </div>
-  </section>
-{% endif %}
-{% if recent_commissions and perms.commissions.view_salesagentcommission %}
-  <section class="card dashboard-section">
-    <div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Your commissions</h2><a href="{% url 'commissions:list' %}">View commissions</a></div>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th scope="col">Sale</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Created</th></tr></thead>
-        <tbody>{% for row in recent_commissions %}<tr><td>{{ row.sale }}</td><td>{{ CURRENCY_CODE }} {{ row.amount|floatformat:2 }}</td><td>{{ row.get_status_display }}</td><td>{{ row.created_at|date:"j M Y" }}</td></tr>{% endfor %}</tbody>
-      </table></div>
-    </div>
-  </section>
-{% endif %}
-{% if recent_salaries and perms.payroll.view_salaryrecord %}
-  <section class="card dashboard-section">
-    <div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Salary history</h2><a href="{% url 'payroll:salary_list' %}">View salary records</a></div>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th scope="col">Period</th><th scope="col">Gross</th><th scope="col">Net</th><th scope="col">Status</th></tr></thead>
-        <tbody>{% for row in recent_salaries %}<tr><td>{{ row.period_start|date:"M Y" }}</td><td>{{ CURRENCY_CODE }} {{ row.gross_amount|floatformat:2 }}</td><td>{{ CURRENCY_CODE }} {{ row.net_amount|floatformat:2 }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>
-      </table></div>
-    </div>
-  </section>
-{% endif %}
-{% if recent_businesses and perms.beneficiaries.view_business %}
-  <section class="card dashboard-section">
-    <div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Your businesses</h2><a href="{% url 'beneficiaries:list' %}">View businesses</a></div>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th scope="col">Business</th><th scope="col">Hub</th><th scope="col">Type</th><th scope="col">Status</th></tr></thead>
-        <tbody>{% for row in recent_businesses %}<tr><td>{{ row.name }}</td><td>{{ row.hub|default:"—" }}</td><td>{{ row.business_type|default:"—" }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>
-      </table></div>
-    </div>
-  </section>
-{% endif %}
-{% if perms.commissions.view_salesagentcommission and perms.payroll.view_salaryrecord %}
-{% if pending_commissions or pending_salaries %}
-  <section class="grid grid--2 dashboard-section">
-    {% if pending_commissions %}<article class="card"><div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Commission approvals</h2><a href="{% url 'commissions:list' %}">Review</a></div>
-      <div class="table-wrap"><table class="table"><thead><tr><th scope="col">Agent</th><th scope="col">Hub</th><th scope="col">Amount</th></tr></thead>
-        <tbody>{% for row in pending_commissions %}<tr><td>{{ row.agent.display_name }}</td><td>{{ row.sale.hub.name }}</td><td>{{ CURRENCY_CODE }} {{ row.amount|floatformat:2 }}</td></tr>{% endfor %}</tbody>
-      </table></div>
-    </div></article>{% endif %}
-    {% if pending_salaries %}<article class="card"><div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Salary approvals</h2><a href="{% url 'payroll:salary_list' %}">Review</a></div>
-      <div class="table-wrap"><table class="table"><thead><tr><th scope="col">Worker</th><th scope="col">Hub</th><th scope="col">Net pay</th></tr></thead>
-        <tbody>{% for row in pending_salaries %}<tr><td>{{ row.worker.user.display_name }}</td><td>{{ row.worker.hub.name }}</td><td>{{ CURRENCY_CODE }} {{ row.net_amount|floatformat:2 }}</td></tr>{% endfor %}</tbody>
-      </table></div>
-    </div></article>{% endif %}
-  </section>
-{% endif %}
-{% endif %}
-<section class="grid grid--2 dashboard-shortcuts">
-  <article class="card">
-    <div class="card__body stack">
-      <h2 class="card__title">Your account</h2>
-      <p>{{ user.display_name }}<br><span class="text-muted">{{ user.email }}</span></p>
-      <a class="btn btn--secondary btn--sm" href="{% url 'accounts:profile' %}">{% icon "user" %} My profile</a>
-    </div>
-  </article>
-  <article class="card">
-    <div class="card__body stack">
-      <h2 class="card__title">Quick links</h2>
-      <a class="link-row" href="{% url 'accounts:password_change' %}">{% icon "lock" %} Change password</a>
-      {% if perms.accounts.view_user %}
-        <a class="link-row" href="{% url 'accounts:user_list' %}">{% icon "users" %} Manage users</a>
-      {% endif %}
-      {% if perms.accounts.export_reports %}
-        <a class="link-row" href="{% url 'reports:index' %}">{% icon "bar-chart" %} View reports</a>
-      {% endif %}
-    </div>
-  </article>
-</section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

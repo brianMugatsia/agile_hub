@@ -32,6 +32,11 @@
   --color-primary-hover: var(--brand-blue-600);
   --color-primary-soft: var(--brand-blue-50);
   --color-danger: var(--red-500);
+  --table-head-bg: #f3f7fd;
+  --table-stripe-bg: #fafcff;
+  --table-hover-bg: #edf4ff;
+  --table-link: var(--brand-blue-600);
+  --table-link-hover: var(--brand-blue-900);
 
   /* Spacing, radius, shadow */
   --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;

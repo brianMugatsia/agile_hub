@@ -1,11 +1,62 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block page_actions %}
+  <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Back to commissions</a>
+{% endblock %}
+
 {% block content %}
-  <section class="card card--narrow"><div class="card__body stack">
-    <h2>Commission settings</h2>
-    <p class="text-muted">Rates apply from their effective date to newly completed sales. Existing commission records keep their recorded rate.</p>
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Commission settings">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Settings</span>
+      <h2 class="dash-hero__title">Commission <span class="dash-gradient">settings.</span></h2>
+      <p class="dash-hero__note">Rates apply from their effective date to newly completed sales. Existing commission records keep their recorded rate.</p>
+    </div>
+  </section>
+
+  <div class="com-settings-grid{% if not form %} com-settings-grid--single{% endif %}">
+
     {% if form %}
-      <form method="post" data-validate data-loading>{% csrf_token %}{{ form.as_p }}<button class="btn btn--primary" type="submit">Save rate</button></form>
+      <article class="card dash-panel" data-spot>
+        <div class="card__body">
+          <div class="dashboard-section__heading"><h2 class="card__title">Set a new rate</h2></div>
+          <form method="post" data-validate data-loading class="com-form">{% csrf_token %}{{ form.as_p }}<button class="btn btn--primary" type="submit">Save rate</button></form>
+        </div>
+      </article>
     {% endif %}
-    {% if settings %}<ul class="stack">{% for setting in settings %}<li>{{ setting.rate|floatformat:2 }}% from {{ setting.effective_from }}{% if setting.is_active %} · Active{% endif %}</li>{% endfor %}</ul>{% endif %}
-  </div></section>
+
+    <article class="card dash-panel" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Rate history</h2></div>
+        {% if settings %}
+          <ol class="com-rates">
+            {% for setting in settings %}
+              <li class="com-rate{% if setting.is_active %} is-active{% endif %}" style="--r: {{ forloop.counter0 }}">
+                <span class="com-rate__dot" aria-hidden="true"></span>
+                <div class="com-rate__body">
+                  <strong class="com-rate__value">{{ setting.rate|floatformat:2 }}%</strong>
+                  <span class="com-rate__date">from {{ setting.effective_from }}</span>
+                </div>
+                {% if setting.is_active %}<span class="com-badge" data-status="paid">Active</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="text-muted">No commission rates have been recorded yet.</p>
+        {% endif %}
+      </div>
+    </article>
+
+  </div>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

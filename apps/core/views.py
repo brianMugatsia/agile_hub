@@ -1,8 +1,12 @@
+from datetime import date, datetime, time, timedelta
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.conf import settings
 from django.db.models import F, Sum
+from django.db import models
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from apps.accounts.roles import Role
@@ -27,6 +31,58 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
     """Renders the dashboard template that matches the signed-in user's role."""
 
     page_title = "Dashboard"
+    max_date_range_days = 366
+
+    def get_date_range(self):
+        today = timezone.localdate()
+        month_start = today.replace(day=1)
+        month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        start_value = self.request.GET.get("start_date", "")
+        end_value = self.request.GET.get("end_date", "")
+        errors = []
+
+        def parse_date(value, field_name):
+            if not value:
+                return None
+            try:
+                parsed = date.fromisoformat(value)
+                if parsed.isoformat() != value:
+                    raise ValueError
+                return parsed
+            except (TypeError, ValueError):
+                errors.append(f"Enter a valid {field_name} date in YYYY-MM-DD format.")
+                return None
+
+        start_date = parse_date(start_value, "start")
+        end_date = parse_date(end_value, "end")
+
+        if not start_value and not end_value:
+            start_date, end_date = month_start, month_end
+        elif start_date and not end_value:
+            end_date = start_date
+        elif end_date and not start_value:
+            start_date = end_date
+
+        if not errors and start_date and end_date:
+            if end_date < start_date:
+                errors.append("The end date must be the same as or later than the start date.")
+            elif (end_date - start_date).days + 1 > self.max_date_range_days:
+                errors.append(
+                    f"Choose a date range of no more than {self.max_date_range_days} days."
+                )
+
+        if errors:
+            start_date, end_date = month_start, month_end
+        return start_date, end_date, errors
+
+    def apply_date_range(self, queryset, field_name):
+        start_date, end_date = self.date_range
+        field = queryset.model._meta.get_field(field_name)
+        if isinstance(field, models.DateTimeField):
+            start_at = timezone.make_aware(datetime.combine(start_date, time.min))
+            end_at = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min))
+            return queryset.filter(**{f"{field_name}__gte": start_at, f"{field_name}__lt": end_at})
+        return queryset.filter(**{f"{field_name}__range": (start_date, end_date)})
 
     def get_template_names(self):
         return [f"dashboard/{self.request.user.role.lower()}.html"]
@@ -34,6 +90,13 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        start_date, end_date, date_errors = self.get_date_range()
+        self.date_range = start_date, end_date
+        context.update(
+            date_start=start_date,
+            date_end=end_date,
+            date_errors=date_errors,
+        )
         from apps.commissions.models import SalesAgentCommission
         from apps.hubs.models import Hub
         from apps.inventory.models import InventoryBalance
@@ -57,6 +120,7 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             sales = sales.filter(business__beneficiary__user=user)
         else:
             sales = sales.none()
+        sales = self.apply_date_range(sales, "completed_at")
 
         if not is_platform_admin:
             context["dashboard_intro"] = {
@@ -89,22 +153,21 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             )
 
         if user.role in (Role.SUPER_ADMIN, Role.ADMIN):
-            completed_sales = Sale.objects.filter(status=Sale.Status.COMPLETED)
             context["dashboard_stats"] = [
                 ("Active hubs", Hub.objects.filter(status=Hub.Status.ACTIVE).count()),
                 ("Products", Product.objects.filter(is_active=True).count()),
-                ("Completed sales", completed_sales.count()),
-                ("Sales value", completed_sales.aggregate(total=Sum("total"))["total"] or 0),
+                ("Completed sales", sales.count()),
+                ("Sales value", sales.aggregate(total=Sum("total"))["total"] or 0),
                 (
                     "Pending commissions",
                     SalesAgentCommission.objects.filter(status=SalesAgentCommission.Status.PENDING).count(),
                 ),
             ]
-            context["low_stock_count"] = InventoryBalance.objects.filter(
-                quantity__lte=F("product__reorder_level")
-            ).count()
         elif user.role == Role.SALES_AGENT:
-            agent_sales = Sale.objects.filter(agent=user, status=Sale.Status.COMPLETED)
+            agent_sales = self.apply_date_range(
+                Sale.objects.filter(agent=user, status=Sale.Status.COMPLETED),
+                "completed_at",
+            )
             context["dashboard_stats"] = [
                 ("Completed sales", agent_sales.count()),
                 ("Sales total", agent_sales.aggregate(total=Sum("total"))["total"] or 0),
@@ -117,12 +180,19 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             ]
             context["recent_commissions"] = SalesAgentCommission.objects.filter(
                 agent=user
+            )
+            context["recent_commissions"] = self.apply_date_range(
+                context["recent_commissions"], "created_at"
             ).select_related("sale").order_by("-created_at")[:8]
         elif user.role == Role.WORKER:
-            salaries = SalaryRecord.objects.filter(worker__user=user)
+            all_salaries = SalaryRecord.objects.filter(worker__user=user)
+            salaries = self.apply_date_range(all_salaries, "period_start")
             context["dashboard_stats"] = [
                 ("Salary records", salaries.count()),
-                ("Awaiting payment", salaries.filter(status=SalaryRecord.Status.APPROVED).count()),
+                (
+                    "Awaiting payment (current)",
+                    all_salaries.filter(status=SalaryRecord.Status.APPROVED).count(),
+                ),
             ]
             context["recent_salaries"] = salaries.select_related("worker").order_by("-period_start")[:8]
         elif user.role == Role.BENEFICIARY:
@@ -157,7 +227,16 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             context["pending_salaries"] = salaries.select_related(
                 "worker", "worker__user", "worker__hub"
             ).order_by("-created_at")[:8]
-            if is_platform_admin:
+            context["pending_commission_count"] = commissions.count()
+            context["pending_salary_count"] = salaries.count()
+            if is_platform_admin or user.role == Role.HUB_MANAGER:
+                context["low_stock_count"] = InventoryBalance.objects.filter(
+                    hub__in=hubs,
+                    hub__status=Hub.Status.ACTIVE,
+                    product__is_active=True,
+                    product__reorder_level__gt=0,
+                    quantity__lte=F("product__reorder_level"),
+                ).count()
                 context["dashboard_stats"].append(("Low stock items", context["low_stock_count"]))
         return context
 

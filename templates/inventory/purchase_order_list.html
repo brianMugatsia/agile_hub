@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block page_actions %}
+  {% if can_create_order %}
+    <a class="btn btn--primary" href="{% url 'inventory:purchase_order_create' %}">Create reorder order</a>
+    <a class="btn btn--secondary" href="{% url 'inventory:suppliers' %}">Suppliers</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <div class="card__body">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Order</th><th scope="col">Hub</th><th scope="col">Supplier</th><th scope="col">Items</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td>#{{ order.pk }}</td><td>{{ order.hub.name }}</td><td>{{ order.supplier.name }}</td>
+                <td>{% for line in order.lines.all %}{{ line.product.name }}: {{ line.quantity_received }}/{{ line.quantity_ordered }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
+                <td>{{ order.get_status_display }}</td><td>{{ order.created_at|date:"Y-m-d" }}</td>
+                <td>{% if order.status != "RECEIVED" and perms.inventory.change_purchaseorder %}<a href="{% url 'inventory:purchase_order_receive' order.pk %}">Receive stock</a>{% else %}—{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7">No purchase orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "partials/pagination.html" %}
+    </div>
+  </section>
+{% endblock %}

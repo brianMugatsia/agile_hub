@@ -2,10 +2,25 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: .75rem;
-  margin-bottom: 1rem;
-  padding: .9rem 1rem;
+  gap: .7rem;
+  margin-block: .25rem 1.1rem;
+  padding: .85rem;
 }
-.filter-bar__field { min-width: 10rem; }
-.filter-bar__field--grow { flex: 1 1 16rem; }
+.filter-bar__field { min-width: 8rem; }
+.filter-bar__field--grow { flex: 1 1 12rem; }
+.filter-bar > .field,
+.filter-bar > .filter-bar__field { flex: 0 1 11rem; min-width: min(100%, 8rem); }
+.filter-bar > .filter-bar__field--grow { flex: 1 1 13rem; }
+.filter-bar > .btn { min-height: 2.5rem; }
+.filter-bar .input,
+.filter-bar .select { min-width: 0; }
+.filter-bar[role="search"] > input[type="search"] {
+  flex: 1 1 13rem;
+  max-width: 24rem;
+}
 @media (max-width: 640px) { .filter-bar__field { flex: 1 1 100%; } }
+@media (max-width: 640px) {
+  .filter-bar[role="search"] > input[type="search"],
+  .filter-bar[role="search"] > .field { flex-basis: 100%; }
+  .filter-bar[role="search"] > .btn { flex: 1 1 auto; }
+}

@@ -8,7 +8,7 @@
     {% icon "moon" %}
   </button>
   <details class="user-menu" data-dropdown>
-    <summary class="user-menu__trigger">
+    <summary class="user-menu__trigger" aria-expanded="false">
       {% include "components/avatar.html" with person=user %}
       <span class="user-menu__text">
         <strong>{{ user.display_name }}</strong>

@@ -1,0 +1,33 @@
+{% if saved_filter_model_key %}
+  <section class="saved-filters" aria-label="Shared saved filters">
+    <div class="saved-filters__save">
+      <h2 class="card__title">Shared filters</h2>
+      <form method="post" action="{% url 'core:saved_filter_create' %}" class="saved-filters__form">
+        {% csrf_token %}
+        <input type="hidden" name="model_key" value="{{ saved_filter_model_key }}">
+        <input type="hidden" name="return_to" value="{{ saved_filter_return_to }}">
+        <input type="hidden" name="query_params" value="{{ saved_filter_query }}">
+        <label class="sr-only" for="saved-filter-name">Name this filter</label>
+        <input class="input" id="saved-filter-name" name="name" maxlength="80" required placeholder="Name current filters">
+        <button class="btn btn--secondary" type="submit">Save filter</button>
+      </form>
+    </div>
+    {% if saved_filters %}
+      <ul class="saved-filters__list">
+        {% for saved in saved_filters %}
+          <li>
+            <a href="{{ saved.url }}">{{ saved.name }}</a>
+            <small>by {{ saved.created_by.display_name }}</small>
+            {% if saved.created_by_id == user.pk %}
+              <form method="post" action="{{ saved.delete_url }}">
+                {% csrf_token %}
+                <input type="hidden" name="return_to" value="{{ saved_filter_return_to }}">
+                <button class="btn btn--ghost btn--sm" type="submit" aria-label="Remove {{ saved.name }}">Remove</button>
+              </form>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+{% endif %}

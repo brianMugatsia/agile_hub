@@ -1,11 +1,28 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <section class="card card--narrow"><div class="card__body stack">
-    <h2>Approve commission</h2>
-    <p>Confirm approval of {{ commission }}. Payment remains a separate authorized action.</p>
-    <form method="post" data-confirm-action="commission">{% csrf_token %}
-      <button class="btn btn--primary" type="submit">Approve commission</button>
-      <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
-    </form>
-  </div></section>
+<div class="dash">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="com-i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+  </svg>
+
+  <section class="card com-confirm" data-tone="approve" data-spot>
+    <div class="card__body">
+      <span class="com-confirm__icon" aria-hidden="true"><svg class="dash-icon"><use href="#com-i-check"/></svg></span>
+      <span class="com-confirm__eyebrow">Confirmation required</span>
+      <h2 class="com-confirm__title">Approve commission</h2>
+      <p class="com-confirm__text">Confirm approval of {{ commission }}. Payment remains a separate authorized action.</p>
+      <form method="post" data-confirm-action="commission" class="com-confirm__form">{% csrf_token %}
+        <div class="com-confirm__actions">
+          <button class="btn btn--primary" type="submit">Approve commission</button>
+          <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

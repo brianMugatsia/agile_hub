@@ -1,14 +1,79 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <form class="filter-bar" method="get">
-    <label class="field"><span class="field__label">From</span><input class="input" type="date" name="start" value="{{ period_start|date:'Y-m-d' }}"></label>
-    <label class="field"><span class="field__label">To</span><input class="input" type="date" name="end" value="{{ period_end|date:'Y-m-d' }}"></label>
-    <button class="btn btn--secondary" type="submit">Apply</button>
-  </form>
-  <section class="grid grid--3">
-    {% include "components/stat_card.html" with label="Completed sales" value=sales_count %}
-    {% include "components/stat_card.html" with label="Sales revenue" value=sales_total %}
-    {% include "components/stat_card.html" with label="Active agents" value=active_agents %}
+<div class="dash">
+
+  <!-- HERO + PERIOD -->
+  <section class="dash-hero" data-reveal="up" aria-label="Reporting period">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{% if hub %}{{ hub.name }} · {% endif %}Performance</span>
+      <h2 class="dash-hero__title">How the hub is <span class="dash-gradient">performing.</span></h2>
+      <p class="dash-hero__note">
+        {% if period_start and period_end %}Showing {{ period_start|date:"j M Y" }} to {{ period_end|date:"j M Y" }}.{% else %}Pick a period to see completed sales, revenue and active agents.{% endif %}
+      </p>
+    </div>
+
+    <form method="get" class="dash-range">
+      <div class="dash-range__field">
+        <label for="hub-perf-start">From</label>
+        <input id="hub-perf-start" type="date" name="start" value="{{ period_start|date:'Y-m-d' }}">
+      </div>
+      <div class="dash-range__field">
+        <label for="hub-perf-end">To</label>
+        <input id="hub-perf-end" type="date" name="end" value="{{ period_end|date:'Y-m-d' }}">
+      </div>
+      <button class="dash-range__btn" type="submit">
+        Apply
+        <svg class="dash-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
   </section>
-  {% if object_list %}{% include "components/data_table.html" %}{% endif %}
+
+  <!-- STATS -->
+  <section class="grid grid--3 dashboard-stats" aria-label="Hub summary">
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 0">
+      <div class="card__body">
+        <span class="stat-card__icon" aria-hidden="true">
+          <svg class="dash-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+        </span>
+        <span class="stat-card__label">Completed sales</span>
+        <strong class="stat-card__value" data-count>{{ sales_count }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 1">
+      <div class="card__body">
+        <span class="stat-card__icon" aria-hidden="true">
+          <svg class="dash-icon" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1"/></svg>
+        </span>
+        <span class="stat-card__label">Sales revenue</span>
+        <strong class="stat-card__value" data-count>{{ sales_total }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 2">
+      <div class="card__body">
+        <span class="stat-card__icon" aria-hidden="true">
+          <svg class="dash-icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>
+        </span>
+        <span class="stat-card__label">Active agents</span>
+        <strong class="stat-card__value" data-count>{{ active_agents }}</strong>
+      </div>
+    </article>
+  </section>
+
+  {% if object_list %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        {% include "components/data_table.html" %}
+      </div>
+    </section>
+  {% endif %}
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

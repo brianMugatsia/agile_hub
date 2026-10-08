@@ -39,12 +39,19 @@
 .auth-card {
   width: 100%;
   max-width: 26rem;
-  padding: clamp(1.5rem, 4vw, 2.25rem);
+  padding: clamp(1.35rem, 3vw, 1.8rem);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
+.auth-card .stack { gap: .85rem; }
+.auth-card .field { gap: .45rem; }
+.auth-card .field__label { font-size: .86rem; }
+.auth-card .input { min-height: 2.65rem; }
+.auth-card .btn--block { min-height: 2.6rem; margin-top: .1rem; }
+.auth-card__title { font-size: clamp(1.55rem, 3vw, 1.85rem); letter-spacing: -.035em; }
+.auth-card__lead { line-height: 1.6; }
 .auth-card__icon {
   display: grid;
   place-items: center;
@@ -68,5 +75,5 @@
 
 @media (max-width: 480px) {
   .auth__main { padding: 1rem; }
-  .auth-card { padding: 1.25rem; border-radius: var(--radius); }
+  .auth-card { padding: 1.1rem; border-radius: var(--radius); }
 }

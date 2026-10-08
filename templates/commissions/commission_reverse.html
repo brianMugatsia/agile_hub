@@ -1,12 +1,31 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <section class="card card--narrow"><div class="card__body stack">
-    <h2>Reverse commission</h2>
-    <p>Explain why {{ commission }} is being reversed. Reversal details are retained in the audit trail.</p>
-    <form method="post" data-confirm-action="commission">{% csrf_token %}
-      {% if form %}{{ form.as_p }}{% else %}<label class="field"><span class="field__label">Reason</span><textarea class="textarea" name="reason" required maxlength="1000"></textarea></label>{% endif %}
-      <button class="btn btn--danger" type="submit">Reverse commission</button>
-      <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
-    </form>
-  </div></section>
+<div class="dash">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="com-i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+  </svg>
+
+  <section class="card com-confirm" data-tone="reverse" data-spot>
+    <div class="card__body">
+      <span class="com-confirm__icon" aria-hidden="true"><svg class="dash-icon"><use href="#com-i-undo"/></svg></span>
+      <span class="com-confirm__eyebrow">Confirmation required</span>
+      <h2 class="com-confirm__title">Reverse commission</h2>
+      <p class="com-confirm__text">Explain why {{ commission }} is being reversed. Reversal details are retained in the audit trail.</p>
+      <form method="post" data-confirm-action="commission" class="com-confirm__form">{% csrf_token %}
+        <div class="com-confirm__fields">
+          {% if form %}{{ form.as_p }}{% else %}<label class="field"><span class="field__label">Reason</span><textarea class="textarea" name="reason" required maxlength="1000"></textarea></label>{% endif %}
+        </div>
+        <div class="com-confirm__actions">
+          <button class="btn btn--danger" type="submit">Reverse commission</button>
+          <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

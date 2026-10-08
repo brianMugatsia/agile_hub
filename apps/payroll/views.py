@@ -7,6 +7,7 @@ from django.views import View
 
 from apps.audit.services import record_event
 from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
+from apps.core.exports import ScopedModelExportView
 from apps.payroll.services import approve_salary, pay_salary
 
 from .forms import SalaryRecordForm, WorkerProfileForm
@@ -52,9 +53,16 @@ class SalaryListView(ScopedModelListView):
         {"label": "Net", "field": "net_amount"},
         {"label": "Status", "field": "status"},
     )
+    date_filter_field = "period_start"
+    filter_fields = (("status", SalaryRecord.Status.choices),)
     create_url_name = "payroll:salary_create"
     create_label = "Prepare salary"
     create_permission = "payroll.add_salaryrecord"
+    export_url_name = "payroll:salary_export"
+
+
+class SalaryExportView(ScopedModelExportView):
+    list_view_class = SalaryListView
 
 
 class SalaryCreateView(ProtectedCreateView):

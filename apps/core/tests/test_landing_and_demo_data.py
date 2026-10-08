@@ -32,6 +32,24 @@ def test_public_home_page_shows_platform_sections_and_sign_in(client):
     assert reverse("accounts:login").encode() in response.content
 
 
+def test_landing_motion_has_pointer_enhancement_and_accessible_css_fallback():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[3]
+    script = (root / "static" / "js" / "pages" / "landing-motion.js").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = (root / "static" / "css" / "pages" / "landing.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'pointermove' in script and 'pointerleave' in script
+    assert '(hover: hover) and (pointer: fine)' in script
+    assert '@media (prefers-reduced-motion: reduce)' in stylesheet
+    assert '.landing-card.is-visible .mini-meter__track i' in stylesheet
+    assert '.landing-card.is-visible .mini-spark i' in stylesheet
+
+
 def test_mobile_navigation_controls_are_rendered_for_signed_in_user(client, make_user):
     client.force_login(make_user(role=Role.ADMIN))
 

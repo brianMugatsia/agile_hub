@@ -1,14 +1,91 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <section class="card"><div class="card__body">
-    <dl class="detail-list">
-      <div><dt>Beneficiary</dt><dd>{{ beneficiary.user.display_name }}</dd></div>
-      <div><dt>Email</dt><dd>{{ beneficiary.user.email }}</dd></div>
-      <div><dt>Phone</dt><dd>{{ beneficiary.phone_number|default:"—" }}</dd></div>
-      <div><dt>National ID</dt><dd>{{ beneficiary.national_id|default:"—" }}</dd></div>
-      <div><dt>Hub</dt><dd>{{ beneficiary.hub|default:"—" }}</dd></div>
-      <div><dt>Address</dt><dd>{{ beneficiary.address|default:"—" }}</dd></div>
-    </dl>
-  </div></section>
-  {% if businesses %}<section class="card"><div class="card__header"><h2 class="card__title">Businesses</h2></div><div class="card__body">{% include "components/data_table.html" with object_list=businesses columns=business_columns %}</div></section>{% endif %}
+<div class="dash">
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="ben-i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="ben-i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+    <symbol id="ben-i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="ben-i-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16a3 3 0 0 1 6 0"/><path d="M14 10h4"/><path d="M14 14h3"/></symbol>
+    <symbol id="ben-i-store" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 21V12"/><path d="M19 21V12"/><path d="M5 21h14"/></symbol>
+    <symbol id="ben-i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  </svg>
+
+  <!-- HERO -->
+  <section class="dash-hero" data-reveal="up" aria-label="Beneficiary profile">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Beneficiary profile</span>
+      <div class="ben-id">
+        <span class="ben-id__avatar" aria-hidden="true">{{ beneficiary.user.display_name|default:"?"|slice:":1"|upper }}</span>
+        <div class="ben-id__text">
+          <h2 class="dash-hero__title">{{ beneficiary.user.display_name }}</h2>
+          <p class="dash-hero__note">{{ beneficiary.user.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hub-manager">
+      <span class="hub-manager__avatar" aria-hidden="true"><svg class="dash-icon" viewBox="0 0 24 24"><use href="#ben-i-store"/></svg></span>
+      <div class="hub-manager__text">
+        <span class="hub-manager__label">Assigned hub</span>
+        <strong class="hub-manager__name">{{ beneficiary.hub|default:"No hub assigned" }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- DETAILS -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+    <div class="card__body">
+      <div class="dashboard-section__heading"><h2 class="card__title">Beneficiary details</h2></div>
+      <dl class="hub-facts">
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
+          <dt>Beneficiary</dt><dd>{{ beneficiary.user.display_name }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-mail"/></svg></span>
+          <dt>Email</dt><dd>{{ beneficiary.user.email }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-phone"/></svg></span>
+          <dt>Phone</dt><dd>{{ beneficiary.phone_number|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-id"/></svg></span>
+          <dt>National ID</dt><dd>{{ beneficiary.national_id|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-store"/></svg></span>
+          <dt>Hub</dt><dd>{{ beneficiary.hub|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-pin"/></svg></span>
+          <dt>Address</dt><dd>{{ beneficiary.address|default:"—" }}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- BUSINESSES -->
+  {% if businesses %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading">
+          <h2 class="card__title">Businesses <span class="dash-count">{{ businesses|length }}</span></h2>
+        </div>
+        {% include "components/data_table.html" with object_list=businesses columns=business_columns %}
+      </div>
+    </section>
+  {% endif %}
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

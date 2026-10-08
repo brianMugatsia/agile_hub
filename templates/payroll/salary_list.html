@@ -8,8 +8,20 @@
 {% endblock %}
 
 {% block content %}
+  {% include "components/saved_filters.html" %}
   <section class="card">
     <div class="card__body">
+      <form class="filter-bar" method="get" role="search">
+        <label class="field filter-bar__field"><span class="field__label">From</span><input class="input" type="date" name="start" value="{{ filter_start }}"></label>
+        <label class="field filter-bar__field"><span class="field__label">To</span><input class="input" type="date" name="end" value="{{ filter_end }}"></label>
+        <label class="field filter-bar__field"><span class="field__label">Status</span><select class="select" name="status"><option value="">All statuses</option>{% for value, label in filter_fields.0.choices %}<option value="{{ value }}"{% if filter_fields.0.selected == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <button class="btn btn--secondary" type="submit">Filter</button>
+      </form>
+      {% if filter_error %}<p class="alert alert--danger" role="alert">{{ filter_error }}</p>{% endif %}
+      <div class="cluster">
+        <a class="btn btn--secondary" href="{% url 'payroll:salary_export' 'csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Download CSV</a>
+        <a class="btn btn--secondary" href="{% url 'payroll:salary_export' 'xlsx' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Download Excel</a>
+      </div>
       <div class="table-wrap">
         <table class="table">
           <thead><tr><th>Worker</th><th>Period</th><th>Gross</th><th>Deductions</th><th>Net</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>

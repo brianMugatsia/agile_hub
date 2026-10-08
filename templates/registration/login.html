@@ -1,6 +1,8 @@
 {% extends "base_auth.html" %}
+{% load ui_tags %}
 {% block title %}Sign in{% endblock %}
 {% block auth_content %}
+  <div class="auth-card__icon">{% icon "lock" %}</div>
   <h1 class="auth-card__title">Welcome back</h1>
   <p class="auth-card__lead">Sign in to manage your hub, sales and payments.</p>
 
@@ -10,7 +12,7 @@
     </div>
   {% endif %}
 
-  <form method="post" class="stack" novalidate>
+  <form method="post" class="stack auth-form" novalidate>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% include "components/form_field.html" with field=form.username %}

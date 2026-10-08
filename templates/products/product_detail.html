@@ -18,4 +18,8 @@
       <p>{{ product.description|default:"No product description has been added."|linebreaksbr }}</p>
     </div></article>
   </section>
+  <nav class="cluster" aria-label="Product reports">
+    {% if perms.products.view_productpricehistory %}<a class="btn btn--secondary" href="{% url 'products:price_history' product.pk %}">Price history</a>{% endif %}
+    <a class="btn btn--secondary" href="{% url 'products:low_stock_report' %}">Low-stock report</a>
+  </nav>
 {% endblock %}

@@ -78,6 +78,9 @@ python manage.py makemigrations --check --dry-run --settings=config.settings.tes
 - Currency defaults to KES and can be changed with `CURRENCY_CODE`.
 - Commission defaults to 20%; active, effective-dated `CommissionSetting` records take precedence. Commissions are accrued only on completed eligible agent sales and must be approved before payment.
 - Sale completion and stock movements run in database transactions. A hub cannot sell stock it does not have.
+- Hub managers can create reorder purchase orders from products at or below their reorder levels, maintain supplier records, and receive orders in partial or full quantities through the inventory ledger.
+- Product and inventory Excel imports are previewed before confirmation. Rejected rows can be downloaded with validation explanations; reports are available only to the uploader for 15 minutes.
+- The sales / stock reconciliation report compares completed or refunded sale quantities with their linked inventory ledger movements for a selected period and accessible hubs.
 - Salary records must be approved before they can be paid.
 - Sales, stock movements, commission transitions, salary transitions, and administrative actions are recorded in the audit trail.
 - Reporting summarizes the operational records currently stored by Agile Hub. It is not a double-entry general ledger and must not be treated as audited financial statements.

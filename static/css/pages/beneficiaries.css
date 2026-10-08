@@ -1,0 +1,38 @@
+/* =========================================================
+   Beneficiary pages
+   Builds on pages/dashboard.css (.dash, hero, panels) and
+   pages/hubs.css (.hub-facts, .hub-fact, .hub-manager)
+   ========================================================= */
+
+/* Avatar + name row inside the hero */
+.ben-id { display: flex; align-items: center; gap: 1.1rem; margin-top: .9rem; min-width: 0; }
+.ben-id__avatar {
+  position: relative; display: grid; flex: none; place-items: center; width: 4.4rem; height: 4.4rem;
+  color: #fff; background: linear-gradient(135deg, #60a5fa, #1d4ed8);
+  border: 2px solid rgb(255 255 255 / 40%); border-radius: 50%;
+  box-shadow: 0 14px 30px rgb(8 24 60 / 40%); font-size: 1.8rem; font-weight: 760;
+  transition: transform .4s var(--dash-ease);
+}
+.ben-id__avatar::after {
+  position: absolute; inset: -7px; content: ""; border: 1px dashed rgb(255 255 255 / 40%); border-radius: 50%;
+  animation: ben-spin 24s linear infinite;
+}
+.ben-id:hover .ben-id__avatar { transform: rotate(-8deg) scale(1.06); }
+.ben-id__text { min-width: 0; }
+.ben-id__text .dash-hero__title { margin: 0 0 .25rem; overflow-wrap: anywhere; }
+.ben-id__text .dash-hero__note { overflow-wrap: anywhere; }
+
+/* Icon inside the glass hub card */
+.hub-manager__avatar .dash-icon { width: 1.5rem; height: 1.5rem; }
+
+@keyframes ben-spin { to { rotate: 1turn; } }
+
+@media (max-width: 480px) {
+  .ben-id { gap: .85rem; }
+  .ben-id__avatar { width: 3.6rem; height: 3.6rem; font-size: 1.4rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ben-id__avatar, .ben-id__avatar::after { animation: none !important; transition: none !important; }
+  .ben-id:hover .ben-id__avatar { transform: none; }
+}

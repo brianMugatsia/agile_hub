@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 
 
 class Hub(models.Model):
@@ -31,6 +32,9 @@ class Hub(models.Model):
 
     def __str__(self):
         return f"{self.code} — {self.name}"
+
+    def get_absolute_url(self):
+        return reverse("hubs:detail", kwargs={"pk": self.pk})
 
 
 class HubMembership(models.Model):

@@ -55,7 +55,11 @@ class UniqueEmailMixin:
 class LoginForm(StyledFormMixin, AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["username"].widget.attrs.update({"autocomplete": "username", "autofocus": True})
+        self.fields["username"].widget.attrs.update({
+            "autocomplete": "username",
+            "autofocus": True,
+            "placeholder": "Username or email",
+        })
         self.fields["password"].widget.attrs.update({"autocomplete": "current-password"})
 
 
@@ -86,6 +90,16 @@ class UserCreateForm(StyledFormMixin, UniqueEmailMixin, UserCreationForm):
         self.fields["email"].required = True
         self.fields["first_name"].required = True
         self.fields["last_name"].required = True
+        for name, autocomplete in (
+            ("username", "username"),
+            ("email", "email"),
+            ("first_name", "given-name"),
+            ("last_name", "family-name"),
+            ("phone_number", "tel"),
+            ("password1", "new-password"),
+            ("password2", "new-password"),
+        ):
+            self.fields[name].widget.attrs["autocomplete"] = autocomplete
 
 
 class UserUpdateForm(StyledFormMixin, UniqueEmailMixin, forms.ModelForm):

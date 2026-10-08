@@ -1,16 +1,71 @@
 {% extends "base.html" %}
 {% load ui_tags %}
+{% load static %}
+
 {% block content %}
-  <section class="card">
-    <div class="card__header"><h2 class="card__title">Commission history</h2></div>
+<div class="dash">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="com-i-trend" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
+    <symbol id="com-i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="com-i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  </svg>
+
+  <!-- HERO -->
+  <section class="dash-hero" aria-label="Agent statement">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Agent statement</span>
+      <h2 class="dash-hero__title">Commission <span class="dash-gradient">history.</span></h2>
+      <p class="dash-hero__note">Earned, paid and pending commissions for {{ agent.display_name|default:request.user.display_name }}.</p>
+    </div>
+
+    <div class="hub-manager">
+      <span class="hub-manager__avatar" aria-hidden="true">{{ agent.display_name|default:request.user.display_name|slice:":1"|upper }}</span>
+      <div class="hub-manager__text">
+        <span class="hub-manager__label">Agent</span>
+        <strong class="hub-manager__name">{{ agent.display_name|default:request.user.display_name }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOTALS -->
+  <section class="grid grid--3 dashboard-stats" aria-label="Commission totals">
+    <article class="card stat-card" data-spot>
+      <div class="card__body">
+        <span class="stat-card__icon" aria-hidden="true"><svg class="dash-icon"><use href="#com-i-trend"/></svg></span>
+        <span class="stat-card__label">Earned</span>
+        <strong class="stat-card__value" data-count>{{ earned_total|default:"0.00" }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-spot>
+      <div class="card__body">
+        <span class="stat-card__icon" aria-hidden="true"><svg class="dash-icon"><use href="#com-i-check"/></svg></span>
+        <span class="stat-card__label">Paid</span>
+        <strong class="stat-card__value" data-count>{{ paid_total|default:"0.00" }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-spot>
+      <div class="card__body">
+        <span class="stat-card__icon" aria-hidden="true"><svg class="dash-icon"><use href="#com-i-clock"/></svg></span>
+        <span class="stat-card__label">Pending</span>
+        <strong class="stat-card__value" data-count>{{ pending_total|default:"0.00" }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="card dashboard-section dash-panel" data-spot>
     <div class="card__body">
-      <dl class="detail-list">
-        <div><dt>Agent</dt><dd>{{ agent.display_name|default:request.user.display_name }}</dd></div>
-        <div><dt>Earned</dt><dd>{{ earned_total|default:"0.00" }}</dd></div>
-        <div><dt>Paid</dt><dd>{{ paid_total|default:"0.00" }}</dd></div>
-        <div><dt>Pending</dt><dd>{{ pending_total|default:"0.00" }}</dd></div>
-      </dl>
+      <div class="dashboard-section__heading"><h2 class="card__title">Commission history</h2></div>
       {% include "components/data_table.html" with object_list=commissions columns=columns %}
     </div>
   </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

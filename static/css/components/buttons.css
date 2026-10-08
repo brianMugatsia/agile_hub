@@ -15,6 +15,7 @@
   font-size: .9rem;
   font-weight: 600;
   line-height: 1.2;
+  white-space: nowrap;
   text-decoration: none;
   transition: background-color .15s, border-color .15s, box-shadow .15s, transform .05s;
 }
@@ -31,3 +32,36 @@
 .btn--ghost:hover { --btn-bg: var(--color-primary-soft); }
 .btn--sm { min-height: 2rem; padding: .25rem .7rem; font-size: .82rem; }
 .btn--block { width: 100%; }
+
+.cluster {
+  column-gap: .65rem;
+  row-gap: .65rem;
+  margin-block: .75rem;
+}
+.form-actions {
+  column-gap: .7rem;
+  row-gap: .65rem;
+  margin-top: .75rem;
+  padding-top: .25rem;
+}
+.page-header__actions {
+  align-items: center;
+  column-gap: .65rem;
+  row-gap: .6rem;
+}
+.table__actions { min-width: 8rem; }
+.table__actions > form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+  margin: 0;
+}
+.inline-action { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+
+@media (max-width: 480px) {
+  .cluster,
+  .form-actions { align-items: stretch; }
+  .cluster > .btn,
+  .form-actions > .btn { flex: 1 1 auto; }
+}

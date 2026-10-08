@@ -15,20 +15,36 @@ import { initSalaryActions } from "./pages/salary-actions.js";
 import { initSaleForm } from "./pages/sale-form.js";
 
 function initDropdowns() {
-  const open = () => document.querySelectorAll("details[data-dropdown][open]");
+  const menus = [...document.querySelectorAll("details[data-dropdown]")];
+  const close = (menu, restoreFocus = false) => {
+    if (!menu.open) return;
+    menu.open = false;
+    if (restoreFocus) menu.querySelector("summary")?.focus();
+  };
+
+  menus.forEach((menu) => {
+    const trigger = menu.querySelector("summary");
+    if (!trigger) return;
+    trigger.setAttribute("aria-expanded", String(menu.open));
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      menu.open = !menu.open;
+      trigger.setAttribute("aria-expanded", String(menu.open));
+    });
+    menu.addEventListener("toggle", () => {
+      trigger.setAttribute("aria-expanded", String(menu.open));
+    });
+  });
 
   document.addEventListener("click", (event) => {
-    open().forEach((menu) => {
-      if (!menu.contains(event.target)) menu.removeAttribute("open");
+    menus.forEach((menu) => {
+      if (!menu.contains(event.target)) close(menu);
     });
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
-    open().forEach((menu) => {
-      menu.removeAttribute("open");
-      menu.querySelector("summary")?.focus();
-    });
+    menus.forEach((menu) => close(menu, true));
   });
 }
 

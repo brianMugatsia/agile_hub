@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="card card--wide">
+    <div class="card__body stack">
+      <p>{{ description }}</p>
+      <p class="text-muted">Upload an .xlsx workbook with up to 500 data rows. Download the blank template to see the required columns. Imports are validated before anything is saved.</p>
+      <a class="btn btn--secondary" href="{% url template_url %}">Download Excel template</a>
+      {% if errors %}
+        <div class="alert alert--danger" role="alert">
+          <strong>Fix these issues before importing:</strong>
+          <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% if error_report_url %}
+            <a class="btn btn--secondary" href="{{ error_report_url }}">Download rejected rows</a>
+          {% endif %}
+        </div>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data" class="stack">
+        {% csrf_token %}
+        {% include "components/form_field.html" with field=form.file %}
+        <button class="btn btn--primary" type="submit">Preview workbook</button>
+      </form>
+      {% if preview_rows %}
+        <h2 class="card__title">Preview ({{ preview_rows|length }} rows)</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr>{% for heading in preview_headers %}<th scope="col">{{ heading }}</th>{% endfor %}</tr></thead>
+            <tbody>{% for row in preview_rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        {% if ready_to_import %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="confirm_import" value="1">
+            <input type="hidden" name="stage_token" value="{{ stage_token }}">
+            <button class="btn btn--primary" type="submit">Confirm import</button>
+          </form>
+        {% endif %}
+      {% endif %}
+      <a class="btn btn--ghost" href="{% url list_url %}">Back to records</a>
+    </div>
+  </section>
+{% endblock %}

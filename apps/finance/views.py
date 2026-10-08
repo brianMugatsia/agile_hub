@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.http import HttpResponseBadRequest
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -40,21 +40,38 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
     page_title = "Income statement"
 
     def dispatch(self, request, *args, **kwargs):
-        if request.GET.get("start") and not parse_date(request.GET["start"]):
+        start_value = request.GET.get("start", "")
+        end_value = request.GET.get("end", "")
+        try:
+            start = parse_date(start_value)
+        except ValueError:
+            start = None
+        try:
+            end = parse_date(end_value)
+        except ValueError:
+            end = None
+        if start_value and (not start or start.isoformat() != start_value):
             return HttpResponseBadRequest("Use YYYY-MM-DD for the start date.")
-        if request.GET.get("end") and not parse_date(request.GET["end"]):
+        if end_value and (not end or end.isoformat() != end_value):
             return HttpResponseBadRequest("Use YYYY-MM-DD for the end date.")
-        start = parse_date(request.GET.get("start", ""))
-        end = parse_date(request.GET.get("end", ""))
         if start and end and end < start:
             return HttpResponseBadRequest("The end date must be on or after the start date.")
+        if start and end and (end - start).days + 1 > 366:
+            return HttpResponseBadRequest("Choose a date range of no more than 366 days.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         today = timezone.localdate()
-        period_start = parse_date(self.request.GET.get("start", "")) or today.replace(day=1)
-        period_end = parse_date(self.request.GET.get("end", "")) or today
+        start_date = parse_date(self.request.GET.get("start", ""))
+        end_date = parse_date(self.request.GET.get("end", ""))
+        if start_date and not end_date:
+            period_start = period_end = start_date
+        elif end_date and not start_date:
+            period_start = period_end = end_date
+        else:
+            period_start = start_date or today.replace(day=1)
+            period_end = end_date or today
 
         sales = Sale.objects.filter(
             status=Sale.Status.COMPLETED,
@@ -63,10 +80,14 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         )
         role = self.request.user.role
         hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)
-        if role in (Role.HUB_MANAGER, Role.FINANCE_OFFICER):
+        is_platform_admin = role in (Role.SUPER_ADMIN, Role.ADMIN)
+        hub_scoped_roles = (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER)
+        if role in hub_scoped_roles:
             sales = sales.filter(hub_id__in=hub_ids)
         elif role == Role.BENEFICIARY:
             sales = sales.filter(business__beneficiary__user=self.request.user)
+        elif not is_platform_admin:
+            sales = sales.none()
         revenue = _sum(sales, "total")
         sale_items = SaleItem.objects.filter(sale__in=sales)
         cost_of_goods = _sum(
@@ -93,9 +114,9 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
                 SalaryRecord.Status.PAID,
             ],
         )
-        if role in (Role.HUB_MANAGER, Role.FINANCE_OFFICER):
+        if role in hub_scoped_roles:
             salaries = salaries.filter(worker__hub_id__in=hub_ids)
-        elif role == Role.BENEFICIARY:
+        elif role == Role.BENEFICIARY or not is_platform_admin:
             salaries = salaries.none()
         payroll = _sum(salaries, "gross_amount")
         expense_items = IncomeStatementItem.objects.filter(
@@ -103,10 +124,15 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             statement__period_start__lte=period_end,
             statement__period_end__gte=period_start,
         )
-        if role in (Role.HUB_MANAGER, Role.FINANCE_OFFICER):
-            expense_items = expense_items.filter(statement__hub_id__in=hub_ids)
+        if role in hub_scoped_roles:
+            expense_items = expense_items.filter(
+                Q(statement__hub_id__in=hub_ids)
+                | Q(statement__business__hub_id__in=hub_ids)
+            )
         elif role == Role.BENEFICIARY:
             expense_items = expense_items.filter(statement__business__beneficiary__user=self.request.user)
+        elif not is_platform_admin:
+            expense_items = expense_items.none()
         manual_expenses = _sum(
             expense_items,
             "amount",

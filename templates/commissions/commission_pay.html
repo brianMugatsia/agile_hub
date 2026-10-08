@@ -1,11 +1,32 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <section class="card card--narrow"><div class="card__body stack">
-    <h2>Record commission payment</h2>
-    <p>Confirm payment of {{ commission.amount }} to {{ commission.agent.display_name }}.</p>
-    <form method="post" data-confirm-action="commission">{% csrf_token %}
-      <button class="btn btn--primary" type="submit">Mark as paid</button>
-      <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
-    </form>
-  </div></section>
+<div class="dash">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="com-i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1"/></symbol>
+  </svg>
+
+  <section class="card com-confirm" data-tone="pay" data-spot>
+    <div class="card__body">
+      <span class="com-confirm__icon" aria-hidden="true"><svg class="dash-icon"><use href="#com-i-wallet"/></svg></span>
+      <span class="com-confirm__eyebrow">Confirmation required</span>
+      <h2 class="com-confirm__title">Record commission payment</h2>
+      <div class="com-confirm__amount">
+        <span>Amount</span>
+        <strong data-count>{{ commission.amount }}</strong>
+      </div>
+      <p class="com-confirm__text">Confirm payment of {{ commission.amount }} to {{ commission.agent.display_name }}.</p>
+      <form method="post" data-confirm-action="commission" class="com-confirm__form">{% csrf_token %}
+        <div class="com-confirm__actions">
+          <button class="btn btn--primary" type="submit">Mark as paid</button>
+          <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

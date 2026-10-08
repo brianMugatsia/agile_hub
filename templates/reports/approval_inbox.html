@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% if can_approve_salary %}
+    <section class="card">
+      <div class="card__body">
+        <h2 class="card__title">Pending salaries</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Worker</th><th>Hub</th><th>Period</th><th>Gross</th><th>Deductions</th><th>Net</th><th><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>
+              {% for item in pending_salaries %}
+                <tr>
+                  <td>{{ item.worker.user.display_name }}</td>
+                  <td>{{ item.worker.hub.name }}</td>
+                  <td>{{ item.period_start|date:"Y-m" }}</td>
+                  <td>{{ item.gross_amount }}</td>
+                  <td>{{ item.deductions }}</td>
+                  <td>{{ item.net_amount }}</td>
+                  <td class="table__actions">
+                    <form method="post" action="{% url 'reports:approve_salary' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="7">No pending salaries.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if can_approve_commission %}
+    <section class="card">
+      <div class="card__body">
+        <h2 class="card__title">Pending sales-agent commissions</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Agent</th><th>Hub</th><th>Sale</th><th>Rate</th><th>Amount</th><th><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>
+              {% for item in pending_commissions %}
+                <tr>
+                  <td>{{ item.agent.display_name }}</td>
+                  <td>{{ item.sale.hub.name }}</td>
+                  <td>{{ item.sale }}</td>
+                  <td>{{ item.rate|floatformat:2 }}%</td>
+                  <td>{{ item.amount }}</td>
+                  <td class="table__actions">
+                    <form method="post" action="{% url 'reports:approve_commission' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6">No pending commissions.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

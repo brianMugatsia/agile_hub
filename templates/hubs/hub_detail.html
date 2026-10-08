@@ -1,21 +1,91 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <section class="grid grid--2">
-    <article class="card"><div class="card__body">
-      <dl class="detail-list">
-        <div><dt>Code</dt><dd>{{ hub.code }}</dd></div>
-        <div><dt>Name</dt><dd>{{ hub.name }}</dd></div>
-        <div><dt>Region</dt><dd>{{ hub.region|default:"—" }}</dd></div>
-        <div><dt>Address</dt><dd>{{ hub.address|default:"—" }}</dd></div>
-        <div><dt>Manager</dt><dd>{{ hub.manager.display_name|default:"—" }}</dd></div>
-        <div><dt>Status</dt><dd>{{ hub.get_status_display }}</dd></div>
-      </dl>
-    </div></article>
-    <article class="card"><div class="card__body stack">
-      <h2 class="card__title">Hub operations</h2>
-      <a class="link-row" href="{% url 'sales:list' %}">Sales</a>
-      <a class="link-row" href="{% url 'inventory:list' %}">Inventory movements</a>
-      <a class="link-row" href="{% url 'payroll:worker_list' %}">Workers</a>
-    </div></article>
+<div class="dash">
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="hub-i-hash" viewBox="0 0 24 24"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3 8 21"/><path d="M16 3l-2 18"/></symbol>
+    <symbol id="hub-i-store" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 21V12"/><path d="M19 21V12"/><path d="M5 21h14"/></symbol>
+    <symbol id="hub-i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></symbol>
+    <symbol id="hub-i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="hub-i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="hub-i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="hub-i-trend" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
+    <symbol id="hub-i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></symbol>
+    <symbol id="hub-i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
+  </svg>
+
+  <!-- HERO -->
+  <section class="dash-hero" data-reveal="up" aria-label="Hub overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Hub {{ hub.code }}</span>
+      <h2 class="dash-hero__title">{{ hub.name }}</h2>
+      <p class="dash-hero__note">
+        {% if hub.region or hub.address %}{{ hub.region|default:"" }}{% if hub.region and hub.address %} · {% endif %}{{ hub.address|default:"" }}{% else %}No location details recorded yet.{% endif %}
+      </p>
+      <span class="hub-status" data-status="{{ hub.status|lower }}"><span class="hub-status__dot"></span>{{ hub.get_status_display }}</span>
+    </div>
+
+    <div class="hub-manager">
+      <span class="hub-manager__avatar" aria-hidden="true">{{ hub.manager.display_name|default:"?"|slice:":1"|upper }}</span>
+      <div class="hub-manager__text">
+        <span class="hub-manager__label">Hub manager</span>
+        <strong class="hub-manager__name">{{ hub.manager.display_name|default:"No manager assigned" }}</strong>
+      </div>
+    </div>
   </section>
+
+  <!-- DETAILS + OPERATIONS -->
+  <div class="hub-detail-grid">
+    <article class="card dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Hub details</h2></div>
+        <dl class="hub-facts">
+          <div class="hub-fact">
+            <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-hash"/></svg></span>
+            <dt>Code</dt><dd>{{ hub.code }}</dd>
+          </div>
+          <div class="hub-fact">
+            <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-store"/></svg></span>
+            <dt>Name</dt><dd>{{ hub.name }}</dd>
+          </div>
+          <div class="hub-fact">
+            <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-globe"/></svg></span>
+            <dt>Region</dt><dd>{{ hub.region|default:"—" }}</dd>
+          </div>
+          <div class="hub-fact">
+            <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-pin"/></svg></span>
+            <dt>Address</dt><dd>{{ hub.address|default:"—" }}</dd>
+          </div>
+          <div class="hub-fact">
+            <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-user"/></svg></span>
+            <dt>Manager</dt><dd>{{ hub.manager.display_name|default:"—" }}</dd>
+          </div>
+          <div class="hub-fact">
+            <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-check"/></svg></span>
+            <dt>Status</dt><dd>{{ hub.get_status_display }}</dd>
+          </div>
+        </dl>
+      </div>
+    </article>
+
+    <article class="card dash-panel" data-reveal="up" data-spot style="--i: 1">
+      <div class="card__body stack">
+        <div class="dashboard-section__heading"><h2 class="card__title">Hub operations</h2><a href="{% url 'hubs:performance' hub.pk %}">View performance</a></div>
+        <a class="link-row" href="{% url 'sales:list' %}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-trend"/></svg> Sales</a>
+        <a class="link-row" href="{% url 'inventory:list' %}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-box"/></svg> Inventory movements</a>
+        <a class="link-row" href="{% url 'payroll:worker_list' %}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-users"/></svg> Workers</a>
+      </div>
+    </article>
+  </div>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}
