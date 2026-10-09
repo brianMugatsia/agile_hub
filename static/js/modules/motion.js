@@ -16,24 +16,6 @@ function initRowStagger() {
   });
 }
 
-/* Material-style ripple on buttons inside the app. */
-function initRipple() {
-  document.addEventListener("pointerdown", (event) => {
-    const button = event.target.closest(".app-shell .btn");
-    if (!button || button.disabled || button.classList.contains("is-disabled")) return;
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height) * 2;
-    const ripple = document.createElement("span");
-    ripple.className = "btn__ripple";
-    ripple.style.width = `${size}px`;
-    ripple.style.height = `${size}px`;
-    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
-    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
-    button.append(ripple);
-    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
-  });
-}
-
 /* Fades the page slightly while moving to another page or switching hub. */
 function initPageLeave() {
   const page = document.querySelector(".app-shell .page");
@@ -61,6 +43,5 @@ export function initMotion() {
   initTopbarShadow();
   initRowStagger();
   if (REDUCE_MOTION) return;
-  initRipple();
   initPageLeave();
 }

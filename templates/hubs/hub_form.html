@@ -1,1 +1,88 @@
-{% extends "components/record_form.html" %}
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<form method="post" class="hub-form" data-validate data-loading novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="hub-form__layout">
+    <div class="hub-form__main">
+
+      <section class="card">
+        <div class="card__body">
+          <header class="hub-form__head">
+            <span class="hub-form__step">1</span>
+            <div>
+              <h2 class="card__title">Identity</h2>
+              <p class="hub-form__hint">The code appears on reports, stock records and sales.</p>
+            </div>
+          </header>
+          <div class="hub-form__fields">
+            {% include "hubs/_field.html" with field=form.code css="input" %}
+            {% include "hubs/_field.html" with field=form.name css="input" %}
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__body">
+          <header class="hub-form__head">
+            <span class="hub-form__step">2</span>
+            <div>
+              <h2 class="card__title">Location and contact</h2>
+              <p class="hub-form__hint">Where the hub operates and how to reach it.</p>
+            </div>
+          </header>
+          <div class="hub-form__fields">
+            {% include "hubs/_field.html" with field=form.region css="input" %}
+            {% include "hubs/_field.html" with field=form.phone_number css="input" %}
+            <div class="hub-form__wide">{% include "hubs/_field.html" with field=form.address css="input" %}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__body">
+          <header class="hub-form__head">
+            <span class="hub-form__step">3</span>
+            <div>
+              <h2 class="card__title">Management</h2>
+              <p class="hub-form__hint">Who runs the hub and whether it is open for business.</p>
+            </div>
+          </header>
+          <div class="hub-form__fields">
+            {% include "hubs/_field.html" with field=form.manager css="select" %}
+            {% include "hubs/_field.html" with field=form.status css="select" %}
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit">{{ submit_label|default:"Save" }}</button>
+        <a class="btn btn--secondary" href="{% if cancel_url %}{{ cancel_url }}{% else %}{% url 'hubs:list' %}{% endif %}">Cancel</a>
+      </div>
+    </div>
+
+    <aside class="hub-preview" data-hub-preview data-status="active" aria-label="Live preview of this hub">
+      <span class="hub-preview__tag">Live preview</span>
+      <span class="hub-preview__code" data-preview="code">CODE</span>
+      <h2 class="hub-preview__name" data-preview="name">Hub name</h2>
+      <p class="hub-preview__line"><span data-preview="region">Region</span></p>
+      <p class="hub-preview__line"><span data-preview="address">Address</span></p>
+      <p class="hub-preview__line"><span data-preview="phone">Phone</span></p>
+      <div class="hub-preview__manager">
+        <span class="hub-preview__avatar" data-preview-avatar aria-hidden="true">?</span>
+        <div>
+          <small>Hub manager</small>
+          <strong data-preview="manager">No manager assigned</strong>
+        </div>
+      </div>
+      <span class="hub-preview__status"><span class="hub-preview__dot"></span><span data-preview="status">Active</span></span>
+    </aside>
+  </div>
+</form>
+<script type="module" src="{% static 'js/pages/hub-form.js' %}"></script>
+{% endblock %}

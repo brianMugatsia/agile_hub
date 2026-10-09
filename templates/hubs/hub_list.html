@@ -1,1 +1,81 @@
-{% extends "components/record_list.html" %}
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block page_actions %}
+  {% if can_create %}
+    <a class="btn btn--primary" href="{% url create_url_name %}">
+      {% icon "plus" %}<span>{{ create_label }}</span>
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form class="hub-toolbar" method="get" role="search" aria-label="Search hubs">
+    <div class="hub-search">
+      {% icon "search" %}
+      <label class="sr-only" for="hub-search">Search hubs</label>
+      <input id="hub-search" class="input" type="search" name="q" value="{{ search_query }}"
+             placeholder="Search by name, code or region…" autocomplete="off">
+    </div>
+    <button class="btn btn--secondary" type="submit">Search</button>
+    {% if page_obj %}
+      <span class="hub-toolbar__count">{{ page_obj.paginator.count }} hub{{ page_obj.paginator.count|pluralize }}</span>
+    {% endif %}
+  </form>
+
+  {% if filter_error %}<p class="alert alert--danger" role="alert">{{ filter_error }}</p>{% endif %}
+  {% include "components/saved_filters.html" %}
+
+  {% if object_list %}
+    <div class="hub-grid">
+      {% for hub in object_list %}
+        <article class="hub-card" data-status="{{ hub.status|lower }}" style="--i: {{ forloop.counter0 }}">
+          <header class="hub-card__top">
+            <span class="hub-card__code">{{ hub.code }}</span>
+            <span class="hub-card__status"><span class="hub-card__dot"></span>{{ hub.get_status_display }}</span>
+          </header>
+
+          <div>
+            <h2 class="hub-card__name"><a href="{{ hub.get_absolute_url }}">{{ hub.name }}</a></h2>
+            <p class="hub-card__place">
+              {% icon "map-pin" %}
+              <span>{{ hub.region|default:"No region set" }}{% if hub.address %} · {{ hub.address }}{% endif %}</span>
+            </p>
+          </div>
+
+          <div class="hub-card__manager">
+            <span class="hub-card__avatar" aria-hidden="true">{{ hub.manager.display_name|default:"?"|slice:":1"|upper }}</span>
+            <div>
+              <span class="hub-card__label">Hub manager</span>
+              <strong>{{ hub.manager.display_name|default:"Not assigned" }}</strong>
+            </div>
+          </div>
+
+          <dl class="hub-card__stats">
+            <div class="hub-stat"><dt>Staff</dt><dd>{{ hub.n_staff }}</dd></div>
+            <div class="hub-stat"><dt>Businesses</dt><dd>{{ hub.n_businesses }}</dd></div>
+            <div class="hub-stat{% if hub.n_low_stock %} hub-stat--warn{% endif %}"><dt>Low stock</dt><dd>{{ hub.n_low_stock }}</dd></div>
+          </dl>
+
+          <div class="hub-card__revenue">
+            <span>Revenue this month</span>
+            <strong>{{ CURRENCY_CODE }} {{ hub.month_revenue|floatformat:"0g" }}</strong>
+          </div>
+
+          <footer class="hub-card__actions">
+            <a class="btn btn--primary btn--sm" href="{% url 'core:dashboard' %}?hub={{ hub.pk }}">Open hub</a>
+            <a class="btn btn--secondary btn--sm" href="{{ hub.get_absolute_url }}">Details</a>
+            <a class="btn btn--ghost btn--sm" href="{% url 'hubs:performance' hub.pk %}">Performance</a>
+            {% if can_edit_rows %}<a class="btn btn--ghost btn--sm" href="{% url row_edit_url_name hub.pk %}">Edit</a>{% endif %}
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <section class="card"><div class="card__body">
+      {% include "partials/empty_state.html" with title="No hubs found" message="Try a different search, or add a hub to get started." %}
+    </div></section>
+  {% endif %}
+
+  {% include "partials/pagination.html" %}
+{% endblock %}

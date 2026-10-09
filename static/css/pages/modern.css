@@ -14,7 +14,6 @@
   70% { box-shadow: 0 0 0 7px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
-@keyframes ripple { to { transform: scale(1); opacity: 0; } }
 @keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-34px, -26px, 0); } }
@@ -30,8 +29,8 @@ html:has(.app-shell) {
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
-/* ---------- Page entrance (FIXED: Added contain layout to prevent flex element explosions) ---------- */
-.app-shell .page-header { animation: rise-in var(--dur-slow) var(--ease-out) forwards; }
+/* ---------- Page entrance ---------- */
+.app-shell .page-header { animation: rise-in var(--dur-slow) var(--ease-out) both; }
 .app-shell .page-header__title::after {
   content: "";
   display: block;
@@ -43,9 +42,7 @@ html:has(.app-shell) {
   transform-origin: left;
   animation: grow-bar .7s var(--ease-out) .2s both;
 }
-.app-shell .page > :not(.page-header):not(.dash) { 
-  animation: rise-in var(--dur-slow) var(--ease-out) forwards; 
-}
+.app-shell .page > :not(.page-header):not(.dash) { animation: rise-in var(--dur-slow) var(--ease-out) both; }
 .app-shell .page > :nth-child(2) { animation-delay: .05s; }
 .app-shell .page > :nth-child(3) { animation-delay: .1s; }
 .app-shell .page > :nth-child(n + 4) { animation-delay: .15s; }
@@ -149,18 +146,13 @@ html:has(.app-shell) {
 .app-shell .table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .app-shell .table th { white-space: nowrap; }
 
-/* ---------- Buttons (FIXED: Locked position & height against container animation leaks) ---------- */
-.app-shell .btn {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  height: 2.65rem;
-  max-height: 2.65rem;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-}
+/* ---------- Buttons ----------
+   Buttons never change size on click: no press-down scale and no click effects.
+   The hover lift is a 1px nudge only. */
+.app-shell .btn { position: relative; }
 .app-shell .btn:hover { transform: translateY(-1px); }
-.app-shell .btn:active { transform: translateY(0); }
+.app-shell .btn:active { transform: none; }
+.app-shell .btn--primary { overflow: hidden; isolation: isolate; }
 .app-shell .btn--primary::after {
   content: "";
   position: absolute;
@@ -171,15 +163,6 @@ html:has(.app-shell) {
   pointer-events: none;
 }
 .app-shell .btn--primary:hover::after { transform: translateX(120%); }
-.btn__ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: .26;
-  transform: scale(0);
-  animation: ripple .6s var(--ease-out) forwards;
-  pointer-events: none;
-}
 
 /* ---------- Forms ---------- */
 :where(.app-shell, .auth-card) :is(.input, .select, .textarea, .file-input) {
@@ -222,7 +205,7 @@ html:has(.app-shell) {
 .auth-card { animation: rise-in .7s var(--ease-out) both; }
 .auth__brand::after { animation: drift 18s ease-in-out infinite alternate; }
 
-/* ---------- Dark theme fixes ---------- */
+/* ---------- Dark theme fixes (these lost to later layers before) ---------- */
 [data-theme="dark"] .btn:not(.btn--primary):not(.btn--danger):hover {
   --btn-bg: #1f3250;
   --btn-border: var(--color-border-strong);

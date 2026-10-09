@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block page_actions %}
+  <a class="btn btn--secondary" href="{% url 'hubs:detail' hub.pk %}">Back to hub</a>
+{% endblock %}
+
 {% block content %}
 <div class="dash">
 
@@ -35,6 +39,13 @@
     </form>
   </section>
 
+  <!-- QUICK PERIODS -->
+  <nav class="hub-presets" aria-label="Quick periods">
+    {% for preset in presets %}
+      <a class="hub-chip{% if preset.active %} is-active{% endif %}" href="?start={{ preset.start }}&amp;end={{ preset.end }}"{% if preset.active %} aria-current="true"{% endif %}>{{ preset.label }}</a>
+    {% endfor %}
+  </nav>
+
   <!-- STATS -->
   <section class="grid grid--3 dashboard-stats" aria-label="Hub summary">
     <article class="card stat-card" data-reveal="up" data-spot style="--i: 0">
@@ -66,9 +77,26 @@
     </article>
   </section>
 
+  <!-- REVENUE CHART -->
+  {% if bars %}
+    <section class="card dashboard-section dash-panel" data-reveal="up">
+      <div class="card__body">
+        <div class="dashboard-section__heading">
+          <h2 class="card__title">Revenue by {{ bars_unit }}</h2>
+          <span class="hub-chart__peak">Peak {{ CURRENCY_CODE }} {{ bars_peak|floatformat:"0g" }}</span>
+        </div>
+        <div class="hub-bars" role="img" aria-label="Bar chart of completed sales revenue by {{ bars_unit }}">
+          {% for bar in bars %}<div class="hub-bar"{% if not bar.total %} data-zero{% endif %} style="--h: {{ bar.pct|stringformat:'.1f' }}%; --i: {{ forloop.counter0 }}" title="{{ bar.label }}: {{ CURRENCY_CODE }} {{ bar.total|floatformat:'0g' }}"><span></span></div>{% endfor %}
+        </div>
+        <div class="hub-bars__axis"><span>{{ bars_first }}</span><span>{{ bars_last }}</span></div>
+      </div>
+    </section>
+  {% endif %}
+
   {% if object_list %}
     <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">Latest completed sales</h2></div>
         {% include "components/data_table.html" %}
       </div>
     </section>
