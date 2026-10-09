@@ -9,6 +9,7 @@ from django.conf import settings
 from django.urls import NoReverseMatch, reverse
 
 from apps.accounts.roles import Role
+from apps.hubs.permissions import hub_is_locked, selected_hub
 
 SA, AD, HM, FO = Role.SUPER_ADMIN, Role.ADMIN, Role.HUB_MANAGER, Role.FINANCE_OFFICER
 AG, WK, BN, VW = Role.SALES_AGENT, Role.WORKER, Role.BENEFICIARY, Role.VIEWER
@@ -52,6 +53,7 @@ def navigation(request):
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return {}
+    available_hubs, active_hub, _hub_error = selected_hub(request, user)
 
     entries = []
     for item in NAV_ITEMS:
@@ -83,4 +85,7 @@ def navigation(request):
         "CURRENCY_CODE": settings.CURRENCY_CODE,
         "DEMO_MODE": getattr(settings, "DEMO_MODE", False),
         "DEVELOPMENT_MODE": getattr(settings, "DEVELOPMENT_MODE", False),
+        "available_hubs": available_hubs,
+        "active_hub": active_hub,
+        "hub_locked": hub_is_locked(user, available_hubs),
     }

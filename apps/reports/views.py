@@ -11,6 +11,7 @@ from django.views.generic import TemplateView, View
 from apps.commissions.models import SalesAgentCommission
 from apps.commissions.services import approve_commission
 from apps.core.scoping import scope_queryset
+from apps.hubs.permissions import selected_hub
 from apps.inventory.models import InventoryTransaction
 from apps.payroll.models import SalaryRecord
 from apps.payroll.services import approve_salary
@@ -63,6 +64,9 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
 
         start_date = parse_date(start_value)
         end_date = parse_date(end_value)
+        available_hubs, chosen_hub, hub_error = selected_hub(self.request)
+        if hub_error:
+            errors.append(hub_error)
         if start_value and start_date is None:
             errors.append("Enter a valid start date.")
         if end_value and end_date is None:
@@ -94,6 +98,8 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                 ),
                 self.request.user,
             )
+            if chosen_hub:
+                sales = sales.filter(hub=chosen_hub)
             sale_rows = list(
                 SaleItem.objects.filter(sale__in=sales)
                 .values(
@@ -116,6 +122,8 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                 ).filter(movement_period),
                 self.request.user,
             )
+            if chosen_hub:
+                movements = movements.filter(hub=chosen_hub)
             movement_rows = list(
                 movements.values(
                     "hub_id", "hub__name", "product_id", "product__name", "reference"
@@ -176,6 +184,8 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
 
         context.update(
             page_title=self.page_title,
+            filter_hubs=available_hubs,
+            selected_hub=chosen_hub.pk if chosen_hub else "",
             start_date=start_date,
             end_date=end_date,
             date_errors=errors,
@@ -205,28 +215,39 @@ class ApprovalInboxView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        available_hubs, chosen_hub, hub_error = selected_hub(self.request)
         can_approve_salary = user.has_perm("payroll.approve_salaryrecord")
         can_approve_commission = user.has_perm("commissions.approve_salesagentcommission")
+        salaries = (
+            scope_queryset(
+                SalaryRecord.objects.select_related("worker__user", "worker__hub"),
+                user,
+            ).filter(status=SalaryRecord.Status.PENDING)
+            if can_approve_salary
+            else SalaryRecord.objects.none()
+        )
+        commissions = (
+            scope_queryset(
+                SalesAgentCommission.objects.select_related("agent", "sale__hub"),
+                user,
+            ).filter(status=SalesAgentCommission.Status.PENDING)
+            if can_approve_commission
+            else SalesAgentCommission.objects.none()
+        )
+        if chosen_hub:
+            salaries = salaries.filter(worker__hub=chosen_hub)
+            commissions = commissions.filter(sale__hub=chosen_hub)
+        elif hub_error:
+            salaries, commissions = salaries.none(), commissions.none()
         context.update(
             page_title=self.page_title,
             can_approve_salary=can_approve_salary,
             can_approve_commission=can_approve_commission,
-            pending_salaries=(
-                scope_queryset(
-                    SalaryRecord.objects.select_related("worker__user", "worker__hub"),
-                    user,
-                ).filter(status=SalaryRecord.Status.PENDING)
-                if can_approve_salary
-                else SalaryRecord.objects.none()
-            ),
-            pending_commissions=(
-                scope_queryset(
-                    SalesAgentCommission.objects.select_related("agent", "sale__hub"),
-                    user,
-                ).filter(status=SalesAgentCommission.Status.PENDING)
-                if can_approve_commission
-                else SalesAgentCommission.objects.none()
-            ),
+            pending_salaries=salaries,
+            pending_commissions=commissions,
+            filter_hubs=available_hubs,
+            selected_hub=chosen_hub.pk if chosen_hub else "",
+            hub_error=hub_error,
         )
         return context
 

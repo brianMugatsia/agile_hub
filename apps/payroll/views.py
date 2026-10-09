@@ -6,11 +6,16 @@ from django.urls import reverse
 from django.views import View
 
 from apps.audit.services import record_event
-from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
+from apps.core.generic import (
+    ProtectedCreateView,
+    ProtectedUpdateView,
+    ScopedModelListView,
+    hubs_for_user,
+)
 from apps.core.exports import ScopedModelExportView
 from apps.payroll.services import approve_salary, pay_salary
 
-from .forms import SalaryRecordForm, WorkerProfileForm
+from .forms import SalaryRecordForm, WorkerProfileForm, WorkerUpdateForm
 from .models import SalaryRecord, WorkerProfile
 
 
@@ -28,6 +33,9 @@ class WorkerListView(ScopedModelListView):
     create_url_name = "payroll:worker_create"
     create_label = "Add worker"
     create_permission = "payroll.add_workerprofile"
+    row_edit_url_name = "payroll:worker_edit"
+    row_edit_permission = "payroll.change_workerprofile"
+    filter_hub = True
 
 
 class WorkerCreateView(ProtectedCreateView):
@@ -35,6 +43,22 @@ class WorkerCreateView(ProtectedCreateView):
     form_class = WorkerProfileForm
     page_title = "Add worker"
     success_url_name = "payroll:worker_list"
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["hub"].queryset = hubs_for_user(self.request.user)
+        return form
+
+
+class WorkerUpdateView(ProtectedUpdateView):
+    model = WorkerProfile
+    form_class = WorkerUpdateForm
+    page_title = "Edit worker"
+    success_url_name = "payroll:worker_list"
+    cancel_url_name = "payroll:worker_list"
+
+    def get_queryset(self):
+        return WorkerProfile.objects.filter(hub__in=hubs_for_user(self.request.user))
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -55,6 +79,7 @@ class SalaryListView(ScopedModelListView):
     )
     date_filter_field = "period_start"
     filter_fields = (("status", SalaryRecord.Status.choices),)
+    filter_hub = True
     create_url_name = "payroll:salary_create"
     create_label = "Prepare salary"
     create_permission = "payroll.add_salaryrecord"

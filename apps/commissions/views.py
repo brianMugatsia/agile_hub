@@ -47,6 +47,7 @@ class CommissionListView(ScopedModelListView):
     )
     date_filter_field = "created_at"
     filter_fields = (("status", SalesAgentCommission.Status.choices),)
+    filter_hub = True
     export_url_name = "commissions:export"
 
     def get_queryset(self):

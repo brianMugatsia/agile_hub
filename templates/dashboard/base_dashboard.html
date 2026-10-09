@@ -36,6 +36,15 @@
         <label for="dashboard-end-date">To</label>
         <input class="input" id="dashboard-end-date" type="date" name="end_date" value="{{ date_end|date:'Y-m-d' }}">
       </div>
+      {% if available_hubs %}
+        <div class="dash-range__field">
+          <label for="dashboard-hub">Hub</label>
+          <select class="select" id="dashboard-hub" name="hub">
+            <option value="">All hubs</option>
+            {% for hub in available_hubs %}<option value="{{ hub.pk }}"{% if active_hub_id == hub.pk %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
+          </select>
+        </div>
+      {% endif %}
       <button class="dash-range__btn" type="submit">
         Apply dates
         <svg class="dash-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
@@ -48,6 +57,7 @@
         <ul>{% for error in date_errors %}<li>{{ error }}</li>{% endfor %}</ul>
       </div>
     {% endif %}
+    {% if hub_error %}<div class="dash-hero__errors" role="alert">{{ hub_error }}</div>{% endif %}
   </section>
 
   <!-- STATS -->

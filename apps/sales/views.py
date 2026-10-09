@@ -38,6 +38,7 @@ class SaleListView(ScopedModelListView):
     export_url_name = "sales:export"
     row_edit_url_name = "sales:edit"
     row_edit_permission = "sales.change_sale"
+    filter_hub = True
 
 
 class SaleExportView(ScopedModelExportView):
@@ -149,18 +150,14 @@ class SalesAgentListView(ScopedModelListView):
     )
     search_fields = ("first_name", "last_name", "email", "username")
     permission_required = "sales.view_sale"
+    filter_hub = True
+    hub_filter_paths = ("hub_memberships__hub_id",)
 
     def get_queryset(self):
-        queryset = User.objects.filter(role=Role.SALES_AGENT, is_active=True).order_by("last_name", "first_name")
+        queryset = super().get_queryset().filter(
+            role=Role.SALES_AGENT, is_active=True
+        ).order_by("last_name", "first_name")
         if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN):
             hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)
             queryset = queryset.filter(hub_memberships__hub_id__in=hub_ids, hub_memberships__is_active=True)
-        query = self.request.GET.get("q", "").strip()
-        if query:
-            queryset = queryset.filter(
-                Q(first_name__icontains=query)
-                | Q(last_name__icontains=query)
-                | Q(email__icontains=query)
-                | Q(username__icontains=query)
-            )
         return queryset.distinct()

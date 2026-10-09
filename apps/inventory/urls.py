@@ -9,6 +9,7 @@ from .views import (
     StockMovementCreateView,
     SupplierCreateView,
     SupplierListView,
+    SupplierUpdateView,
 )
 from apps.core.spreadsheets import InventoryImportTemplateView, InventoryImportView
 
@@ -20,6 +21,7 @@ urlpatterns = [
     path("purchase-orders/<int:pk>/receive/", PurchaseOrderReceiveView.as_view(), name="purchase_order_receive"),
     path("suppliers/", SupplierListView.as_view(), name="suppliers"),
     path("suppliers/create/", SupplierCreateView.as_view(), name="supplier_create"),
+    path("suppliers/<int:pk>/edit/", SupplierUpdateView.as_view(), name="supplier_edit"),
     path("import/", InventoryImportView.as_view(), name="import"),
     path("import/template.xlsx", InventoryImportTemplateView.as_view(), name="import_template"),
     path("export/<str:file_format>/", InventoryExportView.as_view(), name="export"),

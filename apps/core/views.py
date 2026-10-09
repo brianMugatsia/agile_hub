@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 
 from apps.accounts.roles import Role
+from apps.hubs.permissions import selected_hub
 from .mixins import PageMixin
 
 
@@ -106,7 +107,12 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
         from apps.core.generic import hubs_for_user
 
         is_platform_admin = user.role in (Role.SUPER_ADMIN, Role.ADMIN)
-        hubs = Hub.objects.all() if is_platform_admin else hubs_for_user(user)
+        available_hubs, active_hub, hub_error = selected_hub(self.request)
+        hubs = available_hubs
+        if active_hub:
+            hubs = hubs.filter(pk=active_hub.pk)
+        elif hub_error:
+            hubs = hubs.none()
         sales = Sale.objects.filter(status=Sale.Status.COMPLETED)
         if is_platform_admin:
             context["dashboard_intro"] = (
@@ -119,6 +125,10 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
         elif user.role == Role.BENEFICIARY:
             sales = sales.filter(business__beneficiary__user=user)
         else:
+            sales = sales.none()
+        if active_hub:
+            sales = sales.filter(hub=active_hub)
+        elif hub_error:
             sales = sales.none()
         sales = self.apply_date_range(sales, "completed_at")
 
@@ -153,39 +163,47 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             )
 
         if user.role in (Role.SUPER_ADMIN, Role.ADMIN):
+            pending_commissions = SalesAgentCommission.objects.filter(
+                status=SalesAgentCommission.Status.PENDING,
+                sale__hub__in=hubs,
+            )
             context["dashboard_stats"] = [
-                ("Active hubs", Hub.objects.filter(status=Hub.Status.ACTIVE).count()),
+                ("Active hubs", hubs.filter(status=Hub.Status.ACTIVE).count()),
                 ("Products", Product.objects.filter(is_active=True).count()),
                 ("Completed sales", sales.count()),
                 ("Sales value", sales.aggregate(total=Sum("total"))["total"] or 0),
-                (
-                    "Pending commissions",
-                    SalesAgentCommission.objects.filter(status=SalesAgentCommission.Status.PENDING).count(),
-                ),
+                ("Pending commissions", pending_commissions.count()),
             ]
         elif user.role == Role.SALES_AGENT:
             agent_sales = self.apply_date_range(
                 Sale.objects.filter(agent=user, status=Sale.Status.COMPLETED),
                 "completed_at",
             )
+            agent_pending_commissions = SalesAgentCommission.objects.filter(
+                agent=user,
+                status=SalesAgentCommission.Status.PENDING,
+                sale__hub__in=hubs,
+            )
             context["dashboard_stats"] = [
                 ("Completed sales", agent_sales.count()),
                 ("Sales total", agent_sales.aggregate(total=Sum("total"))["total"] or 0),
-                (
-                    "Pending commission",
-                    SalesAgentCommission.objects.filter(
-                        agent=user, status=SalesAgentCommission.Status.PENDING
-                    ).aggregate(total=Sum("amount"))["total"] or 0,
-                ),
+                ("Pending commission", agent_pending_commissions.aggregate(total=Sum("amount"))["total"] or 0),
             ]
             context["recent_commissions"] = SalesAgentCommission.objects.filter(
                 agent=user
             )
+            if active_hub:
+                context["recent_commissions"] = context["recent_commissions"].filter(
+                    sale__hub=active_hub
+                )
+            elif hub_error:
+                context["recent_commissions"] = context["recent_commissions"].none()
             context["recent_commissions"] = self.apply_date_range(
                 context["recent_commissions"], "created_at"
             ).select_related("sale").order_by("-created_at")[:8]
         elif user.role == Role.WORKER:
             all_salaries = SalaryRecord.objects.filter(worker__user=user)
+            all_salaries = all_salaries.filter(worker__hub__in=hubs)
             salaries = self.apply_date_range(all_salaries, "period_start")
             context["dashboard_stats"] = [
                 ("Salary records", salaries.count()),
@@ -199,6 +217,10 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             from apps.beneficiaries.models import Business
 
             businesses = Business.objects.filter(beneficiary__user=user)
+            if active_hub:
+                businesses = businesses.filter(hub=active_hub)
+            elif hub_error:
+                businesses = businesses.none()
             context["dashboard_stats"] = [
                 ("Businesses", businesses.count()),
                 ("Active businesses", businesses.filter(status=Business.Status.ACTIVE).count()),
@@ -218,9 +240,8 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
                 status=SalesAgentCommission.Status.PENDING
             )
             salaries = SalaryRecord.objects.filter(status=SalaryRecord.Status.PENDING)
-            if not is_platform_admin:
-                commissions = commissions.filter(sale__hub__in=hubs)
-                salaries = salaries.filter(worker__hub__in=hubs)
+            commissions = commissions.filter(sale__hub__in=hubs)
+            salaries = salaries.filter(worker__hub__in=hubs)
             context["pending_commissions"] = commissions.select_related(
                 "agent", "sale", "sale__hub"
             ).order_by("-created_at")[:8]
@@ -238,6 +259,12 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
                     quantity__lte=F("product__reorder_level"),
                 ).count()
                 context["dashboard_stats"].append(("Low stock items", context["low_stock_count"]))
+        context.update(
+            available_hubs=available_hubs,
+            active_hub=active_hub,
+            active_hub_id=active_hub.pk if active_hub else "",
+            hub_error=hub_error,
+        )
         return context
 
 

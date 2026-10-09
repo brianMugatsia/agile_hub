@@ -8,6 +8,7 @@ from .views import (
     SalaryListView,
     WorkerCreateView,
     WorkerListView,
+    WorkerUpdateView,
 )
 
 app_name = "payroll"
@@ -15,6 +16,7 @@ app_name = "payroll"
 urlpatterns = [
     path("workers/", WorkerListView.as_view(), name="worker_list"),
     path("workers/create/", WorkerCreateView.as_view(), name="worker_create"),
+    path("workers/<int:pk>/edit/", WorkerUpdateView.as_view(), name="worker_edit"),
     path("salaries/export/<str:file_format>/", SalaryExportView.as_view(), name="salary_export"),
     path("salaries/", SalaryListView.as_view(), name="salary_list"),
     path("salaries/create/", SalaryCreateView.as_view(), name="salary_create"),

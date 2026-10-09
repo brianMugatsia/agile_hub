@@ -11,6 +11,7 @@ from django.views.generic import TemplateView
 from apps.accounts.roles import Role
 from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
 from apps.core.scoping import scope_queryset
+from apps.hubs.permissions import selected_hub
 from apps.sales.models import Sale, SaleItem
 from apps.beneficiaries.models import Business
 
@@ -80,7 +81,8 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             completed_at__date__lte=period_end,
         )
         role = self.request.user.role
-        hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)
+        available_hubs, selected, hub_error = selected_hub(self.request)
+        hub_ids = available_hubs.values_list("pk", flat=True)
         is_platform_admin = role in (Role.SUPER_ADMIN, Role.ADMIN)
         hub_scoped_roles = (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER)
         if role in hub_scoped_roles:
@@ -88,6 +90,10 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         elif role == Role.BENEFICIARY:
             sales = sales.filter(business__beneficiary__user=self.request.user)
         elif not is_platform_admin:
+            sales = sales.none()
+        if selected:
+            sales = sales.filter(hub=selected)
+        elif hub_error:
             sales = sales.none()
         revenue = _sum(sales, "total")
         sale_items = SaleItem.objects.filter(sale__in=sales)
@@ -119,6 +125,10 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             salaries = salaries.filter(worker__hub_id__in=hub_ids)
         elif role == Role.BENEFICIARY or not is_platform_admin:
             salaries = salaries.none()
+        if selected:
+            salaries = salaries.filter(worker__hub=selected)
+        elif hub_error:
+            salaries = salaries.none()
         payroll = _sum(salaries, "gross_amount")
         expense_items = IncomeStatementItem.objects.filter(
             is_expense=True,
@@ -134,6 +144,12 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             expense_items = expense_items.filter(statement__business__beneficiary__user=self.request.user)
         elif not is_platform_admin:
             expense_items = expense_items.none()
+        if selected:
+            expense_items = expense_items.filter(
+                Q(statement__hub=selected) | Q(statement__business__hub=selected)
+            )
+        elif hub_error:
+            expense_items = expense_items.none()
         manual_expenses = _sum(
             expense_items,
             "amount",
@@ -143,6 +159,9 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             page_title=self.page_title,
             period_start=period_start,
             period_end=period_end,
+            filter_hubs=available_hubs,
+            selected_hub=selected.pk if selected else "",
+            hub_error=hub_error,
             revenue=revenue,
             cost_of_goods=cost_of_goods,
             gross_profit=revenue - cost_of_goods,
@@ -170,6 +189,7 @@ class CashFlowListView(ScopedModelListView):
     create_url_name = "finance:cash_flow_create"
     create_label = "Record cash flow"
     create_permission = "finance.add_cashflow"
+    filter_hub = True
 
 
 class CashFlowCreateView(ProtectedCreateView):
@@ -204,6 +224,7 @@ class AssetListView(ScopedModelListView):
         {"label": "Hub", "field": "hub__name"},
     )
     search_fields = ("name", "category")
+    filter_hub = True
 
 
 class LiabilityListView(ScopedModelListView):
@@ -217,6 +238,7 @@ class LiabilityListView(ScopedModelListView):
         {"label": "Hub", "field": "hub__name"},
     )
     search_fields = ("name", "counterparty")
+    filter_hub = True
 
 
 class EquityListView(ScopedModelListView):
@@ -227,6 +249,7 @@ class EquityListView(ScopedModelListView):
         {"label": "Amount", "field": "amount"},
         {"label": "Date", "field": "transaction_date"},
     )
+    filter_hub = True
 
 
 class StartupCostsListView(ScopedModelListView):
@@ -238,6 +261,7 @@ class StartupCostsListView(ScopedModelListView):
         {"label": "Amount", "field": "amount"},
         {"label": "Date", "field": "incurred_on"},
     )
+    filter_hub = True
 
 
 class FundingSourcesListView(ScopedModelListView):
@@ -249,6 +273,7 @@ class FundingSourcesListView(ScopedModelListView):
         {"label": "Amount", "field": "amount"},
         {"label": "Received", "field": "received_on"},
     )
+    filter_hub = True
 
 
 class BreakEvenView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
@@ -307,13 +332,24 @@ class FinancialRatiosView(LoginRequiredMixin, PermissionRequiredMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        total_assets = _sum(scope_queryset(Asset.objects.all(), self.request.user), "cost")
-        total_liabilities = _sum(
-            scope_queryset(Liability.objects.all(), self.request.user), "balance"
-        )
-        total_equity = _sum(scope_queryset(EquityRecord.objects.all(), self.request.user), "amount")
+        available_hubs, selected, hub_error = selected_hub(self.request)
+        assets = scope_queryset(Asset.objects.all(), self.request.user)
+        liabilities = scope_queryset(Liability.objects.all(), self.request.user)
+        equity = scope_queryset(EquityRecord.objects.all(), self.request.user)
+        if selected:
+            assets = assets.filter(Q(hub=selected) | Q(business__hub=selected))
+            liabilities = liabilities.filter(Q(hub=selected) | Q(business__hub=selected))
+            equity = equity.filter(Q(hub=selected) | Q(business__hub=selected))
+        elif hub_error:
+            assets, liabilities, equity = assets.none(), liabilities.none(), equity.none()
+        total_assets = _sum(assets, "cost")
+        total_liabilities = _sum(liabilities, "balance")
+        total_equity = _sum(equity, "amount")
         context.update(
             page_title=self.page_title,
+            filter_hubs=available_hubs,
+            selected_hub=selected.pk if selected else "",
+            hub_error=hub_error,
             total_assets=total_assets,
             total_liabilities=total_liabilities,
             total_equity=total_equity,

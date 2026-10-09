@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+  <form method="get" class="filter-bar card card__body" aria-label="Filter financial ratios by hub">
+    <label class="field filter-bar__field">
+      <span class="field__label">Hub</span>
+      <select class="select" name="hub">
+        <option value="">All hubs</option>
+        {% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn btn--secondary" type="submit">Filter</button>
+  </form>
+  {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
   <section class="finance-summary">
     {% include "components/stat_card.html" with label="Debt to assets" value=ratios.debt_to_assets %}
     {% include "components/stat_card.html" with label="Liabilities to equity" value=ratios.liabilities_to_equity %}

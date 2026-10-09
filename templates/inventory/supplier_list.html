@@ -11,12 +11,19 @@
     <div class="card__body">
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th scope="col">Supplier</th><th scope="col">Contact</th><th scope="col">Email</th><th scope="col">Phone</th></tr></thead>
+          <thead><tr><th scope="col">Supplier</th><th scope="col">Contact</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Status</th>{% if can_edit_suppliers %}<th scope="col">Actions</th>{% endif %}</tr></thead>
           <tbody>
             {% for supplier in suppliers %}
-              <tr><td>{{ supplier.name }} <span class="text-muted">({{ supplier.code }})</span></td><td>{{ supplier.contact_name|default:"—" }}</td><td>{{ supplier.email|default:"—" }}</td><td>{{ supplier.phone|default:"—" }}</td></tr>
+              <tr>
+                <td>{{ supplier.name }} <span class="text-muted">({{ supplier.code }})</span></td>
+                <td>{{ supplier.contact_name|default:"—" }}</td>
+                <td>{{ supplier.email|default:"—" }}</td>
+                <td>{{ supplier.phone|default:"—" }}</td>
+                <td>{% if supplier.is_active %}Active{% else %}Inactive{% endif %}</td>
+                {% if can_edit_suppliers %}<td><a class="btn btn--secondary btn--sm" href="{% url 'inventory:supplier_edit' supplier.pk %}">Edit</a></td>{% endif %}
+              </tr>
             {% empty %}
-              <tr><td colspan="4">No active suppliers have been added.</td></tr>
+              <tr><td colspan="{% if can_edit_suppliers %}6{% else %}5{% endif %}">No suppliers have been added.</td></tr>
             {% endfor %}
           </tbody>
         </table>

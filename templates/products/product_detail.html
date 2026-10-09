@@ -19,6 +19,7 @@
     </div></article>
   </section>
   <nav class="cluster" aria-label="Product reports">
+    {% if perms.products.change_product %}<a class="btn btn--primary" href="{% url 'products:edit' product.pk %}">Edit product</a>{% endif %}
     {% if perms.products.view_productpricehistory %}<a class="btn btn--secondary" href="{% url 'products:price_history' product.pk %}">Price history</a>{% endif %}
     <a class="btn btn--secondary" href="{% url 'products:low_stock_report' %}">Low-stock report</a>
   </nav>

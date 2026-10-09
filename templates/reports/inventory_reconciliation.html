@@ -18,7 +18,7 @@
   <section class="card recon-filter">
     <div class="card__body">
       <div class="recon-filter__intro">
-        <div><h2 class="card__title">Choose a period</h2><p>By default, this report checks the last 30 days.</p></div>
+        <div>        <h2 class="card__title">Choose a hub and period</h2><p>By default, this report checks the last 30 days.</p></div>
         {% if not date_errors %}
           {% if mismatch_count %}
             <span class="badge badge--danger">{% icon "alert-circle" %} {{ mismatch_count }} exception{{ mismatch_count|pluralize }}</span>
@@ -28,6 +28,13 @@
         {% endif %}
       </div>
       <form class="recon-filter__form" method="get" aria-label="Choose reconciliation date range">
+        <label class="field">
+          <span class="field__label">Hub</span>
+          <select class="select" name="hub">
+            <option value="">All hubs</option>
+            {% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
+          </select>
+        </label>
         <label class="field">
           <span class="field__label">From</span>
           <input class="input" type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" required>
@@ -40,6 +47,7 @@
         <button class="btn btn--primary" type="submit">{% icon "search" %} Run reconciliation</button>
       </form>
       {% for error in date_errors %}<p class="alert alert--danger" role="alert">{{ error }}</p>{% endfor %}
+      {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
     </div>
   </section>
 

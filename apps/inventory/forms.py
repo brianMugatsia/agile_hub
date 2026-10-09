@@ -32,7 +32,7 @@ class StockMovementForm(forms.Form):
 class SupplierForm(ModelForm):
     class Meta:
         model = Supplier
-        fields = ("code", "name", "contact_name", "email", "phone", "address")
+        fields = ("code", "name", "contact_name", "email", "phone", "address", "is_active")
 
 
 class ReorderOrderForm(forms.Form):

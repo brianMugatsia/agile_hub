@@ -7,9 +7,15 @@ from django.views.generic import FormView, ListView
 from django.views import View
 
 from apps.core.exports import ScopedModelExportView
-from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
+from apps.core.generic import (
+    ProtectedCreateView,
+    ProtectedUpdateView,
+    ScopedModelListView,
+    hubs_for_user,
+)
 from apps.core.mixins import PageMixin
 from apps.core.spreadsheets import InventoryImportTemplateView, InventoryImportView
+from apps.hubs.permissions import selected_hub
 from apps.inventory.services import (
     create_reorder_order,
     receive_purchase_order,
@@ -71,7 +77,12 @@ class SupplierListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, L
     page_title = "Suppliers"
 
     def get_queryset(self):
-        return Supplier.objects.filter(is_active=True)
+        return Supplier.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_edit_suppliers"] = self.request.user.has_perm("inventory.change_supplier")
+        return context
 
 
 class SupplierCreateView(ProtectedCreateView):
@@ -80,6 +91,15 @@ class SupplierCreateView(ProtectedCreateView):
     permission_required = "inventory.add_supplier"
     page_title = "Add supplier"
     success_url_name = "inventory:suppliers"
+
+
+class SupplierUpdateView(ProtectedUpdateView):
+    model = Supplier
+    form_class = SupplierForm
+    permission_required = "inventory.change_supplier"
+    page_title = "Edit supplier"
+    success_url_name = "inventory:suppliers"
+    cancel_url_name = "inventory:suppliers"
 
 
 class PurchaseOrderListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, ListView):
@@ -91,8 +111,17 @@ class PurchaseOrderListView(LoginRequiredMixin, PermissionRequiredMixin, PageMix
     paginate_by = 25
 
     def get_queryset(self):
+        available_hubs, selected, error = selected_hub(self.request)
+        self.available_hubs = available_hubs
+        self.selected_hub = selected
+        self.hub_error = error
+        queryset = PurchaseOrder.objects.filter(hub__in=available_hubs)
+        if selected:
+            queryset = queryset.filter(hub=selected)
+        elif error:
+            queryset = queryset.none()
         return (
-            PurchaseOrder.objects.filter(hub__in=hubs_for_user(self.request.user))
+            queryset
             .select_related("hub", "supplier", "created_by")
             .prefetch_related("lines__product")
         )
@@ -100,6 +129,9 @@ class PurchaseOrderListView(LoginRequiredMixin, PermissionRequiredMixin, PageMix
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["can_create_order"] = self.request.user.has_perm("inventory.add_purchaseorder")
+        context["filter_hubs"] = getattr(self, "available_hubs", hubs_for_user(self.request.user))
+        context["selected_hub"] = self.selected_hub.pk if self.selected_hub else ""
+        context["hub_error"] = self.hub_error
         return context
 
 

@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.views.generic import DetailView
 
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView
-from apps.core.mixins import PageMixin
+from apps.core.mixins import ActiveHubInitialMixin, PageMixin
 from apps.core.scoping import scope_queryset
 
 from .forms import BeneficiaryProfileForm, BusinessForm
@@ -25,6 +25,7 @@ class BeneficiaryListView(ScopedModelListView):
     create_permission = "beneficiaries.add_beneficiaryprofile"
     row_edit_url_name = "beneficiaries:edit"
     row_edit_permission = "beneficiaries.change_beneficiaryprofile"
+    filter_hub = True
 
 
 class BeneficiaryDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
@@ -82,7 +83,7 @@ class BeneficiaryUpdateView(ProtectedUpdateView):
         return {**super().get_form_kwargs(), "user": self.request.user}
 
 
-class BeneficiaryCreateView(ProtectedCreateView):
+class BeneficiaryCreateView(ActiveHubInitialMixin, ProtectedCreateView):
     model = BeneficiaryProfile
     form_class = BeneficiaryProfileForm
     page_title = "Add beneficiary"
@@ -108,9 +109,10 @@ class BusinessListView(ScopedModelListView):
     create_permission = "beneficiaries.add_business"
     row_edit_url_name = "beneficiaries:business_edit"
     row_edit_permission = "beneficiaries.change_business"
+    filter_hub = True
 
 
-class BusinessCreateView(ProtectedCreateView):
+class BusinessCreateView(ActiveHubInitialMixin, ProtectedCreateView):
     model = Business
     form_class = BusinessForm
     page_title = "Add business"

@@ -4,6 +4,22 @@
     {% icon "menu" %}
   </button>
   <div class="topbar__spacer"></div>
+  {% if available_hubs %}
+    {% if hub_locked and active_hub %}
+      <div class="topbar__hub-filter" aria-label="Your hub">
+        <strong>{{ active_hub.name }}</strong>
+      </div>
+    {% else %}
+      <form method="get" action="{{ request.path }}" class="topbar__hub-filter" aria-label="Select active hub">
+        {% for key, value in request.GET.items %}{% if key != "hub" and key != "page" %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+        <label class="sr-only" for="active-hub">Active hub</label>
+        <select id="active-hub" class="select" name="hub" onchange="this.form.submit()">
+          <option value="">All hubs</option>
+          {% for hub in available_hubs %}<option value="{{ hub.pk }}"{% if active_hub.pk == hub.pk %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
+        </select>
+      </form>
+    {% endif %}
+  {% endif %}
   <button type="button" class="icon-btn" data-theme-toggle aria-pressed="false" aria-label="Switch to dark theme">
     {% icon "moon" %}
   </button>

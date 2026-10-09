@@ -10,7 +10,7 @@ from django.utils.http import urlencode
 from django.utils import timezone
 from django.views.generic import CreateView, ListView, UpdateView
 
-from apps.hubs.permissions import hubs_for_user
+from apps.hubs.permissions import hubs_for_user, selected_hub
 
 from apps.audit.services import record_event
 from .mixins import PageMixin
@@ -37,6 +37,7 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
     date_filter_field = ""
     filter_fields = ()
     filter_hub = False
+    hub_filter_paths = None
 
     def get_permission_required(self):
         if self.permission_required:
@@ -46,6 +47,7 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
     def get_queryset(self):
         queryset = self._search(scope_queryset(super().get_queryset(), self.request.user))
         self.filter_error = ""
+        self.selected_hub = None
         start = self.request.GET.get("start", "")
         end = self.request.GET.get("end", "")
         if self.date_filter_field and (start or end):
@@ -84,12 +86,18 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
                 else:
                     self.filter_error = "Choose a valid filter option."
         if self.filter_hub:
-            hub_id = self.request.GET.get("hub", "")
-            hubs = hubs_for_user(self.request.user)
-            if hub_id and hubs.filter(pk=hub_id).exists():
-                queryset = queryset.filter(hub_id=hub_id)
-            elif hub_id:
-                self.filter_error = "Choose a hub you can access."
+            hubs, self.selected_hub, self.hub_error = selected_hub(self.request)
+            if self.hub_error:
+                self.filter_error = self.hub_error
+            elif self.selected_hub:
+                paths = self.hub_filter_paths
+                if paths is None:
+                    paths = self._hub_filter_paths()
+                if paths:
+                    condition = Q()
+                    for path in paths:
+                        condition |= Q(**{path: self.selected_hub.pk})
+                    queryset = queryset.filter(condition)
         if self.filter_error:
             queryset = queryset.none()
         related_fields = self._related_column_fields()
@@ -178,7 +186,8 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
             filter_error=getattr(self, "filter_error", ""),
             filter_fields=filter_fields,
             filter_hubs=hubs,
-            selected_hub=self.request.GET.get("hub", ""),
+            selected_hub=self.selected_hub.pk if getattr(self, "selected_hub", None) else "",
+            selected_hub_object=getattr(self, "selected_hub", None),
         )
         context.update(
             page_title=self.page_title,
@@ -201,6 +210,39 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
             ),
         )
         return context
+
+    def _hub_filter_paths(self):
+        model = self.model
+        paths = []
+        candidates = (
+            ("hub", "hub_id"),
+            ("business", "business__hub_id"),
+            ("statement", "statement__hub_id"),
+            ("statement", "statement__business__hub_id"),
+            ("worker", "worker__hub_id"),
+            ("sale", "sale__hub_id"),
+        )
+        for first, path in candidates:
+            try:
+                model._meta.get_field(first)
+            except FieldDoesNotExist:
+                continue
+            if path not in paths:
+                paths.append(path)
+        if "statement" in [first for first, _ in candidates]:
+            try:
+                model._meta.get_field("statement")
+            except FieldDoesNotExist:
+                pass
+            else:
+                paths.extend(
+                    path for path in (
+                        "statement__hub_id",
+                        "statement__business__hub_id",
+                    )
+                    if path not in paths
+                )
+        return tuple(paths)
 
 
 class ProtectedCreateView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, CreateView):

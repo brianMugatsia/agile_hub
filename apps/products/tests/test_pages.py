@@ -46,3 +46,54 @@ def test_product_list_links_to_detail_and_product_reports(client, make_user):
     assert list(low_stock_response.context["low_stock_products"]) == [
         InventoryBalance.objects.get(hub=hub, product=product)
     ]
+
+
+def test_admin_can_edit_product_without_changing_stock_and_tracks_price_change(
+    client, make_user, roles
+):
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="PRODUCT-EDIT", name="Product edit hub")
+    product = Product.objects.create(
+        sku="PRODUCT-EDIT-1",
+        name="Editable item",
+        selling_price=Decimal("24.00"),
+        stock_on_hand=7,
+        reorder_level=3,
+    )
+    InventoryBalance.objects.create(hub=hub, product=product, quantity=7)
+    client.force_login(admin)
+
+    list_response = client.get(reverse("products:list"))
+    edit_url = reverse("products:edit", kwargs={"pk": product.pk})
+    edit_page = client.get(edit_url)
+
+    assert b"Edit" in list_response.content
+    assert edit_url.encode() in list_response.content
+    assert edit_page.status_code == 200
+    assert b'name="stock_on_hand"' not in edit_page.content
+    response = client.post(
+        edit_url,
+        {
+            "sku": product.sku,
+            "name": "Updated item",
+            "category": "Food",
+            "description": "Updated description",
+            "unit": "each",
+            "cost_price": "10.00",
+            "selling_price": "28.00",
+            "reorder_level": "4",
+            "is_active": "on",
+            "price_change_reason": "Supplier price increase",
+        },
+    )
+
+    assert response.status_code == 302
+    product.refresh_from_db()
+    assert product.name == "Updated item"
+    assert product.selling_price == Decimal("28.00")
+    assert product.stock_on_hand == 7
+    assert InventoryBalance.objects.get(hub=hub, product=product).quantity == 7
+    history = ProductPriceHistory.objects.get(product=product, new_price=Decimal("28.00"))
+    assert history.previous_price == Decimal("24.00")
+    assert history.changed_by == admin
+    assert history.reason == "Supplier price increase"

@@ -7,6 +7,7 @@ from .views import (
     ProductExportView,
     ProductListView,
     ProductPriceHistoryView,
+    ProductUpdateView,
 )
 from apps.core.spreadsheets import ProductImportTemplateView, ProductImportView
 
@@ -19,6 +20,7 @@ urlpatterns = [
     path("low-stock/", LowStockReportView.as_view(), name="low_stock_report"),
     path("", ProductListView.as_view(), name="list"),
     path("create/", ProductCreateView.as_view(), name="create"),
+    path("<int:pk>/edit/", ProductUpdateView.as_view(), name="edit"),
     path("<int:pk>/price-history/", ProductPriceHistoryView.as_view(), name="price_history"),
     path("<int:pk>/", ProductDetailView.as_view(), name="detail"),
 ]

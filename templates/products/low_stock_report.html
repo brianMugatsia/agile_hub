@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 {% block content %}
+  <form method="get" class="filter-bar card card__body" aria-label="Filter low stock by hub">
+    <label class="field filter-bar__field">
+      <span class="field__label">Hub</span>
+      <select class="select" name="hub">
+        <option value="">All hubs</option>
+        {% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn btn--secondary" type="submit">Filter</button>
+  </form>
+  {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
   <section class="card"><div class="card__body">
     {% include "components/data_table.html" with object_list=low_stock_products columns=columns %}
     {% if not low_stock_products %}{% include "partials/empty_state.html" with title="Stock levels look good" message="No active products are below their reorder level." %}{% endif %}
