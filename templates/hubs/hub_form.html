@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static ui_tags %}
+{% load static ui_tags widget_tweaks %}
 
 {% block content %}
 <form method="post" class="hub-form" data-validate data-loading novalidate>
@@ -9,8 +9,24 @@
   {% endif %}
 
   <div class="hub-form__layout">
-    <div class="hub-form__main">
+    <aside class="hub-preview" data-hub-preview data-status="active" aria-label="Live preview of this hub">
+      <span class="hub-preview__tag">Live preview</span>
+      <span class="hub-preview__code" data-preview="code">CODE</span>
+      <h2 class="hub-preview__name" data-preview="name">Hub name</h2>
+      <p class="hub-preview__line"><span data-preview="region">Region</span></p>
+      <p class="hub-preview__line"><span data-preview="address">Address</span></p>
+      <p class="hub-preview__line"><span data-preview="phone">Phone</span></p>
+      <div class="hub-preview__manager">
+        <span class="hub-preview__avatar" data-preview-avatar aria-hidden="true">?</span>
+        <div>
+          <small>Hub manager</small>
+          <strong data-preview="manager">No manager assigned</strong>
+        </div>
+      </div>
+      <span class="hub-preview__status"><span class="hub-preview__dot"></span><span data-preview="status">Active</span></span>
+    </aside>
 
+    <div class="hub-form__main">
       <section class="card">
         <div class="card__body">
           <header class="hub-form__head">
@@ -65,23 +81,6 @@
         <a class="btn btn--secondary" href="{% if cancel_url %}{{ cancel_url }}{% else %}{% url 'hubs:list' %}{% endif %}">Cancel</a>
       </div>
     </div>
-
-    <aside class="hub-preview" data-hub-preview data-status="active" aria-label="Live preview of this hub">
-      <span class="hub-preview__tag">Live preview</span>
-      <span class="hub-preview__code" data-preview="code">CODE</span>
-      <h2 class="hub-preview__name" data-preview="name">Hub name</h2>
-      <p class="hub-preview__line"><span data-preview="region">Region</span></p>
-      <p class="hub-preview__line"><span data-preview="address">Address</span></p>
-      <p class="hub-preview__line"><span data-preview="phone">Phone</span></p>
-      <div class="hub-preview__manager">
-        <span class="hub-preview__avatar" data-preview-avatar aria-hidden="true">?</span>
-        <div>
-          <small>Hub manager</small>
-          <strong data-preview="manager">No manager assigned</strong>
-        </div>
-      </div>
-      <span class="hub-preview__status"><span class="hub-preview__dot"></span><span data-preview="status">Active</span></span>
-    </aside>
   </div>
 </form>
 <script type="module" src="{% static 'js/pages/hub-form.js' %}"></script>

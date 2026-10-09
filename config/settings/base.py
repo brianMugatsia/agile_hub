@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     "axes",
+    'widget_tweaks',
     # Local business apps
     "apps.accounts",
     "apps.core",

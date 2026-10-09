@@ -1,3 +1,5 @@
+{% load widget_tweaks %}
+
 <div class="form-field{% if field.errors %} form-field--invalid{% endif %}">
   {{ field.label_tag }}
   {{ field|add_class:css }}
