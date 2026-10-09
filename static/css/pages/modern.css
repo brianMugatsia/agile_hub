@@ -1,0 +1,242 @@
+/* ==========================================================================
+   Modern refresh. Lives in the `refresh` cascade layer (after `pages`), so it
+   overrides earlier layers without !important. Scoped to the signed-in app
+   shell and the auth screens; the public landing page is not affected.
+   ========================================================================== */
+
+/* ---------- Keyframes ---------- */
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes row-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes grow-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes indicator-in { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-34px, -26px, 0); } }
+
+/* ---------- Global polish ---------- */
+.app-shell {
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+html:has(.app-shell) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/* ---------- Page entrance (FIXED: Added contain layout to prevent flex element explosions) ---------- */
+.app-shell .page-header { animation: rise-in var(--dur-slow) var(--ease-out) forwards; }
+.app-shell .page-header__title::after {
+  content: "";
+  display: block;
+  width: 2.25rem;
+  height: 4px;
+  margin-top: .6rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), #fbbf24);
+  transform-origin: left;
+  animation: grow-bar .7s var(--ease-out) .2s both;
+}
+.app-shell .page > :not(.page-header):not(.dash) { 
+  animation: rise-in var(--dur-slow) var(--ease-out) forwards; 
+}
+.app-shell .page > :nth-child(2) { animation-delay: .05s; }
+.app-shell .page > :nth-child(3) { animation-delay: .1s; }
+.app-shell .page > :nth-child(n + 4) { animation-delay: .15s; }
+
+.app-shell .page.is-leaving {
+  opacity: .35;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+/* ---------- Sidebar ---------- */
+.app-shell .sidebar {
+  background: linear-gradient(185deg, #14397a 0%, #0d2750 55%, #0a1c3b 100%);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .2) transparent;
+}
+.app-shell .sidebar__brand {
+  background: radial-gradient(circle at 0 0, rgba(96, 165, 250, .2), transparent 62%);
+}
+.app-shell .sidebar__link {
+  transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.app-shell .sidebar__link:hover { transform: translateX(3px); }
+.app-shell .sidebar__link .icon {
+  transition: transform var(--dur) var(--ease-spring), opacity var(--dur);
+}
+.app-shell .sidebar__link:hover .icon { transform: scale(1.14); opacity: 1; }
+.app-shell .sidebar__link.is-active {
+  background: linear-gradient(90deg, rgba(255, 255, 255, .17), rgba(255, 255, 255, .05));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
+}
+.app-shell .sidebar__link.is-active::before {
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent), #fbbf24);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent);
+  animation: indicator-in .45s var(--ease-spring) both;
+}
+.app-shell .sidebar__heading { letter-spacing: .11em; }
+
+/* ---------- Top bar ---------- */
+.app-shell .topbar {
+  background: var(--topbar-bg);
+  backdrop-filter: saturate(1.5) blur(14px);
+  -webkit-backdrop-filter: saturate(1.5) blur(14px);
+  transition: box-shadow var(--dur) var(--ease-out), border-color var(--dur);
+}
+.app-shell .topbar.is-scrolled {
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 10px 30px -12px rgba(16, 35, 68, .18);
+}
+.app-shell .topbar__hub-filter .select {
+  border-color: transparent;
+  border-radius: 999px;
+  background-color: var(--color-primary-soft);
+  font-weight: 650;
+  transition: background-color var(--dur), box-shadow var(--dur), border-color var(--dur);
+}
+.app-shell .topbar__hub-filter .select:hover { border-color: var(--color-primary); }
+.app-shell div.topbar__hub-filter { width: auto; max-width: min(20rem, 42vw); }
+.app-shell .topbar__hub-filter > strong {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  max-width: 100%;
+  padding: .5rem .95rem;
+  border-radius: 999px;
+  color: var(--table-link);
+  background: var(--color-primary-soft);
+  font-size: .85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-shell .topbar__hub-filter > strong::before {
+  content: "";
+  flex: none;
+  width: .5rem;
+  height: .5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-dot 2.4s ease-out infinite;
+}
+.app-shell .user-menu__panel { animation: rise-in .25s var(--ease-out) both; transform-origin: top right; }
+
+/* ---------- Cards ---------- */
+.app-shell .card {
+  transition: box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out), border-color var(--dur);
+}
+.app-shell .page > .grid > .card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Tables ---------- */
+.app-shell .page > .card tbody tr {
+  animation: row-in .45s var(--ease-out) both;
+  animation-delay: calc(.12s + min(var(--r, 0), 14) * 26ms);
+}
+.app-shell .table tbody td:first-child { transition: box-shadow var(--dur) var(--ease-out); }
+.app-shell .table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.app-shell .table th { white-space: nowrap; }
+
+/* ---------- Buttons (FIXED: Locked position & height against container animation leaks) ---------- */
+.app-shell .btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  height: 2.65rem;
+  max-height: 2.65rem;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+.app-shell .btn:hover { transform: translateY(-1px); }
+.app-shell .btn:active { transform: translateY(0); }
+.app-shell .btn--primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .3) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform .7s var(--ease-out);
+  pointer-events: none;
+}
+.app-shell .btn--primary:hover::after { transform: translateX(120%); }
+.btn__ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .26;
+  transform: scale(0);
+  animation: ripple .6s var(--ease-out) forwards;
+  pointer-events: none;
+}
+
+/* ---------- Forms ---------- */
+:where(.app-shell, .auth-card) :is(.input, .select, .textarea, .file-input) {
+  border-radius: 10px;
+}
+:where(.app-shell, .auth-card) :is(.input, .select, .textarea):focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+:where(.app-shell, .auth-card) .field__label,
+:where(.app-shell, .auth-card) .form-field > label {
+  transition: color var(--dur) var(--ease-out);
+}
+:where(.app-shell, .auth-card) .field:focus-within > .field__label,
+:where(.app-shell, .auth-card) .form-field:focus-within > label {
+  color: var(--color-primary);
+}
+:where(.app-shell, .auth-card) :is(.input, .select, .textarea)[aria-invalid="true"] {
+  animation: shake .4s var(--ease-out);
+}
+.app-shell .checkbox__input { accent-color: var(--color-primary); }
+
+/* ---------- Pagination and badges ---------- */
+.app-shell .pagination__link {
+  transition: background-color var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
+}
+.app-shell .pagination__link:hover { transform: translateY(-1px); }
+.app-shell .badge { font-weight: 650; }
+
+/* ---------- Skeleton loader (add class="skeleton" to any placeholder) ---------- */
+.skeleton {
+  color: transparent;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--color-border) 25%, color-mix(in srgb, var(--color-border) 40%, var(--color-surface)) 50%, var(--color-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+
+/* ---------- Auth screens ---------- */
+.auth-card { animation: rise-in .7s var(--ease-out) both; }
+.auth__brand::after { animation: drift 18s ease-in-out infinite alternate; }
+
+/* ---------- Dark theme fixes ---------- */
+[data-theme="dark"] .btn:not(.btn--primary):not(.btn--danger):hover {
+  --btn-bg: #1f3250;
+  --btn-border: var(--color-border-strong);
+}
+[data-theme="dark"] .file-input::file-selector-button {
+  color: var(--color-text);
+  background: #202e44;
+}
+[data-theme="dark"] .input::placeholder { color: #7f90a8; }
+[data-theme="dark"] .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aab8cc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] .app-shell .topbar.is-scrolled { box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .6); }
+
+@media print {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -18,7 +18,10 @@
   <section class="card recon-filter">
     <div class="card__body">
       <div class="recon-filter__intro">
-        <div>        <h2 class="card__title">Choose a hub and period</h2><p>By default, this report checks the last 30 days.</p></div>
+        <div>
+          <h2 class="card__title">Choose a hub and period</h2>
+          <p>By default, this report checks the last 30 days.</p>
+        </div>
         {% if not date_errors %}
           {% if mismatch_count %}
             <span class="badge badge--danger">{% icon "alert-circle" %} {{ mismatch_count }} exception{{ mismatch_count|pluralize }}</span>
@@ -27,27 +30,39 @@
           {% endif %}
         {% endif %}
       </div>
-      <form class="recon-filter__form" method="get" aria-label="Choose reconciliation date range">
-        <label class="field">
+
+      <form class="recon-filter__form filter-bar" action="{% url 'reports:inventory_reconciliation' %}" method="get" aria-label="Choose reconciliation date range">
+        <label class="field filter-bar__field">
           <span class="field__label">Hub</span>
           <select class="select" name="hub">
             <option value="">All hubs</option>
-            {% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
+            {% for hub in filter_hubs %}
+              <option value="{{ hub.pk }}"{% if selected_hub|slugify == hub.pk|slugify %} selected{% endif %}>{{ hub.name }}</option>
+            {% endfor %}
           </select>
         </label>
-        <label class="field">
+        
+        <label class="field filter-bar__field">
           <span class="field__label">From</span>
           <input class="input" type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" required>
         </label>
+        
         <span class="recon-filter__separator" aria-hidden="true">to</span>
-        <label class="field">
+        
+        <label class="field filter-bar__field">
           <span class="field__label">To</span>
           <input class="input" type="date" name="end" value="{{ end_date|date:'Y-m-d' }}" required>
         </label>
+        
         <button class="btn btn--primary" type="submit">{% icon "search" %} Run reconciliation</button>
       </form>
-      {% for error in date_errors %}<p class="alert alert--danger" role="alert">{{ error }}</p>{% endfor %}
-      {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
+
+      {% for error in date_errors %}
+        <p class="alert alert--danger" role="alert">{{ error }}</p>
+      {% endfor %}
+      {% if hub_error %}
+        <p class="alert alert--danger" role="alert">{{ hub_error }}</p>
+      {% endif %}
     </div>
   </section>
 
@@ -55,22 +70,39 @@
     <section class="recon-stats" aria-label="Reconciliation summary">
       <article class="recon-stat">
         <span class="recon-stat__icon recon-stat__icon--blue">{% icon "layers" %}</span>
-        <div><span class="recon-stat__label">Checks performed</span><strong>{{ check_count }}</strong><small>Sale/product and unmatched ledger checks</small></div>
+        <div>
+          <span class="recon-stat__label">Checks performed</span>
+          <strong>{{ check_count }}</strong>
+          <small>Sale/product and unmatched ledger checks</small>
+        </div>
       </article>
       <article class="recon-stat">
         <span class="recon-stat__icon recon-stat__icon--green">{% icon "check-circle" %}</span>
-        <div><span class="recon-stat__label">Matched</span><strong>{{ matched_count }}</strong><small>Sale quantities aligned with stock movements</small></div>
+        <div>
+          <span class="recon-stat__label">Matched</span>
+          <strong>{{ matched_count }}</strong>
+          <small>Sale quantities aligned with stock movements</small>
+        </div>
       </article>
       <article class="recon-stat{% if mismatch_count %} recon-stat--alert{% endif %}">
         <span class="recon-stat__icon recon-stat__icon--red">{% icon "alert-circle" %}</span>
-        <div><span class="recon-stat__label">Discrepancies</span><strong>{{ mismatch_count }}</strong><small>{% if mismatch_count %}Needs investigation{% else %}No follow-up required{% endif %}</small></div>
+        <div>
+          <span class="recon-stat__label">Discrepancies</span>
+          <strong>{{ mismatch_count }}</strong>
+          <small>{% if mismatch_count %}Needs investigation{% else %}No follow-up required{% endif %}</small>
+        </div>
       </article>
     </section>
 
     <section class="card recon-results">
       <div class="recon-results__heading">
-        <div><h2 class="card__title">Discrepancy details</h2><p>Net sale and refund movements are compared for each sale, hub, and product.</p></div>
-        {% if mismatch_count %}<span class="recon-results__count">{{ mismatch_count }} found</span>{% endif %}
+        <div>
+          <h2 class="card__title">Discrepancy details</h2>
+          <p>Net sale and refund movements are compared for each sale, hub, and product.</p>
+        </div>
+        {% if mismatch_count %}
+          <span class="recon-results__count">{{ mismatch_count }} found</span>
+        {% endif %}
       </div>
       {% if mismatch_count > result_limit %}
         <p class="recon-limit-note">Showing the first {{ result_limit }} of {{ mismatch_count }} discrepancies.</p>
@@ -78,12 +110,29 @@
       <div class="table-wrap">
         <table class="table recon-table">
           <thead>
-            <tr><th scope="col">Issue</th><th scope="col">Sale reference</th><th scope="col">Hub</th><th scope="col">Product</th><th scope="col">Expected</th><th scope="col">Recorded</th><th scope="col">Variance</th></tr>
+            <tr>
+              <th scope="col">Issue</th>
+              <th scope="col">Sale reference</th>
+              <th scope="col">Hub</th>
+              <th scope="col">Product</th>
+              <th scope="col">Expected</th>
+              <th scope="col">Recorded</th>
+              <th scope="col">Variance</th>
+            </tr>
           </thead>
           <tbody>
             {% for row in mismatches %}
               <tr>
-                <td><span class="recon-issue">{% if row.issue == "Unmatched stock movement" %}{% icon "alert-triangle" %}{% else %}{% icon "alert-circle" %}{% endif %} {{ row.issue }}</span></td>
+                <td>
+                  <span class="recon-issue">
+                    {% if row.issue == "Unmatched stock movement" %}
+                      {% icon "alert-triangle" %}
+                    {% else %}
+                      {% icon "alert-circle" %}
+                    {% endif %}
+                    {{ row.issue }}
+                  </span>
+                </td>
                 <td>
                   {% if row.issue == "Unmatched stock movement" %}
                     <span class="recon-reference">{{ row.sale_id|truncatechars:14 }}</span>
@@ -91,18 +140,24 @@
                     <a class="recon-reference" href="{% url 'sales:detail' row.sale_id %}">{{ row.sale_id|truncatechars:14 }}</a>
                   {% endif %}
                 </td>
-                <td>{{ row.hub }}</td><td>{{ row.product }}</td>
-                <td class="recon-number">{{ row.expected }}</td><td class="recon-number">{{ row.recorded }}</td>
-                <td class="recon-number{% if row.variance < 0 %} recon-number--negative{% elif row.variance > 0 %} recon-number--positive{% endif %}">{% if row.variance > 0 %}+{% endif %}{{ row.variance }}</td>
+                <td>{{ row.hub }}</td>
+                <td>{{ row.product }}</td>
+                <td class="recon-number">{{ row.expected }}</td>
+                <td class="recon-number">{{ row.recorded }}</td>
+                <td class="recon-number{% if row.variance < 0 %} recon-number--negative{% elif row.variance > 0 %} recon-number--positive{% endif %}">
+                  {% if row.variance > 0 %}+{% endif %}{{ row.variance }}
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="7">
-                <div class="recon-empty">
-                  <span class="recon-empty__icon">{% icon "check-circle" %}</span>
-                  <strong>Everything reconciles</strong>
-                  <p>No sales-to-stock discrepancies were found in this period.</p>
-                </div>
-              </td></tr>
+              <tr>
+                <td colspan="7">
+                  <div class="recon-empty">
+                    <span class="recon-empty__icon">{% icon "check-circle" %}</span>
+                    <strong>Everything reconciles</strong>
+                    <p>No sales-to-stock discrepancies were found in this period.</p>
+                  </div>
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>

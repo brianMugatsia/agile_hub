@@ -1,26 +1,45 @@
-.filter-bar {
+.filter-bar,
+.recon-filter__form {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end; /* Align inputs and button to bottom baseline */
   gap: .7rem;
   margin-block: .25rem 1.1rem;
   padding: .85rem;
 }
-.filter-bar__field { min-width: 8rem; }
-.filter-bar__field--grow { flex: 1 1 12rem; }
-.filter-bar > .field,
-.filter-bar > .filter-bar__field { flex: 0 1 11rem; min-width: min(100%, 8rem); }
-.filter-bar > .filter-bar__field--grow { flex: 1 1 13rem; }
-.filter-bar > .btn { min-height: 2.5rem; }
-.filter-bar .input,
-.filter-bar .select { min-width: 0; }
-.filter-bar[role="search"] > input[type="search"] {
-  flex: 1 1 13rem;
-  max-width: 24rem;
+
+/* Keep form field labels and controls properly stacked */
+.filter-bar .field,
+.recon-filter__form .field {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  flex: 0 1 11rem;
+  min-width: min(100%, 8rem);
 }
-@media (max-width: 640px) { .filter-bar__field { flex: 1 1 100%; } }
+
+/* Prevent submit button from expanding to container height */
+.filter-bar > button,
+.recon-filter__form > button,
+.filter-bar > .btn,
+.recon-filter__form > .btn {
+  height: 2.5rem;
+  max-height: 2.5rem;
+  align-self: flex-end;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.filter-bar .input,
+.filter-bar .select {
+  height: 2.5rem;
+  box-sizing: border-box;
+}
+
 @media (max-width: 640px) {
-  .filter-bar[role="search"] > input[type="search"],
-  .filter-bar[role="search"] > .field { flex-basis: 100%; }
-  .filter-bar[role="search"] > .btn { flex: 1 1 auto; }
+  .filter-bar > .btn,
+  .recon-filter__form > .btn {
+    width: 100%;
+    flex: 1 1 100%;
+  }
 }
