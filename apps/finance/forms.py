@@ -13,6 +13,14 @@ class CashFlowForm(forms.ModelForm):
         ]
         widgets = {"transaction_date": forms.DateInput(attrs={"type": "date"})}
 
+    def clean(self):
+        cleaned_data = super().clean()
+        hub = cleaned_data.get("hub")
+        business = cleaned_data.get("business")
+        if hub and business and business.hub_id and business.hub_id != hub.pk:
+            self.add_error("business", "Choose a business assigned to the selected hub.")
+        return cleaned_data
+
 
 class BreakEvenForm(forms.Form):
     fixed_costs = forms.DecimalField(

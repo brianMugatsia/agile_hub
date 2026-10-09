@@ -50,7 +50,12 @@ def scope_queryset(queryset, user):
         hub_ids = HubMembership.objects.filter(user=user, is_active=True).values_list("hub_id", flat=True)
         managed_hub_ids = user.managed_hubs.values_list("pk", flat=True)
         if _has_field(model, "hub"):
-            queryset = queryset.filter(Q(hub_id__in=hub_ids) | Q(hub_id__in=managed_hub_ids))
+            hub_scope = Q(hub_id__in=hub_ids) | Q(hub_id__in=managed_hub_ids)
+            if _has_field(model, "business"):
+                hub_scope |= Q(business__hub_id__in=hub_ids) | Q(
+                    business__hub_id__in=managed_hub_ids
+                )
+            queryset = queryset.filter(hub_scope)
         elif _has_field(model, "worker"):
             queryset = queryset.filter(
                 Q(worker__hub_id__in=hub_ids) | Q(worker__hub_id__in=managed_hub_ids)

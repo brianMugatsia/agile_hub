@@ -111,6 +111,20 @@ def test_commission_detail_and_agent_statement_render_and_link_from_list(client,
         base_amount="100.00",
         amount="10.00",
     )
+    reversed_sale = Sale.objects.create(
+        hub=hub,
+        agent=agent,
+        status=Sale.Status.REFUNDED,
+        total="30.00",
+    )
+    SalesAgentCommission.objects.create(
+        sale=reversed_sale,
+        agent=agent,
+        rate="0.1000",
+        base_amount="30.00",
+        amount="3.00",
+        status=SalesAgentCommission.Status.REVERSED,
+    )
     client.force_login(admin)
 
     list_response = client.get(reverse("commissions:list"))
@@ -121,10 +135,12 @@ def test_commission_detail_and_agent_statement_render_and_link_from_list(client,
     )
 
     assert list_response.status_code == 200
+    assert b"10.00%" in list_response.content
     assert reverse("commissions:detail", kwargs={"pk": commission.pk}).encode() in list_response.content
     assert reverse("commissions:agent_statement", kwargs={"agent_id": agent.pk}).encode() in list_response.content
     assert reverse("sales:detail", kwargs={"pk": sale.pk}).encode() in detail_response.content
     assert detail_response.status_code == 200
+    assert b">10.00%</dd>" in detail_response.content
     assert b"Commission details" in detail_response.content
     assert b'class="com-detail-list"' in detail_response.content
     assert b'class="com-detail-row"><dt>Agent</dt><dd>' in detail_response.content
@@ -142,6 +158,7 @@ def test_commission_detail_and_agent_statement_render_and_link_from_list(client,
     assert b"Items" in sale_detail_response.content
     assert b'data-reveal="up"' not in detail_response.content
     assert statement_response.status_code == 200
+    assert b"10.00%" in statement_response.content
     assert statement_response.context["earned_total"] == Decimal("10.00")
     assert statement_response.context["pending_total"] == Decimal("10.00")
 
@@ -186,13 +203,18 @@ def test_pending_and_commission_settings_pages_render(client, make_user):
         base_amount="50.00",
         amount="5.00",
     )
+    CommissionSetting.objects.create(
+        rate="0.1000",
+        effective_from="2026-01-01",
+        created_by=admin,
+    )
     client.force_login(admin)
 
     pending_response = client.get(reverse("commissions:pending"))
     settings_response = client.get(reverse("commissions:settings"))
     create_response = client.post(
         reverse("commissions:settings"),
-        {"rate": "0.1250", "effective_from": "2026-10-01"},
+        {"rate": "12.5", "effective_from": "2026-10-01"},
     )
 
     assert pending_response.status_code == 200
@@ -200,7 +222,19 @@ def test_pending_and_commission_settings_pages_render(client, make_user):
     assert b"?status=PENDING" in pending_response.content
     assert settings_response.status_code == 200
     assert b"Set a new rate" in settings_response.content
+    assert b"10.00%" in settings_response.content
     assert create_response.status_code == 302
     assert CommissionSetting.objects.filter(
         rate="0.1250", effective_from="2026-10-01", created_by=admin
     ).exists()
+
+
+def test_commission_rate_form_accepts_percent_input_and_rejects_over_100():
+    from apps.commissions.forms import CommissionSettingForm
+
+    form = CommissionSettingForm(data={"rate": "20", "effective_from": "2026-10-01"})
+    assert form.is_valid()
+    assert form.cleaned_data["rate"] == Decimal("0.2")
+
+    invalid_form = CommissionSettingForm(data={"rate": "100.01", "effective_from": "2026-10-01"})
+    assert not invalid_form.is_valid()

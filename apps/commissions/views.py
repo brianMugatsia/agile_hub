@@ -32,7 +32,7 @@ class CommissionListView(ScopedModelListView):
         {"label": "Created", "field": "created_at"},
         {"label": "Agent", "field": "agent__display_name"},
         {"label": "Sale", "field": "sale__id"},
-        {"label": "Rate", "field": "rate"},
+        {"label": "Rate", "field": "rate", "format": "percent"},
         {"label": "Amount", "field": "amount"},
         {"label": "Status", "field": "status"},
     )
@@ -139,7 +139,16 @@ class AgentCommissionStatementView(
             if not commissions.exists():
                 raise PermissionDenied
         totals = commissions.aggregate(
-            earned=Sum("amount"),
+            earned=Sum(
+                "amount",
+                filter=Q(
+                    status__in=[
+                        SalesAgentCommission.Status.PENDING,
+                        SalesAgentCommission.Status.APPROVED,
+                        SalesAgentCommission.Status.PAID,
+                    ]
+                ),
+            ),
             paid=Sum("amount", filter=Q(status=SalesAgentCommission.Status.PAID)),
             pending=Sum("amount", filter=Q(status=SalesAgentCommission.Status.PENDING)),
         )
@@ -153,7 +162,7 @@ class AgentCommissionStatementView(
                 {"label": "Created", "field": "created_at"},
                 {"label": "Sale", "field": "sale__id"},
                 {"label": "Hub", "field": "sale__hub__name"},
-                {"label": "Rate", "field": "rate"},
+                {"label": "Rate", "field": "rate", "format": "percent"},
                 {"label": "Amount", "field": "amount"},
                 {"label": "Status", "field": "status"},
             ),

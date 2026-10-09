@@ -50,6 +50,10 @@ def test_reconciliation_flags_missing_sale_movement_and_clears_after_matching_le
     assert b"Reconcile item" in mismatch.content
     assert b">3</td>" in mismatch.content
     assert b">0</td>" in mismatch.content
+    assert b"Missing stock movement" in mismatch.content
+    assert mismatch.context["check_count"] == 1
+    assert mismatch.context["matched_count"] == 0
+    assert b"recon-stats" in mismatch.content
 
     InventoryTransaction.objects.create(
         hub=hub,
@@ -61,7 +65,38 @@ def test_reconciliation_flags_missing_sale_movement_and_clears_after_matching_le
     )
     matched = client.get(reverse("reports:inventory_reconciliation"))
     assert matched.status_code == 200
-    assert b"No discrepancies found" in matched.content
+    assert b"Everything reconciles" in matched.content
+    assert matched.context["check_count"] == 1
+    assert matched.context["matched_count"] == 1
+
+
+def test_reconciliation_reports_unmatched_stock_movements_without_broken_sale_links(
+    client, make_user, roles
+):
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="REC-ORPHAN", name="Orphan movement hub")
+    product = Product.objects.create(
+        sku="REC-ORPHAN-P", name="Orphan product", selling_price=Decimal("10.00")
+    )
+    orphan_reference = "orphan-sale-reference"
+    InventoryTransaction.objects.create(
+        hub=hub,
+        product=product,
+        kind=InventoryTransaction.Kind.SALE,
+        direction=InventoryTransaction.Direction.OUT,
+        quantity=2,
+        reference=orphan_reference,
+    )
+    client.force_login(admin)
+
+    response = client.get(reverse("reports:inventory_reconciliation"))
+
+    assert response.status_code == 200
+    assert b"Unmatched stock movement" in response.content
+    assert b"orphan-sale" in response.content
+    assert b'href="/sales/orphan-sale-reference/"' not in response.content
+    assert response.context["check_count"] == 1
+    assert response.context["matched_count"] == 0
 
 
 def test_reconciliation_is_scoped_to_user_hubs_and_rejects_long_ranges(

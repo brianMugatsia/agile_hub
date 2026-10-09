@@ -8,14 +8,14 @@ from django.views.generic import DetailView, FormView
 from apps.accounts.models import User
 from apps.accounts.roles import Role
 from apps.beneficiaries.models import Business
-from apps.core.generic import ScopedModelListView, hubs_for_user
+from apps.core.generic import ProtectedUpdateView, ScopedModelListView, hubs_for_user
 from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin
 from apps.core.scoping import scope_queryset
 from apps.hubs.models import HubMembership
 from apps.sales.services import complete_sale
 
-from .forms import SaleEntryForm
+from .forms import SaleEntryForm, SaleUpdateForm
 from .models import Sale
 
 
@@ -33,9 +33,11 @@ class SaleListView(ScopedModelListView):
     search_fields = ("customer_name", "customer_phone", "payment_reference")
     date_filter_field = "created_at"
     create_url_name = "sales:create"
-    create_label = "Record sale"
+    create_label = "New sale"
     create_permission = "sales.add_sale"
     export_url_name = "sales:export"
+    row_edit_url_name = "sales:edit"
+    row_edit_permission = "sales.change_sale"
 
 
 class SaleExportView(ScopedModelExportView):
@@ -64,7 +66,19 @@ class SaleDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, Det
             {"label": "Unit price", "field": "unit_price"},
             {"label": "Line total", "field": "line_total"},
         )
+        context["can_edit_sale"] = self.request.user.has_perm("sales.change_sale")
         return context
+
+
+class SaleUpdateView(ProtectedUpdateView):
+    model = Sale
+    form_class = SaleUpdateForm
+    page_title = "Edit sale details"
+    success_url_name = "sales:list"
+    cancel_url_name = "sales:list"
+
+    def get_queryset(self):
+        return scope_queryset(Sale.objects.all(), self.request.user)
 
 
 class SaleCreateView(FormView):

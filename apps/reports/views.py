@@ -3,7 +3,7 @@ from datetime import date, datetime, time, timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.db.models import Case, F, IntegerField, Sum, Value, When
+from django.db.models import Case, F, IntegerField, Q, Sum, Value, When
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView, View
@@ -81,6 +81,8 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                 errors.append(f"Choose a date range of no more than {self.max_range_days} days.")
 
         mismatches = []
+        check_count = 0
+        matched_count = 0
         if not errors:
             start_at = timezone.make_aware(datetime.combine(start_date, time.min))
             end_at = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min))
@@ -105,32 +107,32 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                 .annotate(quantity=Sum("quantity"))
             )
             sale_ids = {str(row["sale_id"]) for row in sale_rows}
-            movement_rows = []
+            movement_period = Q(created_at__gte=start_at, created_at__lt=end_at)
             if sale_ids:
-                movements = scope_queryset(
-                    InventoryTransaction.objects.filter(
-                        kind__in=(InventoryTransaction.Kind.SALE, InventoryTransaction.Kind.REFUND),
-                        reference__in=sale_ids,
-                    ),
-                    self.request.user,
+                movement_period |= Q(reference__in=sale_ids)
+            movements = scope_queryset(
+                InventoryTransaction.objects.filter(
+                    kind__in=(InventoryTransaction.Kind.SALE, InventoryTransaction.Kind.REFUND),
+                ).filter(movement_period),
+                self.request.user,
+            )
+            movement_rows = list(
+                movements.values(
+                    "hub_id", "hub__name", "product_id", "product__name", "reference"
                 )
-                movement_rows = list(
-                    movements.values(
-                        "hub_id", "hub__name", "product_id", "product__name", "reference"
-                    )
-                    .annotate(
-                        outgoing=Sum(Case(
-                            When(direction=InventoryTransaction.Direction.OUT, then=F("quantity")),
-                            default=Value(0),
-                            output_field=IntegerField(),
-                        )),
-                        incoming=Sum(Case(
-                            When(direction=InventoryTransaction.Direction.IN, then=F("quantity")),
-                            default=Value(0),
-                            output_field=IntegerField(),
-                        )),
-                    )
+                .annotate(
+                    outgoing=Sum(Case(
+                        When(direction=InventoryTransaction.Direction.OUT, then=F("quantity")),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )),
+                    incoming=Sum(Case(
+                        When(direction=InventoryTransaction.Direction.IN, then=F("quantity")),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )),
                 )
+            )
             actual = {
                 (row["hub_id"], row["product_id"], row["reference"]): (
                     row["outgoing"] - row["incoming"],
@@ -147,6 +149,7 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                     0 if row["sale__status"] == Sale.Status.REFUNDED else row["quantity"]
                 )
                 actual_quantity = actual.get(key, (0, "", ""))[0]
+                check_count += 1
                 if expected != actual_quantity:
                     mismatches.append({
                         "sale_id": row["sale_id"],
@@ -154,16 +157,22 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                         "product": row["product__name"],
                         "expected": expected,
                         "recorded": actual_quantity,
+                        "variance": actual_quantity - expected,
+                        "issue": "Missing stock movement" if actual_quantity < expected else "Excess stock movement",
                     })
             for key, (recorded, hub_name, product_name) in actual.items():
                 if key not in expected_keys and recorded:
+                    check_count += 1
                     mismatches.append({
                         "sale_id": key[2],
                         "hub": hub_name,
                         "product": product_name,
                         "expected": 0,
                         "recorded": recorded,
+                        "variance": recorded,
+                        "issue": "Unmatched stock movement",
                     })
+            matched_count = check_count - len(mismatches)
 
         context.update(
             page_title=self.page_title,
@@ -172,6 +181,8 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
             date_errors=errors,
             mismatches=mismatches[:1000],
             mismatch_count=len(mismatches),
+            check_count=check_count,
+            matched_count=matched_count,
             result_limit=1000,
         )
         return context

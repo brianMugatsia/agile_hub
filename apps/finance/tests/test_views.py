@@ -5,7 +5,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.roles import Role
-from apps.finance.models import IncomeStatement, IncomeStatementItem
+from apps.beneficiaries.models import BeneficiaryProfile, Business
+from apps.core.scoping import scope_queryset
+from apps.finance.forms import CashFlowForm
+from apps.finance.models import Asset, CashFlow, IncomeStatement, IncomeStatementItem
 from apps.hubs.models import Hub, HubMembership
 from apps.payroll.models import SalaryRecord, WorkerProfile
 from apps.products.models import Product
@@ -165,3 +168,75 @@ def test_financial_overview_rejects_invalid_periods(client, make_user, params, m
 
     assert response.status_code == 400
     assert message in response.content.decode().lower()
+
+
+def test_hub_scoping_includes_business_linked_assets_for_assigned_hub(make_user):
+    manager = make_user(role=Role.HUB_MANAGER)
+    visible_hub = Hub.objects.create(code="ASSET-VISIBLE", name="Visible asset hub")
+    hidden_hub = Hub.objects.create(code="ASSET-HIDDEN", name="Hidden asset hub")
+    HubMembership.objects.create(hub=visible_hub, user=manager)
+    beneficiary_user = make_user(role=Role.BENEFICIARY)
+    beneficiary = BeneficiaryProfile.objects.create(user=beneficiary_user)
+    visible_business = Business.objects.create(
+        beneficiary=beneficiary, hub=visible_hub, name="Visible business"
+    )
+    hidden_business = Business.objects.create(
+        beneficiary=beneficiary, hub=hidden_hub, name="Hidden business"
+    )
+    visible_asset = Asset.objects.create(
+        name="Business-only visible asset", cost=Decimal("100.00"), business=visible_business
+    )
+    Asset.objects.create(
+        name="Hidden business-only asset", cost=Decimal("900.00"), business=hidden_business
+    )
+    Asset.objects.create(name="Hidden direct hub asset", cost=Decimal("300.00"), hub=hidden_hub)
+
+    assert list(scope_queryset(Asset.objects.all(), manager)) == [visible_asset]
+
+
+def test_cash_flow_form_rejects_business_from_different_hub(make_user):
+    first_hub = Hub.objects.create(code="CASHFLOW-ONE", name="Cash flow hub one")
+    second_hub = Hub.objects.create(code="CASHFLOW-TWO", name="Cash flow hub two")
+    beneficiary_user = make_user(role=Role.BENEFICIARY)
+    beneficiary = BeneficiaryProfile.objects.create(user=beneficiary_user)
+    business = Business.objects.create(beneficiary=beneficiary, hub=second_hub, name="Other hub business")
+
+    form = CashFlowForm(data={
+        "direction": CashFlow.Direction.INFLOW,
+        "category": "Other income",
+        "amount": "25.00",
+        "transaction_date": "2026-10-09",
+        "hub": str(first_hub.pk),
+        "business": str(business.pk),
+        "reference": "",
+        "description": "",
+    })
+
+    assert not form.is_valid()
+    assert "business" in form.errors
+
+
+def test_cash_flow_create_limits_hubs_and_businesses_to_manager_scope(
+    client, make_user, roles
+):
+    manager = make_user(role=Role.HUB_MANAGER)
+    visible_hub = Hub.objects.create(code="CASHFLOW-VISIBLE", name="Visible cash flow hub")
+    hidden_hub = Hub.objects.create(code="CASHFLOW-HIDDEN", name="Hidden cash flow hub")
+    HubMembership.objects.create(hub=visible_hub, user=manager)
+    beneficiary_user = make_user(role=Role.BENEFICIARY)
+    beneficiary = BeneficiaryProfile.objects.create(user=beneficiary_user)
+    visible_business = Business.objects.create(
+        beneficiary=beneficiary, hub=visible_hub, name="Visible cash flow business"
+    )
+    hidden_business = Business.objects.create(
+        beneficiary=beneficiary, hub=hidden_hub, name="Hidden cash flow business"
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("finance:cash_flow_create"))
+
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert list(form.fields["hub"].queryset) == [visible_hub]
+    assert list(form.fields["business"].queryset) == [visible_business]
+    assert hidden_business not in form.fields["business"].queryset

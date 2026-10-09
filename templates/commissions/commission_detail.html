@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static ui_tags %}
 
 {% block content %}
 <div class="dash">
@@ -45,7 +45,7 @@
       <dl class="com-detail-list">
         <div class="com-detail-row"><dt>Agent</dt><dd>{{ commission.agent.display_name }}</dd></div>
         <div class="com-detail-row"><dt>Sale</dt><dd><a class="com-sale-link" href="{{ commission.sale.get_absolute_url }}">{{ commission.sale }}</a></dd></div>
-        <div class="com-detail-row"><dt>Commission rate</dt><dd>{{ commission.rate|floatformat:2 }}%</dd></div>
+        <div class="com-detail-row"><dt>Commission rate</dt><dd>{{ commission.rate|percentage|floatformat:2 }}%</dd></div>
         <div class="com-detail-row"><dt>Base amount</dt><dd>{{ commission.base_amount }}</dd></div>
         <div class="com-detail-row"><dt>Amount</dt><dd>{{ commission.amount }}</dd></div>
         <div class="com-detail-row"><dt>Status</dt><dd><span class="com-badge" data-status="{{ commission.status|lower }}">{{ commission.get_status_display }}</span></dd></div>

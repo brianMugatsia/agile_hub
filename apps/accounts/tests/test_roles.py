@@ -22,6 +22,16 @@ def test_admin_group_gets_expected_permissions(roles):
     codenames = set(Group.objects.get(name=Role.ADMIN).permissions.values_list("codename", flat=True))
     assert {"view_user", "add_user", "change_user", "assign_roles"} <= codenames
     assert "delete_user" not in codenames
+    assert {
+        "view_beneficiaryprofile",
+        "add_beneficiaryprofile",
+        "change_beneficiaryprofile",
+        "view_business",
+        "add_business",
+        "change_business",
+        "add_sale",
+        "change_sale",
+    } <= codenames
 
 
 def test_viewer_cannot_manage_users(make_user, roles):

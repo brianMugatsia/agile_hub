@@ -11,7 +11,7 @@ from django.views.generic import DetailView, TemplateView
 from apps.core.mixins import PageMixin
 from .forms import HubForm
 from .models import Hub
-from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
+from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView, hubs_for_user
 from apps.core.scoping import scope_queryset
 from apps.sales.models import Sale
 
@@ -29,6 +29,8 @@ class HubListView(ScopedModelListView):
     search_fields = ("code", "name", "region")
     create_url_name = "hubs:create"
     create_permission = "hubs.add_hub"
+    row_edit_url_name = "hubs:edit"
+    row_edit_permission = "hubs.change_hub"
 
 
 class HubCreateView(ProtectedCreateView):
@@ -46,6 +48,31 @@ class HubCreateView(ProtectedCreateView):
         return form
 
 
+class HubUpdateView(ProtectedUpdateView):
+    model = Hub
+    form_class = HubForm
+    page_title = "Edit hub"
+    success_url_name = "hubs:list"
+    cancel_url_name = "hubs:list"
+
+    def get_queryset(self):
+        return scope_queryset(Hub.objects.all(), self.request.user)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if self.request.user.role not in ("SUPER_ADMIN", "ADMIN"):
+            manager_field = form.fields["manager"]
+            manager_field.queryset = manager_field.queryset.filter(
+                hub_memberships__hub__in=hubs_for_user(self.request.user)
+            )
+            if self.object.manager_id:
+                manager_field.queryset |= manager_field.queryset.model.objects.filter(
+                    pk=self.object.manager_id
+                )
+            manager_field.queryset = manager_field.queryset.distinct()
+        return form
+
+
 class HubDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
     model = Hub
     template_name = "hubs/hub_detail.html"
@@ -55,6 +82,11 @@ class HubDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, Deta
 
     def get_queryset(self):
         return scope_queryset(Hub.objects.select_related("manager"), self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_edit_hub"] = self.request.user.has_perm("hubs.change_hub")
+        return context
 
 
 class HubPerformanceView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, TemplateView):

@@ -46,7 +46,10 @@
   <div class="hub-detail-grid">
     <article class="card dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
-        <div class="dashboard-section__heading"><h2 class="card__title">Hub details</h2></div>
+        <div class="dashboard-section__heading">
+          <h2 class="card__title">Hub details</h2>
+          {% if can_edit_hub %}<a class="btn btn--secondary btn--sm" href="{% url 'hubs:edit' hub.pk %}">Edit hub</a>{% endif %}
+        </div>
         <dl class="hub-facts">
           <div class="hub-fact">
             <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-hash"/></svg></span>

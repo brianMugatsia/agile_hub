@@ -3,6 +3,7 @@ from django import forms
 from apps.hubs.models import Hub
 from apps.products.models import Product
 from apps.beneficiaries.models import Business
+from .models import Sale
 
 
 class SaleEntryForm(forms.Form):
@@ -20,3 +21,9 @@ class SaleEntryForm(forms.Form):
     ])
     payment_reference = forms.CharField(max_length=80, required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
+
+
+class SaleUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Sale
+        fields = ("customer_name", "customer_phone", "payment_reference", "notes")

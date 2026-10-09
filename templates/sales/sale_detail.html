@@ -2,7 +2,10 @@
 {% load ui_tags %}
 {% block content %}
   <div class="sale-detail">
-    <p><a class="btn btn--secondary" href="{% url 'sales:list' %}">Back to sales</a></p>
+    <p>
+      <a class="btn btn--secondary" href="{% url 'sales:list' %}">Back to sales</a>
+      {% if can_edit_sale %}<a class="btn btn--secondary" href="{% url 'sales:edit' sale.pk %}">Edit sale details</a>{% endif %}
+    </p>
     <section class="grid grid--2">
       <article class="card"><div class="card__body">
         <dl class="detail-list">

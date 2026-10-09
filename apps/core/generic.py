@@ -8,8 +8,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import timezone
-from django.views.generic import CreateView
-from django.views.generic import ListView
+from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.hubs.permissions import hubs_for_user
 
@@ -30,6 +29,8 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
     create_url_name = ""
     create_label = "Add record"
     create_permission = ""
+    row_edit_url_name = ""
+    row_edit_permission = ""
     export_url_name = ""
     import_url_name = ""
     import_permission = ""
@@ -192,6 +193,12 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
                 and self.create_permission
                 and self.request.user.has_perm(self.create_permission)
             ),
+            row_edit_url_name=self.row_edit_url_name,
+            can_edit_rows=bool(
+                self.row_edit_url_name
+                and self.row_edit_permission
+                and self.request.user.has_perm(self.row_edit_permission)
+            ),
         )
         return context
 
@@ -229,5 +236,42 @@ class ProtectedCreateView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
             page_title=self.page_title,
             breadcrumbs=self.get_breadcrumbs(),
             submit_label=self.submit_label,
+        )
+        return context
+
+
+class ProtectedUpdateView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, UpdateView):
+    template_name = "components/record_form.html"
+    success_url_name = ""
+    cancel_url_name = ""
+    submit_label = "Save changes"
+
+    def get_permission_required(self):
+        if self.permission_required:
+            return super().get_permission_required()
+        return (f"{self.model._meta.app_label}.change_{self.model._meta.model_name}",)
+
+    @transaction.atomic
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        record_event(
+            action=f"{self.model._meta.app_label}.{self.model._meta.model_name}.updated",
+            summary=f"Updated {self.model._meta.verbose_name}: {form.instance}",
+            actor=self.request.user,
+            target=form.instance,
+            request=self.request,
+        )
+        return response
+
+    def get_success_url(self):
+        return reverse(self.success_url_name)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            page_title=self.page_title,
+            breadcrumbs=self.get_breadcrumbs(),
+            submit_label=self.submit_label,
+            cancel_url=reverse(self.cancel_url_name) if self.cancel_url_name else "",
         )
         return context

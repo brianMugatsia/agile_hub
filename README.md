@@ -85,6 +85,18 @@ python manage.py makemigrations --check --dry-run --settings=config.settings.tes
 - Sales, stock movements, commission transitions, salary transitions, and administrative actions are recorded in the audit trail.
 - Reporting summarizes the operational records currently stored by Agile Hub. It is not a double-entry general ledger and must not be treated as audited financial statements.
 
+## Using beneficiaries and businesses
+
+For a role-based walkthrough of the full application, see the [Agile Hub user guide](docs/USER_GUIDE.md).
+
+1. An administrator first creates a user with the **Beneficiary** role under **Users**. Then choose **Beneficiaries** in the sidebar, select **Add beneficiary**, choose that user, and save the profile details and assigned hub.
+2. Choose **Businesses** in the sidebar and select **Add business**. Select the beneficiary, enter the business name and any registration/contact details, choose its hub and status, then save.
+3. To update a record, select **Edit** beside it in a list or dashboard. Change the fields and select **Save changes**. A beneficiary's profile page also has an **Edit beneficiary** button and can show that beneficiary's businesses.
+
+Administrators can manage all beneficiary profiles and businesses. Beneficiaries can view and update only their own profile and businesses. Buttons are hidden when the signed-in role does not have the required permission.
+
+Sales edits are limited to customer contact details, payment reference, and notes. Sale products, quantities, totals, payment method, hub, and beneficiary business are not editable because they are tied to stock, cash-flow, and commission records.
+
 ## Production deployment
 
 Use `config.settings.production`, PostgreSQL, a trusted HTTPS reverse proxy, and a process manager such as Gunicorn behind the proxy. Configure secrets in the deployment platform, not in source control. Follow [the deployment guide](docs/DEPLOYMENT.md), [backup guidance](docs/BACKUPS.md), [API notes](docs/API.md), and [role permissions](docs/PERMISSIONS.md).

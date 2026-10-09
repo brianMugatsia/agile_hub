@@ -1,31 +1,105 @@
 {% extends "base.html" %}
+{% load ui_tags %}
 
 {% block content %}
-  <section class="card">
-    <div class="card__body stack">
-      <p>Completed sale quantities are compared with stock ledger sale and refund movements. The default period is the last 30 days.</p>
-      <form class="filter-bar" method="get">
-        <label class="field filter-bar__field"><span class="field__label">From</span><input class="input" type="date" name="start" value="{{ start_date|date:'Y-m-d' }}"></label>
-        <label class="field filter-bar__field"><span class="field__label">To</span><input class="input" type="date" name="end" value="{{ end_date|date:'Y-m-d' }}"></label>
-        <button class="btn btn--secondary" type="submit">Run reconciliation</button>
-      </form>
-      {% for error in date_errors %}<p class="alert alert--danger" role="alert">{{ error }}</p>{% endfor %}
-      {% if not date_errors %}
-        <h2 class="card__title">{{ mismatch_count }} discrepanc{{ mismatch_count|pluralize:"y,ies" }}</h2>
-        {% if mismatch_count > result_limit %}<p class="text-muted">Showing the first {{ result_limit }} discrepancies.</p>{% endif %}
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th scope="col">Sale reference</th><th scope="col">Hub</th><th scope="col">Product</th><th scope="col">Expected net sold</th><th scope="col">Recorded net movement</th></tr></thead>
-            <tbody>
-              {% for row in mismatches %}
-                <tr><td>{{ row.sale_id }}</td><td>{{ row.hub }}</td><td>{{ row.product }}</td><td>{{ row.expected }}</td><td>{{ row.recorded }}</td></tr>
-              {% empty %}
-                <tr><td colspan="5">No discrepancies found for this period.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% endif %}
+  <section class="recon-hero">
+    <div class="recon-hero__copy">
+      <span class="recon-hero__eyebrow">{% icon "check-circle" %} Inventory controls</span>
+      <h2>Sales and stock, in sync.</h2>
+      <p>Compare completed and refunded sale quantities against the inventory ledger. Review exceptions and follow up by sale reference.</p>
+    </div>
+    <div class="recon-hero__period">
+      <span>Reporting period</span>
+      <strong>{{ start_date|date:"j M Y" }} <span aria-hidden="true">→</span> {{ end_date|date:"j M Y" }}</strong>
+      <small>Up to 366 days per reconciliation</small>
     </div>
   </section>
+
+  <section class="card recon-filter">
+    <div class="card__body">
+      <div class="recon-filter__intro">
+        <div><h2 class="card__title">Choose a period</h2><p>By default, this report checks the last 30 days.</p></div>
+        {% if not date_errors %}
+          {% if mismatch_count %}
+            <span class="badge badge--danger">{% icon "alert-circle" %} {{ mismatch_count }} exception{{ mismatch_count|pluralize }}</span>
+          {% else %}
+            <span class="badge badge--success">{% icon "check-circle" %} All checks matched</span>
+          {% endif %}
+        {% endif %}
+      </div>
+      <form class="recon-filter__form" method="get" aria-label="Choose reconciliation date range">
+        <label class="field">
+          <span class="field__label">From</span>
+          <input class="input" type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" required>
+        </label>
+        <span class="recon-filter__separator" aria-hidden="true">to</span>
+        <label class="field">
+          <span class="field__label">To</span>
+          <input class="input" type="date" name="end" value="{{ end_date|date:'Y-m-d' }}" required>
+        </label>
+        <button class="btn btn--primary" type="submit">{% icon "search" %} Run reconciliation</button>
+      </form>
+      {% for error in date_errors %}<p class="alert alert--danger" role="alert">{{ error }}</p>{% endfor %}
+    </div>
+  </section>
+
+  {% if not date_errors %}
+    <section class="recon-stats" aria-label="Reconciliation summary">
+      <article class="recon-stat">
+        <span class="recon-stat__icon recon-stat__icon--blue">{% icon "layers" %}</span>
+        <div><span class="recon-stat__label">Checks performed</span><strong>{{ check_count }}</strong><small>Sale/product and unmatched ledger checks</small></div>
+      </article>
+      <article class="recon-stat">
+        <span class="recon-stat__icon recon-stat__icon--green">{% icon "check-circle" %}</span>
+        <div><span class="recon-stat__label">Matched</span><strong>{{ matched_count }}</strong><small>Sale quantities aligned with stock movements</small></div>
+      </article>
+      <article class="recon-stat{% if mismatch_count %} recon-stat--alert{% endif %}">
+        <span class="recon-stat__icon recon-stat__icon--red">{% icon "alert-circle" %}</span>
+        <div><span class="recon-stat__label">Discrepancies</span><strong>{{ mismatch_count }}</strong><small>{% if mismatch_count %}Needs investigation{% else %}No follow-up required{% endif %}</small></div>
+      </article>
+    </section>
+
+    <section class="card recon-results">
+      <div class="recon-results__heading">
+        <div><h2 class="card__title">Discrepancy details</h2><p>Net sale and refund movements are compared for each sale, hub, and product.</p></div>
+        {% if mismatch_count %}<span class="recon-results__count">{{ mismatch_count }} found</span>{% endif %}
+      </div>
+      {% if mismatch_count > result_limit %}
+        <p class="recon-limit-note">Showing the first {{ result_limit }} of {{ mismatch_count }} discrepancies.</p>
+      {% endif %}
+      <div class="table-wrap">
+        <table class="table recon-table">
+          <thead>
+            <tr><th scope="col">Issue</th><th scope="col">Sale reference</th><th scope="col">Hub</th><th scope="col">Product</th><th scope="col">Expected</th><th scope="col">Recorded</th><th scope="col">Variance</th></tr>
+          </thead>
+          <tbody>
+            {% for row in mismatches %}
+              <tr>
+                <td><span class="recon-issue">{% if row.issue == "Unmatched stock movement" %}{% icon "alert-triangle" %}{% else %}{% icon "alert-circle" %}{% endif %} {{ row.issue }}</span></td>
+                <td>
+                  {% if row.issue == "Unmatched stock movement" %}
+                    <span class="recon-reference">{{ row.sale_id|truncatechars:14 }}</span>
+                  {% else %}
+                    <a class="recon-reference" href="{% url 'sales:detail' row.sale_id %}">{{ row.sale_id|truncatechars:14 }}</a>
+                  {% endif %}
+                </td>
+                <td>{{ row.hub }}</td><td>{{ row.product }}</td>
+                <td class="recon-number">{{ row.expected }}</td><td class="recon-number">{{ row.recorded }}</td>
+                <td class="recon-number{% if row.variance < 0 %} recon-number--negative{% elif row.variance > 0 %} recon-number--positive{% endif %}">{% if row.variance > 0 %}+{% endif %}{{ row.variance }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7">
+                <div class="recon-empty">
+                  <span class="recon-empty__icon">{% icon "check-circle" %}</span>
+                  <strong>Everything reconciles</strong>
+                  <p>No sales-to-stock discrepancies were found in this period.</p>
+                </div>
+              </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <p class="recon-footnote">Refunded sales are expected to net to zero stock movement. Results are limited to hubs you are permitted to access.</p>
+  {% endif %}
 {% endblock %}

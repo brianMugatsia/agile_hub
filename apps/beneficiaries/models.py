@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 
 
 class BeneficiaryProfile(models.Model):
@@ -21,6 +22,9 @@ class BeneficiaryProfile(models.Model):
 
     def __str__(self):
         return self.user.display_name
+
+    def get_absolute_url(self):
+        return reverse("beneficiaries:detail", args=[self.pk])
 
 
 class Business(models.Model):

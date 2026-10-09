@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static ui_tags %}
 
 {% block page_actions %}
   <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Back to commissions</a>
@@ -42,7 +42,7 @@
               <li class="com-rate{% if setting.is_active %} is-active{% endif %}" style="--r: {{ forloop.counter0 }}">
                 <span class="com-rate__dot" aria-hidden="true"></span>
                 <div class="com-rate__body">
-                  <strong class="com-rate__value">{{ setting.rate|floatformat:2 }}%</strong>
+                  <strong class="com-rate__value">{{ setting.rate|percentage|floatformat:2 }}%</strong>
                   <span class="com-rate__date">from {{ setting.effective_from }}</span>
                 </div>
                 {% if setting.is_active %}<span class="com-badge" data-status="paid">Active</span>{% endif %}

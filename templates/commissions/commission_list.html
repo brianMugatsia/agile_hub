@@ -87,7 +87,7 @@
                 <td>{{ item.created_at|date:"Y-m-d" }}</td>
                 <td><a class="com-agent com-agent--link" href="{% url 'commissions:agent_statement' item.agent_id %}"><span class="com-agent__avatar" aria-hidden="true">{{ item.agent.display_name|slice:":1"|upper }}</span><span class="com-agent__name">{{ item.agent.display_name }}</span></a></td>
                 <td><a class="com-list-sale" href="{% url 'commissions:detail' item.pk %}">{{ item.sale }}</a></td>
-                <td class="com-num">{{ item.rate|floatformat:2 }}%</td>
+                <td class="com-num">{{ item.rate|percentage|floatformat:2 }}%</td>
                 <td class="com-amount"><a href="{% url 'commissions:detail' item.pk %}">{{ item.amount }}</a></td>
                 <td><span class="com-badge" data-status="{{ item.status|lower }}">{{ item.get_status_display }}</span></td>
                 <td class="table__actions">

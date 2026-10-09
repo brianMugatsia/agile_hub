@@ -12,6 +12,7 @@ from apps.accounts.roles import Role
 from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
 from apps.core.scoping import scope_queryset
 from apps.sales.models import Sale, SaleItem
+from apps.beneficiaries.models import Business
 
 from .forms import BreakEvenForm, CashFlowForm, ProjectionForm
 from .models import (
@@ -179,11 +180,16 @@ class CashFlowCreateView(ProtectedCreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["hub"].queryset = hubs_for_user(self.request.user)
+        available_hubs = hubs_for_user(self.request.user)
+        form.fields["hub"].queryset = available_hubs
         if self.request.user.role == "BENEFICIARY":
-            form.fields["business"].queryset = form.fields["business"].queryset.filter(
+            form.fields["business"].queryset = Business.objects.filter(
                 beneficiary__user=self.request.user
             )
+        else:
+            form.fields["business"].queryset = Business.objects.filter(
+                Q(hub__in=available_hubs) | Q(hub__isnull=True)
+            ).select_related("beneficiary__user")
         return form
 
 

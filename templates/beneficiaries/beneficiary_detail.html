@@ -44,7 +44,10 @@
   <!-- DETAILS -->
   <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
     <div class="card__body">
-      <div class="dashboard-section__heading"><h2 class="card__title">Beneficiary details</h2></div>
+      <div class="dashboard-section__heading">
+        <h2 class="card__title">Beneficiary details</h2>
+        {% if can_edit_beneficiary %}<a class="btn btn--secondary btn--sm" href="{% url 'beneficiaries:edit' beneficiary.pk %}">Edit beneficiary</a>{% endif %}
+      </div>
       <dl class="hub-facts">
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
@@ -75,11 +78,12 @@
   </section>
 
   <!-- BUSINESSES -->
-  {% if businesses %}
+  {% if businesses or can_add_business %}
     <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
         <div class="dashboard-section__heading">
           <h2 class="card__title">Businesses <span class="dash-count">{{ businesses|length }}</span></h2>
+          {% if can_add_business %}<a class="btn btn--primary btn--sm" href="{% url 'beneficiaries:business_create' %}">Add business</a>{% endif %}
         </div>
         {% include "components/data_table.html" with object_list=businesses columns=business_columns %}
       </div>

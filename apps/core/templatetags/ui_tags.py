@@ -1,4 +1,5 @@
 from django import forms, template
+from decimal import Decimal
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -83,6 +84,12 @@ def get_attr(value, path):
         if value is None:
             return ""
     return value
+
+
+@register.filter
+def percentage(value):
+    """Convert a stored fractional rate (0.2) to a display percentage (20)."""
+    return Decimal(str(value)) * Decimal("100")
 
 
 @register.filter

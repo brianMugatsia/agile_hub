@@ -4,6 +4,7 @@
     <thead>
       <tr>
         {% for column in columns %}<th scope="col">{{ column.label }}</th>{% endfor %}
+        {% if can_edit_rows %}<th scope="col">Actions</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -11,12 +12,15 @@
         <tr>
           {% for column in columns %}
             {% with value=row|get_attr:column.field %}
-              <td>{% if forloop.first and row.get_absolute_url %}<a href="{{ row.get_absolute_url }}">{{ value|default:"—" }}</a>{% else %}{{ value|default:"—" }}{% endif %}</td>
+              <td>{% if forloop.first and row.get_absolute_url %}<a href="{{ row.get_absolute_url }}">{% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</a>{% elif column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</td>
             {% endwith %}
           {% endfor %}
+          {% if can_edit_rows %}
+            <td><a class="btn btn--secondary btn--sm" href="{% url row_edit_url_name row.pk %}">Edit</a></td>
+          {% endif %}
         </tr>
       {% empty %}
-        <tr><td colspan="{{ columns|length }}">
+        <tr><td colspan="{% if can_edit_rows %}{{ columns|length|add:1 }}{% else %}{{ columns|length }}{% endif %}">
           {% include "partials/empty_state.html" with title="Nothing here yet" message="Records will appear here when they are added." %}
         </td></tr>
       {% endfor %}
