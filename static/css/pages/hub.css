@@ -151,9 +151,11 @@
 
 /* =========================================================
    Hub form: sections and live preview
+   Each part is pinned to its own grid column and row, so the
+   layout cannot flip if the HTML order or `order` ever changes.
    ========================================================= */
-.hub-form__layout { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; align-items: start; gap: 1.25rem; }
-.hub-form__main { display: grid; gap: 1.25rem; min-width: 0; }
+.hub-form__layout { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; grid-template-rows: auto; align-items: start; gap: 1.25rem; }
+.hub-form__main { grid-column: 1; grid-row: 1; display: grid; gap: 1.25rem; min-width: 0; }
 .hub-form__head { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.15rem; }
 .hub-form__step {
   display: grid;
@@ -173,10 +175,13 @@
 .hub-form__wide { grid-column: 1 / -1; }
 
 .hub-preview {
+  grid-column: 2;
+  grid-row: 1;
   position: sticky;
   top: calc(var(--topbar-h) + 1rem);
   display: grid;
   gap: .65rem;
+  min-width: 0;
   padding: 1.5rem;
   color: #fff;
   background:
@@ -237,7 +242,8 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .hub-form__layout { grid-template-columns: minmax(0, 1fr); }
-  .hub-preview { position: static; order: -1; }
+  .hub-preview { grid-column: 1; grid-row: 1; position: static; }
+  .hub-form__main { grid-column: 1; grid-row: 2; }
 }
 @media (max-width: 900px) {
   .hub-detail-grid { grid-template-columns: minmax(0, 1fr); }
