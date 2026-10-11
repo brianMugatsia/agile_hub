@@ -52,7 +52,7 @@ ROLE_TONES = {
     "FINANCE_OFFICER": "warning",
     "SALES_AGENT": "info",
     "WORKER": "neutral",
-    "BENEFICIARY": "earth",
+    "MEMBER": "earth",
     "VIEWER": "neutral",
 }
 

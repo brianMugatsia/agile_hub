@@ -26,50 +26,60 @@
   text-decoration: none;
   cursor: pointer;
   flex-shrink: 0; /* Prevents button from stretching or squishing in flex containers */
-  align-self: flex-end; /* Keeps button anchored at the bottom of the input row */
-  
-  transition: background-color .15s, border-color .15s, box-shadow .15s;
-}
 
-.btn svg,
-.btn .icon,
-.btn [data-icon] {
+  transition: background-color .15s, border-color .15s, box-shadow .15s, transform .15s;
+  }
+
+  .btn svg,
+  .btn .icon,
+  .btn [data-icon] {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-}
+  }
 
-.btn:hover {
+  .btn:hover {
   --btn-bg: #f1f5f3;
   color: var(--btn-fg);
-}
+  transform: translateY(-1px);
+  }
 
-/* Use transform or background changes for active state, NOT padding or height */
-.btn:active {
-  transform: translateY(1px);
-}
+  /* Use transform or background changes for active state, NOT padding or height */
+  .btn:active {
+  transform: translateY(0);
+  }
 
-/* Use clean focus ring with box-shadow so element box-model does not change */
-.btn:focus,
-.btn:focus-visible {
+  /* Use clean focus ring with box-shadow so element box-model does not change */
+  .btn:focus,
+  .btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--focus-ring, rgba(18, 53, 104, 0.25));
-}
+  }
 
-.btn[disabled],
-.btn.is-disabled {
+  .btn[disabled],
+  .btn.is-disabled {
   opacity: .55;
   pointer-events: none;
-}
+  transform: none;
+  }
 
-.btn--primary {
+  .btn--primary {
   --btn-bg: var(--color-primary);
   --btn-fg: #fff;
   --btn-border: var(--color-primary);
-}
+  box-shadow: 0 4px 12px rgba(13, 33, 71, 0.18);
+  }
 
-.btn--primary:hover {
+  .btn--primary:hover {
   --btn-bg: var(--color-primary-hover);
   --btn-border: var(--color-primary-hover);
   color: #fff;
-}
+  box-shadow: 0 6px 16px rgba(13, 33, 71, 0.24);
+  transform: translateY(-1px);
+  }
+
+  .btn--block {
+  display: flex;
+  width: 100%;
+  align-self: stretch;
+  }

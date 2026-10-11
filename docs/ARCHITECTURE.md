@@ -9,7 +9,7 @@ Agile Hub is a Django monolith organized as business-domain apps. `config` owns 
 - Products and inventory: product catalog, per-hub balances, and immutable stock movements.
 - Sales: sale headers/items and sale lifecycle.
 - Commissions and payroll: accrual/approval/payment state machines.
-- Beneficiaries: beneficiary profiles and associated businesses.
+- Members: member profiles and associated businesses.
 - Finance and reports: cash-flow records and operational summaries.
 - Audit and notifications: traceable events and user-facing updates.
 

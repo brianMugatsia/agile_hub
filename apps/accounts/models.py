@@ -16,6 +16,14 @@ class User(AbstractUser):
     email = models.EmailField("email address", unique=True)
     phone_number = models.CharField(max_length=20, blank=True, validators=[phone_validator])
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.VIEWER, db_index=True)
+    hub = models.ForeignKey(
+        "hubs.Hub",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_users",
+        help_text="Assigned hub for this single-hub locked user.",
+    )
     profile_photo = models.ImageField(
         upload_to="profile_photos/",
         blank=True,

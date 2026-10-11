@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate, TruncMonth
 from django.http import HttpResponseBadRequest
@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.generic import DetailView, TemplateView
 
+from apps.accounts.roles import Role
 from apps.core.mixins import PageMixin
 from apps.inventory.models import InventoryBalance
 from .forms import HubForm
@@ -44,6 +45,12 @@ class HubListView(ScopedModelListView):
     row_edit_url_name = "hubs:edit"
     row_edit_permission = "hubs.change_hub"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or request.user.role != Role.SUPER_ADMIN:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Only super administrators can view all hubs.")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         queryset = super().get_queryset()
         revenue = (
@@ -60,7 +67,7 @@ class HubListView(ScopedModelListView):
         return queryset.annotate(
             n_staff=Count("workers", filter=Q(workers__is_active=True), distinct=True),
             n_businesses=Count("businesses", distinct=True),
-            n_beneficiaries=Count("beneficiaries", distinct=True),
+            n_members=Count("members", distinct=True),
             n_low_stock=Count(
                 "stock_balances",
                 filter=Q(
@@ -148,7 +155,7 @@ class HubDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, Deta
             can_edit_hub=self.request.user.has_perm("hubs.change_hub"),
             staff_count=hub.workers.filter(is_active=True).count(),
             business_count=hub.businesses.count(),
-            beneficiary_count=hub.beneficiaries.count(),
+            member_count=hub.members.count(),
             low_stock_count=low_stock,
             month_sales_count=month_sales.count(),
             month_revenue=month_sales.aggregate(total=Sum("total"))["total"] or Decimal("0.00"),

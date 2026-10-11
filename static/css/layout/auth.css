@@ -49,7 +49,17 @@
 .auth-card .field { gap: .45rem; }
 .auth-card .field__label { font-size: .86rem; }
 .auth-card .input { min-height: 2.65rem; }
-.auth-card .btn--block { min-height: 2.6rem; margin-top: .1rem; }
+.auth-card .btn--block {
+  min-height: 2.8rem;
+  margin-top: .75rem;
+  font-size: .95rem;
+  letter-spacing: .01em;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.25);
+}
+.auth-card .btn--block:hover {
+  box-shadow: 0 6px 20px rgba(29, 78, 216, 0.35);
+}
 .auth-card__title { font-size: clamp(1.55rem, 3vw, 1.85rem); letter-spacing: -.035em; }
 .auth-card__lead { line-height: 1.6; }
 .auth-card__icon {

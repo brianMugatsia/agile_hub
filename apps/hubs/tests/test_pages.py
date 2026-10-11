@@ -14,17 +14,24 @@ pytestmark = pytest.mark.django_db
 
 
 def test_hub_list_links_to_scoped_details_and_performance(client, make_user):
+    super_admin = make_user(role=Role.SUPER_ADMIN)
     manager = make_user(role=Role.HUB_MANAGER)
     hub = Hub.objects.create(code="HUB-PAGE", name="Hub page")
     HubMembership.objects.create(hub=hub, user=manager)
-    client.force_login(manager)
 
+    client.force_login(super_admin)
     list_response = client.get(reverse("hubs:list"))
+    assert list_response.status_code == 200
+    assert reverse("hubs:detail", kwargs={"pk": hub.pk}).encode() in list_response.content
+
+    client.force_login(manager)
+    # Non-super-admin cannot access the general hubs management list page
+    list_response_manager = client.get(reverse("hubs:list"))
+    assert list_response_manager.status_code == 403
+
     detail_response = client.get(reverse("hubs:detail", kwargs={"pk": hub.pk}))
     performance_response = client.get(reverse("hubs:performance", kwargs={"pk": hub.pk}))
 
-    assert list_response.status_code == 200
-    assert reverse("hubs:detail", kwargs={"pk": hub.pk}).encode() in list_response.content
     assert detail_response.status_code == 200
     assert b"View performance" in detail_response.content
     assert performance_response.status_code == 200
@@ -32,10 +39,10 @@ def test_hub_list_links_to_scoped_details_and_performance(client, make_user):
 
 
 def test_admin_can_edit_hub_from_list_and_detail(client, make_user, roles):
-    admin = make_user(role=Role.ADMIN)
+    super_admin = make_user(role=Role.SUPER_ADMIN)
     manager = make_user(role=Role.HUB_MANAGER)
     hub = Hub.objects.create(code="HUB-EDIT", name="Before edit")
-    client.force_login(admin)
+    client.force_login(super_admin)
 
     hub_list = client.get(reverse("hubs:list"))
     hub_detail = client.get(reverse("hubs:detail", kwargs={"pk": hub.pk}))
@@ -74,8 +81,7 @@ def test_hub_manager_can_edit_only_accessible_hubs(client, make_user, roles):
 
     assert own_edit.status_code == 200
     assert hidden_edit.status_code == 404
-    assert reverse("hubs:edit", kwargs={"pk": assigned_hub.pk}).encode() in hub_list.content
-    assert reverse("hubs:edit", kwargs={"pk": hidden_hub.pk}).encode() not in hub_list.content
+    assert hub_list.status_code == 403
 
     response = client.post(
         reverse("hubs:edit", kwargs={"pk": assigned_hub.pk}),

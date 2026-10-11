@@ -2,7 +2,7 @@ from django import forms
 
 from apps.hubs.models import Hub
 from apps.products.models import Product
-from apps.beneficiaries.models import Business
+from apps.members.models import Business
 from .models import Sale
 
 

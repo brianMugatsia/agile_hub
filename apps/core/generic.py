@@ -259,6 +259,10 @@ class ProtectedCreateView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
     def form_valid(self, form):
         if any(field.name == "created_by" for field in self.model._meta.fields):
             form.instance.created_by = self.request.user
+        user_hub = getattr(self.request.user, "hub", None)
+        if user_hub is not None and any(field.name == "hub" for field in self.model._meta.fields):
+            if not getattr(form.instance, "hub_id", None):
+                form.instance.hub = user_hub
         response = super().form_valid(form)
         record_event(
             action=f"{self.model._meta.app_label}.{self.model._meta.model_name}.created",

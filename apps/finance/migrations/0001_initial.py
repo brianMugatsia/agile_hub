@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('beneficiaries', '0001_initial'),
+        ('members', '0001_initial'),
         ('hubs', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
                 ('reference', models.CharField(blank=True, max_length=80)),
                 ('description', models.TextField(blank=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('business', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='cash_flows', to='beneficiaries.business')),
+                ('business', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='cash_flows', to='members.business')),
                 ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
                 ('hub', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='cash_flows', to='hubs.hub')),
             ],
@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
                 ('period_end', models.DateField()),
                 ('status', models.CharField(choices=[('DRAFT', 'Draft'), ('FINAL', 'Final')], default='DRAFT', max_length=8)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('business', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='income_statements', to='beneficiaries.business')),
+                ('business', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='income_statements', to='members.business')),
                 ('hub', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='income_statements', to='hubs.hub')),
                 ('prepared_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
@@ -150,7 +150,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True)),
                 ('is_active', models.BooleanField(default=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('business', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='revenue_streams', to='beneficiaries.business')),
+                ('business', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='revenue_streams', to='members.business')),
             ],
             options={
                 'ordering': ['name'],

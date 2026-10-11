@@ -1,6 +1,6 @@
 # Agile Hub
 
-Agile Hub is a Django application for managing hub operations, products and stock, sales, agent commissions, payroll, beneficiary businesses, cash flow, audit events, and operational reports.
+Agile Hub is a Django application for managing hub operations, products and stock, sales, agent commissions, payroll, member businesses, cash flow, audit events, and operational reports.
 
 ## Requirements
 
@@ -46,9 +46,9 @@ To add a small set of realistic sample records directly to the database used by 
 python manage.py seed_demo_data --sales 30 --batch preview
 ```
 
-This uses the configured development database (normally the PostgreSQL database in `.env`), so the records appear in the existing local app without switching servers or accounts. The command creates the sample hub, products, inventory, agent, completed sales, three worker profiles with current-month pending salary records, and three beneficiary profiles with active businesses. Sales and payroll records use the normal business models/workflows where applicable. It is idempotent: rerunning the same command will not duplicate sales, workers, beneficiaries, businesses or salary periods. Use a different `--batch` value to add a separate set of sales; workers, beneficiaries, businesses and current-month payroll remain one stable sample set. Sample seeding is blocked under production settings.
+This uses the configured development database (normally the PostgreSQL database in `.env`), so the records appear in the existing local app without switching servers or accounts. The command creates the sample hub, products, inventory, agent, completed sales, three worker profiles with current-month pending salary records, and three member profiles with active businesses. Sales and payroll records use the normal business models/workflows where applicable. It is idempotent: rerunning the same command will not duplicate sales, workers, members, businesses or salary periods. Use a different `--batch` value to add a separate set of sales; workers, members, businesses and current-month payroll remain one stable sample set. Sample seeding is blocked under production settings.
 
-The example business setup is a hub-based social enterprise, cooperative, distributor or community-development program: each hub can track local inventory and product sales, sales-agent commissions, staff and payroll, beneficiary businesses, cash flow and operational reporting. The app provides role-scoped records and approval workflows; it is not a general-purpose accounting ledger or a full HR suite.
+The example business setup is a hub-based social enterprise, cooperative, distributor or community-development program: each hub can track local inventory and product sales, sales-agent commissions, staff and payroll, member businesses, cash flow and operational reporting. The app provides role-scoped records and approval workflows; it is not a general-purpose accounting ledger or a full HR suite.
 
 To seed the separate, disposable SQLite demo database instead, explicitly select its settings:
 
@@ -85,17 +85,17 @@ python manage.py makemigrations --check --dry-run --settings=config.settings.tes
 - Sales, stock movements, commission transitions, salary transitions, and administrative actions are recorded in the audit trail.
 - Reporting summarizes the operational records currently stored by Agile Hub. It is not a double-entry general ledger and must not be treated as audited financial statements.
 
-## Using beneficiaries and businesses
+## Using members and businesses
 
 For a role-based walkthrough of the full application, see the [Agile Hub user guide](docs/USER_GUIDE.md).
 
-1. An administrator first creates a user with the **Beneficiary** role under **Users**. Then choose **Beneficiaries** in the sidebar, select **Add beneficiary**, choose that user, and save the profile details and assigned hub.
-2. Choose **Businesses** in the sidebar and select **Add business**. Select the beneficiary, enter the business name and any registration/contact details, choose its hub and status, then save.
-3. To update a record, select **Edit** beside it in a list or dashboard. Change the fields and select **Save changes**. A beneficiary's profile page also has an **Edit beneficiary** button and can show that beneficiary's businesses.
+1. An administrator first creates a user with the **Member** role under **Users**. Then choose **Members** in the sidebar, select **Add member**, choose that user, and save the profile details and assigned hub.
+2. Choose **Businesses** in the sidebar and select **Add business**. Select the member, enter the business name and any registration/contact details, choose its hub and status, then save.
+3. To update a record, select **Edit** beside it in a list or dashboard. Change the fields and select **Save changes**. A member's profile page also has an **Edit member** button and can show that member's businesses.
 
-Administrators can manage all beneficiary profiles and businesses. Beneficiaries can view and update only their own profile and businesses. Buttons are hidden when the signed-in role does not have the required permission.
+Administrators can manage all member profiles and businesses. Members can view and update only their own profile and businesses. Buttons are hidden when the signed-in role does not have the required permission.
 
-Sales edits are limited to customer contact details, payment reference, and notes. Sale products, quantities, totals, payment method, hub, and beneficiary business are not editable because they are tied to stock, cash-flow, and commission records.
+Sales edits are limited to customer contact details, payment reference, and notes. Sale products, quantities, totals, payment method, hub, and member business are not editable because they are tied to stock, cash-flow, and commission records.
 
 ## Production deployment
 

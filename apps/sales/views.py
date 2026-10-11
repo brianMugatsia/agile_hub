@@ -7,7 +7,7 @@ from django.views.generic import DetailView, FormView
 
 from apps.accounts.models import User
 from apps.accounts.roles import Role
-from apps.beneficiaries.models import Business
+from apps.members.models import Business
 from apps.core.generic import ProtectedUpdateView, ScopedModelListView, hubs_for_user
 from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin

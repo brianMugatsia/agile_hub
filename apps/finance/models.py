@@ -7,7 +7,7 @@ from django.db import models
 
 class RevenueStream(models.Model):
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="revenue_streams"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="revenue_streams"
     )
     hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="revenue_streams")
     name = models.CharField(max_length=120)
@@ -28,7 +28,7 @@ class IncomeStatement(models.Model):
         FINAL = "FINAL", "Final"
 
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="income_statements"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="income_statements"
     )
     hub = models.ForeignKey(
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="income_statements"
@@ -81,7 +81,7 @@ class CashFlow(models.Model):
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="cash_flows"
     )
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="cash_flows"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="cash_flows"
     )
     reference = models.CharField(max_length=80, blank=True)
     description = models.TextField(blank=True)
@@ -105,7 +105,7 @@ class Asset(models.Model):
     useful_life_months = models.PositiveIntegerField(default=0)
     hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="assets")
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="assets"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="assets"
     )
     notes = models.TextField(blank=True)
 
@@ -127,7 +127,7 @@ class Liability(models.Model):
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="liabilities"
     )
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="liabilities"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="liabilities"
     )
     notes = models.TextField(blank=True)
 
@@ -147,7 +147,7 @@ class EquityRecord(models.Model):
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="equity_records"
     )
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="equity_records"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="equity_records"
     )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -160,7 +160,7 @@ class EquityRecord(models.Model):
 
 class Projection(models.Model):
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="projections"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="projections"
     )
     hub = models.ForeignKey(
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="projections"
@@ -182,7 +182,7 @@ class Projection(models.Model):
 
 class StartupCost(models.Model):
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="startup_costs"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="startup_costs"
     )
     hub = models.ForeignKey(
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="startup_costs"
@@ -204,7 +204,7 @@ class StartupCost(models.Model):
 
 class FundingSource(models.Model):
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="funding_sources"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="funding_sources"
     )
     hub = models.ForeignKey(
         "hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="funding_sources"

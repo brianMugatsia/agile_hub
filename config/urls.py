@@ -11,7 +11,7 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
     path("accounts/", include("apps.accounts.urls")),
     path("hubs/", include("apps.hubs.urls")),
-    path("beneficiaries/", include("apps.beneficiaries.urls")),
+    path("members/", include("apps.members.urls")),
     path("products/", include("apps.products.urls")),
     path("inventory/", include("apps.inventory.urls")),
     path("sales/", include("apps.sales.urls")),

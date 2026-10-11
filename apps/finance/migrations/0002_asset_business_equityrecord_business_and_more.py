@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('beneficiaries', '0001_initial'),
+        ('members', '0001_initial'),
         ('finance', '0001_initial'),
         ('hubs', '0001_initial'),
     ]
@@ -16,12 +16,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='asset',
             name='business',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='assets', to='beneficiaries.business'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='assets', to='members.business'),
         ),
         migrations.AddField(
             model_name='equityrecord',
             name='business',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='equity_records', to='beneficiaries.business'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='equity_records', to='members.business'),
         ),
         migrations.AddField(
             model_name='equityrecord',
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='fundingsource',
             name='business',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='funding_sources', to='beneficiaries.business'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='funding_sources', to='members.business'),
         ),
         migrations.AddField(
             model_name='fundingsource',
@@ -41,12 +41,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='liability',
             name='business',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='liabilities', to='beneficiaries.business'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='liabilities', to='members.business'),
         ),
         migrations.AddField(
             model_name='projection',
             name='business',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='projections', to='beneficiaries.business'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='projections', to='members.business'),
         ),
         migrations.AddField(
             model_name='projection',
@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='startupcost',
             name='business',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='startup_costs', to='beneficiaries.business'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='startup_costs', to='members.business'),
         ),
         migrations.AddField(
             model_name='startupcost',

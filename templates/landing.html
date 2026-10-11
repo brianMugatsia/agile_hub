@@ -10,7 +10,10 @@
   <meta property="og:title" content="{{ page_title }} · Operations, made clear">
   <meta property="og:description" content="One role-aware workspace for hub operations, sales, inventory, commissions, payroll and reporting.">
   <title>{{ page_title }} · Operations, made clear</title>
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=4">
+    
+  <link rel="stylesheet" href="{% static 'css/pages/landing-extras.css' %}?v=1">
+
 </head>
 <body class="landing">
   <!-- Icon sprite: referenced below with <use href="#i-...">. -->
@@ -30,15 +33,18 @@
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></symbol>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></symbol>
   </svg>
 
   <a class="skip-link" href="#main">Skip to content</a>
+  <div class="landing-progress" aria-hidden="true"></div>
 
   <header class="landing-header">
     <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home">
-      <img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub">
+      <img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.png' %}" alt="Agile Hub">
     </a>
-    <nav class="landing-nav" aria-label="Main navigation">
+    <nav class="landing-nav" id="landing-nav" aria-label="Main navigation">
       <a href="#about">About</a>
       <a href="#features">Platform</a>
       <a href="#how">How it works</a>
@@ -47,6 +53,10 @@
       <a href="#faq">FAQ</a>
     </nav>
     <a class="btn btn--secondary landing-header__login" href="{% url 'accounts:login' %}">Sign in</a>
+    <button type="button" class="landing-menu" data-landing-menu aria-expanded="false" aria-controls="landing-nav" aria-label="Open menu">
+      <svg class="landing-icon landing-menu__open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="landing-icon landing-menu__close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
   </header>
 
   <main id="main">
@@ -114,10 +124,10 @@
     <section class="landing-marquee" aria-label="Platform areas" data-reveal="up">
       <div class="landing-marquee__track">
         <ul>
-          <li>Sales</li><li>Inventory</li><li>Products</li><li>Commissions</li><li>Payroll</li><li>Finance</li><li>Beneficiary businesses</li><li>Notifications</li><li>Audit trail</li><li>Reports</li>
+          <li>Sales</li><li>Inventory</li><li>Products</li><li>Commissions</li><li>Payroll</li><li>Finance</li><li>Member businesses</li><li>Notifications</li><li>Audit trail</li><li>Reports</li>
         </ul>
         <ul aria-hidden="true">
-          <li>Sales</li><li>Inventory</li><li>Products</li><li>Commissions</li><li>Payroll</li><li>Finance</li><li>Beneficiary businesses</li><li>Notifications</li><li>Audit trail</li><li>Reports</li>
+          <li>Sales</li><li>Inventory</li><li>Products</li><li>Commissions</li><li>Payroll</li><li>Finance</li><li>Member businesses</li><li>Notifications</li><li>Audit trail</li><li>Reports</li>
         </ul>
       </div>
     </section>
@@ -127,7 +137,7 @@
       <div class="landing-why__intro" data-reveal="up">
         <span class="landing-eyebrow">A better way to work</span>
         <h2>Less fragmentation. <span class="landing-gradient">More momentum.</span></h2>
-        <p>Agile Hub is an operations workspace for organizations coordinating hubs, products, sales, staff and beneficiary businesses. It connects those day-to-day records in a single, role-aware system.</p>
+        <p>Agile Hub is an operations workspace for organizations coordinating hubs, products, sales, staff and member businesses. It connects those day-to-day records in a single, role-aware system.</p>
       </div>
       <div class="landing-why__grid">
         <article class="landing-benefit" data-reveal="up"><span class="landing-card__icon" style="--tone:#2563eb;--tone-bg:#eaf1ff"><svg class="landing-icon" aria-hidden="true"><use href="#i-layers"/></svg></span><h3>One source of truth</h3><p>Sales, stock, people and money live together instead of in scattered sheets.</p></article>
@@ -196,8 +206,8 @@
 
         <article class="landing-card" data-reveal="up" style="--tone:#c2410c;--tone-bg:#ffedd5">
           <span class="landing-card__icon"><svg class="landing-icon" aria-hidden="true"><use href="#i-store"/></svg></span>
-          <h3>Beneficiary businesses</h3>
-          <p>Keep track of the beneficiary businesses you support and the hubs that serve them.</p>
+          <h3>Member businesses</h3>
+          <p>Keep track of the member businesses you support and the hubs that serve them.</p>
         </article>
 
         <article class="landing-card" data-reveal="up" style="--tone:#0e7490;--tone-bg:#cffafe">
@@ -320,7 +330,7 @@
       <div class="landing-faq">
         <details name="faq" data-reveal="up" open>
           <summary>Who is Agile Hub for?</summary>
-          <p>Organizations that coordinate hubs, products, sales, staff and beneficiary businesses and want those records together in one role-aware system.</p>
+          <p>Organizations that coordinate hubs, products, sales, staff and member businesses and want those records together in one role-aware system.</p>
         </details>
         <details name="faq" data-reveal="up">
           <summary>How do I get an account?</summary>
@@ -371,7 +381,7 @@
   <footer class="landing-footer">
     <div class="landing-footer__grid">
       <div class="landing-footer__brand">
-        <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home"><img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.webp' %}" alt="Agile Hub"></a>
+        <a class="landing-brand" href="{% url 'core:home' %}" aria-label="Agile Hub home"><img class="landing-brand__image" src="{% static 'images/brand/agile-hub-logo.png' %}" alt="Agile Hub"></a>
         <p>Connected operations. Clearer decisions.</p>
       </div>
       <nav aria-label="Footer navigation: platform links">
@@ -394,6 +404,6 @@
     </div>
   </footer>
 
-  <script type="module" src="{% static 'js/pages/landing-motion.js' %}"></script>
+  <script type="module" src="{% static 'js/pages/landing-motion.js' %}?v=4"></script>
 </body>
 </html>

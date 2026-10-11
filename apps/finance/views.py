@@ -13,7 +13,7 @@ from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for
 from apps.core.scoping import scope_queryset
 from apps.hubs.permissions import selected_hub
 from apps.sales.models import Sale, SaleItem
-from apps.beneficiaries.models import Business
+from apps.members.models import Business
 
 from .forms import BreakEvenForm, CashFlowForm, ProjectionForm
 from .models import (
@@ -87,8 +87,8 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         hub_scoped_roles = (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER)
         if role in hub_scoped_roles:
             sales = sales.filter(hub_id__in=hub_ids)
-        elif role == Role.BENEFICIARY:
-            sales = sales.filter(business__beneficiary__user=self.request.user)
+        elif role == Role.MEMBER:
+            sales = sales.filter(business__member__user=self.request.user)
         elif not is_platform_admin:
             sales = sales.none()
         if selected:
@@ -123,7 +123,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         )
         if role in hub_scoped_roles:
             salaries = salaries.filter(worker__hub_id__in=hub_ids)
-        elif role == Role.BENEFICIARY or not is_platform_admin:
+        elif role == Role.MEMBER or not is_platform_admin:
             salaries = salaries.none()
         if selected:
             salaries = salaries.filter(worker__hub=selected)
@@ -140,8 +140,8 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
                 Q(statement__hub_id__in=hub_ids)
                 | Q(statement__business__hub_id__in=hub_ids)
             )
-        elif role == Role.BENEFICIARY:
-            expense_items = expense_items.filter(statement__business__beneficiary__user=self.request.user)
+        elif role == Role.MEMBER:
+            expense_items = expense_items.filter(statement__business__member__user=self.request.user)
         elif not is_platform_admin:
             expense_items = expense_items.none()
         if selected:
@@ -202,14 +202,14 @@ class CashFlowCreateView(ProtectedCreateView):
         form = super().get_form(form_class)
         available_hubs = hubs_for_user(self.request.user)
         form.fields["hub"].queryset = available_hubs
-        if self.request.user.role == "BENEFICIARY":
+        if self.request.user.role == "MEMBER":
             form.fields["business"].queryset = Business.objects.filter(
-                beneficiary__user=self.request.user
+                member__user=self.request.user
             )
         else:
             form.fields["business"].queryset = Business.objects.filter(
                 Q(hub__in=available_hubs) | Q(hub__isnull=True)
-            ).select_related("beneficiary__user")
+            ).select_related("member__user")
         return form
 
 

@@ -122,8 +122,8 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             sales = sales.filter(hub__in=hubs)
         elif user.role == Role.SALES_AGENT:
             sales = sales.filter(agent=user)
-        elif user.role == Role.BENEFICIARY:
-            sales = sales.filter(business__beneficiary__user=user)
+        elif user.role == Role.MEMBER:
+            sales = sales.filter(business__member__user=user)
         else:
             sales = sales.none()
         if active_hub:
@@ -138,7 +138,7 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
                 Role.FINANCE_OFFICER: "Recent sales and outstanding payment approvals for your hubs.",
                 Role.SALES_AGENT: "Your completed sales and commission activity.",
                 Role.WORKER: "Your salary records and payment history.",
-                Role.BENEFICIARY: "Your businesses and associated sales activity.",
+                Role.MEMBER: "Your businesses and associated sales activity.",
                 Role.VIEWER: "A read-only summary of activity at your hubs.",
             }.get(user.role, "Your latest Agile Hub activity.")
 
@@ -213,10 +213,10 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
                 ),
             ]
             context["recent_salaries"] = salaries.select_related("worker").order_by("-period_start")[:8]
-        elif user.role == Role.BENEFICIARY:
-            from apps.beneficiaries.models import Business
+        elif user.role == Role.MEMBER:
+            from apps.members.models import Business
 
-            businesses = Business.objects.filter(beneficiary__user=user)
+            businesses = Business.objects.filter(member__user=user)
             if active_hub:
                 businesses = businesses.filter(hub=active_hub)
             elif hub_error:
@@ -273,7 +273,7 @@ class SettingsHomeView(LoginRequiredMixin, UserPassesTestMixin, PageMixin, Templ
     page_title = "Settings"
 
     def test_func(self):
-        return self.request.user.role in (Role.SUPER_ADMIN, Role.ADMIN)
+        return self.request.user.role in (Role.SUPER_ADMIN, Role.ADMIN, Role.HUB_MANAGER)
 
 
 def permission_denied(request, exception=None):

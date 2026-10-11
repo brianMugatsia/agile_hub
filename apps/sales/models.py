@@ -23,7 +23,7 @@ class Sale(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, related_name="sales")
     business = models.ForeignKey(
-        "beneficiaries.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="sales"
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="sales"
     )
     agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sales")
     customer_name = models.CharField(max_length=160, blank=True)

@@ -83,8 +83,8 @@
     <article class="card stat-card" data-reveal="up" data-spot style="--i: 5">
       <div class="card__body">
         <span class="stat-card__icon" aria-hidden="true"><svg class="dash-icon"><use href="#hub-i-user"/></svg></span>
-        <span class="stat-card__label">Beneficiaries</span>
-        <strong class="stat-card__value" data-count>{{ beneficiary_count }}</strong>
+        <span class="stat-card__label">Members</span>
+        <strong class="stat-card__value" data-count>{{ member_count }}</strong>
       </div>
     </article>
   </section>
@@ -137,7 +137,7 @@
         {% if perms.products.view_product %}<a class="link-row" href="{% url 'products:list' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-box"/></svg> Products and stock</a>{% endif %}
         {% if perms.inventory.view_inventorytransaction %}<a class="link-row" href="{% url 'inventory:list' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-box"/></svg> Inventory movements</a>{% endif %}
         {% if perms.inventory.view_purchaseorder %}<a class="link-row" href="{% url 'inventory:purchase_orders' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-store"/></svg> Purchase orders</a>{% endif %}
-        {% if perms.beneficiaries.view_business %}<a class="link-row" href="{% url 'beneficiaries:businesses' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-store"/></svg> Businesses</a>{% endif %}
+        {% if perms.members.view_business %}<a class="link-row" href="{% url 'members:businesses' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-store"/></svg> Businesses</a>{% endif %}
         {% if perms.payroll.view_workerprofile %}<a class="link-row" href="{% url 'payroll:worker_list' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-users"/></svg> Workers</a>{% endif %}
       </div>
     </article>

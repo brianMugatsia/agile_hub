@@ -36,15 +36,6 @@
         <label for="dashboard-end-date">To</label>
         <input class="input" id="dashboard-end-date" type="date" name="end_date" value="{{ date_end|date:'Y-m-d' }}">
       </div>
-      {% if available_hubs %}
-        <div class="dash-range__field">
-          <label for="dashboard-hub">Hub</label>
-          <select class="select" id="dashboard-hub" name="hub">
-            <option value="">All hubs</option>
-            {% for hub in available_hubs %}<option value="{{ hub.pk }}"{% if active_hub_id == hub.pk %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
-          </select>
-        </div>
-      {% endif %}
       <button class="dash-range__btn" type="submit">
         Apply dates
         <svg class="dash-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
@@ -57,7 +48,6 @@
         <ul>{% for error in date_errors %}<li>{{ error }}</li>{% endfor %}</ul>
       </div>
     {% endif %}
-    {% if hub_error %}<div class="dash-hero__errors" role="alert">{{ hub_error }}</div>{% endif %}
   </section>
 
   <!-- STATS -->
@@ -117,13 +107,13 @@
     </section>
   {% endif %}
 
-  {% if recent_businesses and perms.beneficiaries.view_business %}
+  {% if recent_businesses and perms.members.view_business %}
     <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
-        <div class="dashboard-section__heading"><h2 class="card__title">Your businesses</h2><a href="{% url 'beneficiaries:businesses' %}">View businesses</a></div>
+        <div class="dashboard-section__heading"><h2 class="card__title">Your businesses</h2><a href="{% url 'members:list' %}">View businesses</a></div>
         <div class="table-wrap"><table class="table">
-          <thead><tr><th scope="col">Business</th><th scope="col">Hub</th><th scope="col">Type</th><th scope="col">Status</th>{% if perms.beneficiaries.change_business %}<th scope="col">Actions</th>{% endif %}</tr></thead>
-          <tbody>{% for row in recent_businesses %}<tr><td>{{ row.name }}</td><td>{{ row.hub|default:"—" }}</td><td>{{ row.business_type|default:"—" }}</td><td>{{ row.get_status_display }}</td>{% if perms.beneficiaries.change_business %}<td><a class="btn btn--secondary btn--sm" href="{% url 'beneficiaries:business_edit' row.pk %}">Edit</a></td>{% endif %}</tr>{% endfor %}</tbody>
+          <thead><tr><th scope="col">Business</th><th scope="col">Hub</th><th scope="col">Type</th><th scope="col">Status</th></tr></thead>
+          <tbody>{% for row in recent_businesses %}<tr><td>{{ row.name }}</td><td>{{ row.hub|default:"—" }}</td><td>{{ row.business_type|default:"—" }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>
         </table></div>
       </div>
     </section>
@@ -172,6 +162,8 @@
         {% endif %}
       </div>
     </article>
+
+    
   </section>
 
 </div>

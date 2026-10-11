@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('email', models.EmailField(max_length=254, unique=True, verbose_name='email address')),
                 ('phone_number', models.CharField(blank=True, max_length=20, validators=[django.core.validators.RegexValidator(message='Enter a valid phone number, e.g. +254712345678 or 0712345678.', regex='^\\+?[0-9]{9,15}$')])),
-                ('role', models.CharField(choices=[('SUPER_ADMIN', 'Super Admin'), ('ADMIN', 'Admin'), ('HUB_MANAGER', 'Hub Manager'), ('FINANCE_OFFICER', 'Finance Officer'), ('SALES_AGENT', 'Sales Agent'), ('WORKER', 'Worker'), ('BENEFICIARY', 'Beneficiary'), ('VIEWER', 'Viewer')], db_index=True, default='VIEWER', max_length=20)),
+                ('role', models.CharField(choices=[('SUPER_ADMIN', 'Super Admin'), ('ADMIN', 'Admin'), ('HUB_MANAGER', 'Hub Manager'), ('FINANCE_OFFICER', 'Finance Officer'), ('SALES_AGENT', 'Sales Agent'), ('WORKER', 'Worker'), ('MEMBER', 'Member'), ('VIEWER', 'Viewer')], db_index=True, default='VIEWER', max_length=20)),
                 ('profile_photo', models.ImageField(blank=True, null=True, upload_to='profile_photos/', validators=[django.core.validators.FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp']), apps.accounts.validators.validate_image_size])),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),

@@ -7,7 +7,7 @@ from django.utils import timezone
 from apps.audit.services import record_event
 from apps.commissions.services import accrue_for_sale
 from apps.finance.models import CashFlow
-from apps.beneficiaries.models import Business
+from apps.members.models import Business
 from apps.hubs.permissions import user_can_access_hub
 from apps.inventory.models import InventoryTransaction
 from apps.inventory.services import record_movement

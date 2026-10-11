@@ -19,7 +19,7 @@ Read-only resource routes are grouped under these prefixes:
 | Prefix | Resource |
 | --- | --- |
 | `/hubs/` | Hubs and memberships |
-| `/beneficiaries/` | Beneficiary profiles and businesses |
+| `/members/` | Member profiles and businesses |
 | `/products/` | Products |
 | `/inventory/` | Inventory balances and transactions |
 | `/sales/` | Sales and sale items |

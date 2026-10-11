@@ -22,7 +22,7 @@ class Role(models.TextChoices):
     FINANCE_OFFICER = "FINANCE_OFFICER", "Finance Officer"
     SALES_AGENT = "SALES_AGENT", "Sales Agent"
     WORKER = "WORKER", "Worker"
-    BENEFICIARY = "BENEFICIARY", "Beneficiary"
+    MEMBER = "MEMBER", "Member"
     VIEWER = "VIEWER", "Viewer"
 
 
@@ -34,7 +34,7 @@ ROLE_ASSIGNMENT = {
         Role.FINANCE_OFFICER,
         Role.SALES_AGENT,
         Role.WORKER,
-        Role.BENEFICIARY,
+        Role.MEMBER,
         Role.VIEWER,
     ),
 }
@@ -60,7 +60,7 @@ def perms(model, *actions):
 
 
 FINANCE_MODELS = (
-    "beneficiaryprofile", "business", "revenuestream", "incomestatement",
+    "memberprofile", "business", "revenuestream", "incomestatement",
     "incomestatementitem", "cashflow", "asset", "liability", "equityrecord",
     "projection", "startupcost", "fundingsource",
 )
@@ -87,23 +87,25 @@ ROLE_PERMISSIONS = {
         *perms("workerprofile", "view", "add", "change"),
         *perms("salaryrecord", "view", "add", "change", "approve"),
         *_finance("view"),
-        *_finance("add", "change", models=("beneficiaryprofile", "business")),
+        *_finance("add", "change", models=("memberprofile", "business")),
         "export_reports",
     ],
     Role.HUB_MANAGER: [
+        *perms("user", "view", "add", "change"),
         *perms("hub", "view", "change"),
         *perms("hubmembership", "view", "add", "change"),
-        *perms("product", "view"),
+        *perms("product", "view", "add", "change"),
         *perms("inventorytransaction", "view", "add"),
         *perms("supplier", "view", "add"),
         *perms("purchaseorder", "view", "add", "change"),
         *perms("sale", "view", "add", "change", "cancel"),
         *perms("saleitem", "view", "add", "change"),
-        *perms("salesagentcommission", "view"),
+        *perms("salesagentcommission", "view", "approve", "reject"),
         *perms("workerprofile", "view", "add", "change"),
-        *perms("salaryrecord", "view"),
+        *perms("salaryrecord", "view", "approve"),
         *_finance("view"),
-        *_finance("add", "change", models=("cashflow", "incomestatement", "incomestatementitem")),
+        *_finance("add", "change", models=("memberprofile", "business", "cashflow", "incomestatement", "incomestatementitem")),
+        "export_reports",
     ],
     Role.FINANCE_OFFICER: [
         *perms("hub", "view"),
@@ -129,10 +131,10 @@ ROLE_PERMISSIONS = {
         *perms("workerprofile", "view"),
         *perms("salaryrecord", "view"),
     ],
-    Role.BENEFICIARY: [
-        *_finance("view", "add", "change", models=("beneficiaryprofile", "business")),
+    Role.MEMBER: [
+        *_finance("view", "add", "change", models=("memberprofile", "business")),
         *_finance("view", "add", "change", "delete",
-                  models=tuple(m for m in FINANCE_MODELS if m not in ("beneficiaryprofile", "business"))),
+                  models=tuple(m for m in FINANCE_MODELS if m not in ("memberprofile", "business"))),
     ],
     Role.VIEWER: [
         *perms("hub", "view"),

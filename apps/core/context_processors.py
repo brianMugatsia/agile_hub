@@ -12,7 +12,7 @@ from apps.accounts.roles import Role
 from apps.hubs.permissions import hub_is_locked, selected_hub
 
 SA, AD, HM, FO = Role.SUPER_ADMIN, Role.ADMIN, Role.HUB_MANAGER, Role.FINANCE_OFFICER
-AG, WK, BN, VW = Role.SALES_AGENT, Role.WORKER, Role.BENEFICIARY, Role.VIEWER
+AG, WK, BN, VW = Role.SALES_AGENT, Role.WORKER, Role.MEMBER, Role.VIEWER
 EVERYONE = tuple(Role.values)
 
 
@@ -28,9 +28,9 @@ class NavItem:
 NAV_ITEMS = (
     NavItem("Dashboard", "core:dashboard", "grid", EVERYONE, "Overview"),
     NavItem("Notifications", "notifications:list", "inbox", EVERYONE, "Overview"),
-    NavItem("Hubs", "hubs:list", "map-pin", (SA, AD, HM, VW), "Operations"),
-    NavItem("Beneficiaries", "beneficiaries:list", "heart", (SA, AD, HM, BN), "Operations"),
-    NavItem("Businesses", "beneficiaries:businesses", "briefcase", (SA, AD, HM, FO, BN, VW), "Operations"),
+    NavItem("Hubs", "hubs:list", "map-pin", (SA,), "Operations"),
+    NavItem("Members", "members:list", "heart", (SA, AD, HM, BN), "Operations"),
+    NavItem("Member Businesses", "members:businesses", "briefcase", (SA, AD, HM, FO, BN, VW), "Operations"),
     NavItem("Products", "products:list", "package", (SA, AD, HM, FO, AG, VW), "Operations"),
     NavItem("Inventory", "inventory:list", "layers", (SA, AD, HM, FO), "Operations"),
     NavItem("Purchase orders", "inventory:purchase_orders", "package", (SA, AD, HM), "Operations"),
@@ -39,13 +39,13 @@ NAV_ITEMS = (
     NavItem("Commissions", "commissions:list", "percent", (SA, AD, HM, FO, AG), "Staff & Payments"),
     NavItem("Workers", "payroll:worker_list", "briefcase", (SA, AD, HM, FO), "Staff & Payments"),
     NavItem("Workers' Salaries", "payroll:salary_list", "credit-card", (SA, AD, HM, FO, WK), "Staff & Payments"),
-    NavItem("Approval inbox", "reports:approvals", "check-circle", (SA, AD, FO), "Staff & Payments"),
+    NavItem("Approval inbox", "reports:approvals", "check-circle", (SA, AD, HM, FO), "Staff & Payments"),
     NavItem("Finance", "finance:income_statement", "trending-up", (SA, AD, HM, FO, BN, VW), "Finance & Insight"),
     NavItem("Reports", "reports:index", "bar-chart", (SA, AD, HM, FO, VW), "Finance & Insight"),
     NavItem("Sales / stock reconciliation", "reports:inventory_reconciliation", "check-circle", (SA, AD, HM, FO, VW), "Finance & Insight"),
-    NavItem("Users", "accounts:user_list", "users", (SA, AD), "Administration"),
+    NavItem("Users", "accounts:user_list", "users", (SA, AD, HM), "Administration"),
     NavItem("Audit Logs", "audit:list", "shield", (SA,), "Administration"),
-    NavItem("Settings", "core:settings", "settings", (SA, AD), "Administration"),
+    NavItem("Settings", "core:settings", "settings", (SA, AD, HM), "Administration"),
 )
 
 

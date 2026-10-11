@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.core",
     "apps.audit",
-    "apps.beneficiaries",
+    "apps.members",
     "apps.hubs",
     "apps.products",
     "apps.inventory",
@@ -128,7 +128,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
-    "django.contrib.auth.backends.ModelBackend",
+    "apps.accounts.backends.EmailOrUsernameModelBackend",
 ]
 
 AUTH_PASSWORD_VALIDATORS = [

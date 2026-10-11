@@ -11,7 +11,7 @@ This guide follows the normal application screens. The sidebar is role-filtered,
 
 Lists generally provide search, filters, pagination, and CSV/Excel downloads where enabled. Use **Details** to inspect a record. Use **Edit** only when it is offered; not every record can be edited, especially records that represent financial or inventory history.
 
-## 2. Accounts, roles, hubs, and beneficiaries
+## 2. Accounts, roles, hubs, and members
 
 ### Create a user and grant access
 
@@ -23,12 +23,12 @@ For hub-scoped staff, open **Hubs** and add the person as a member of the correc
 
 Create a hub before assigning its staff, products, or transactions. A Super Admin creates hubs. An Admin or an authorized Hub Manager can edit a hub they are allowed to manage. Check the hub's status and manager/membership before entering operations; inactive hubs cannot accept sales or stock movements.
 
-### Add beneficiaries and businesses
+### Add members and businesses
 
-1. An administrator creates a user with the **Beneficiary** role.
-2. Under **Beneficiaries**, choose **Add beneficiary**, select that user, and complete the profile and hub assignment.
-3. Under **Businesses**, choose **Add business**, select the beneficiary, and enter the business name, contact/registration details, hub, and status.
-4. To update either record, choose its **Edit** action. A beneficiary can update only their own profile/businesses; administrators can manage them across the organization.
+1. An administrator creates a user with the **Member** role.
+2. Under **Members**, choose **Add member**, select that user, and complete the profile and hub assignment.
+3. Under **Businesses**, choose **Add business**, select the member, and enter the business name, contact/registration details, hub, and status.
+4. To update either record, choose its **Edit** action. A member can update only their own profile/businesses; administrators can manage them across the organization.
 
 Set a business to active before associating it with a sale. Business/hub associations must agree.
 
@@ -50,7 +50,7 @@ Inventory transactions are the stock history. Do not try to correct an old trans
 
 ## 4. Record and reconcile sales
 
-1. Admins, Hub Managers, Sales Agents, and Super Admins can record sales. Under **Sales**, choose **New sale**. Select an active hub, an active product, and a positive quantity. Add customer details, an optional active business, payment method/reference, and notes as appropriate. Finance Officers, Viewers, Workers, and Beneficiaries do not have sale-entry permission.
+1. Admins, Hub Managers, Sales Agents, and Super Admins can record sales. Under **Sales**, choose **New sale**. Select an active hub, an active product, and a positive quantity. Add customer details, an optional active business, payment method/reference, and notes as appropriate. Finance Officers, Viewers, Workers, and Members do not have sale-entry permission.
 2. Submit the sale. The application checks available stock, records the completed sale and stock-out movement, and accrues an agent commission when the seller is a Sales Agent. Cash/mobile/bank sales record an income cash-flow entry; credit sales do not record cash received.
 3. Use the Sales list and detail page to review it. The **Edit** action changes only customer name/phone, payment reference, and notes. Product lines, quantity, amount, payment method, hub, and business are locked because they affect stock, cash flow, and commissions.
 4. Refund a completed sale only through the authorized refund workflow with a reason (the default role matrix grants this action to Super Admin). It records returned stock and, for non-credit sales, a refund cash-flow outflow. Do not use a regular stock adjustment to disguise a sales refund.
@@ -84,7 +84,7 @@ An authorized approver reviews pending commissions and approves or rejects them;
 - **Break-even**, **Projections**, and **Ratios** are decision-support calculations. Break-even and projections use values submitted on the screen and do not save a forecast.
 - **Assets**, **Liabilities**, **Equity**, **Startup costs**, and **Funding sources** are currently browse/report screens, not complete data-entry workflows in the normal application. Do not treat them as maintained ledgers.
 
-Finance Officers and Hub Managers see hub-scoped records. Beneficiaries see their own permitted business data. Financial totals depend on the stored operational records and date/status rules, so reconcile them against source transactions before using them for decisions.
+Finance Officers and Hub Managers see hub-scoped records. Members see their own permitted business data. Financial totals depend on the stored operational records and date/status rules, so reconcile them against source transactions before using them for decisions.
 
 ### Reports, exports, approvals, and audit history
 
@@ -97,12 +97,12 @@ Use **Reports** for available operational summaries and **Sales / stock reconcil
 | Role | Typical work |
 | --- | --- |
 | Super Admin | Full system administration, hubs, users, permissions, and commission settings |
-| Admin | Organization users and operations; beneficiary/business maintenance; prepare/approve salaries |
+| Admin | Organization users and operations; member/business maintenance; prepare/approve salaries |
 | Hub Manager | Assigned hub operations, stock, purchase orders, sales, and local worker profiles |
 | Finance Officer | Hub-scoped finance, commission/payroll review and payment, exports |
 | Sales Agent | Record sales and view own commission history |
 | Worker | View own salary records and notifications |
-| Beneficiary | View/update own profile and businesses and permitted related data |
+| Member | View/update own profile and businesses and permitted related data |
 | Viewer | Read-only operational and reporting access in assigned hubs |
 
 Actual actions are controlled by permissions as well as role and hub scope. When access differs from this summary, the current permission matrix and the buttons shown for your account take precedence.

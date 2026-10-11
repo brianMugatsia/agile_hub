@@ -12,9 +12,9 @@ def hubs_for_user(user, *, active_only=False):
         queryset = queryset.filter(status=Hub.Status.ACTIVE)
     if getattr(user, "role", None) in PLATFORM_ROLES:
         return queryset
-    if getattr(user, "role", None) == Role.BENEFICIARY:
+    if getattr(user, "role", None) == Role.MEMBER:
         return queryset.filter(
-            Q(beneficiaries__user=user) | Q(businesses__beneficiary__user=user)
+            Q(members__user=user) | Q(businesses__member__user=user)
         ).distinct()
     if getattr(user, "role", None) == Role.WORKER:
         return queryset.filter(workers__user=user).distinct()
@@ -28,10 +28,10 @@ def user_can_access_hub(user, hub):
         return False
     if getattr(user, "role", None) in PLATFORM_ROLES:
         return True
-    if getattr(user, "role", None) == Role.BENEFICIARY:
+    if getattr(user, "role", None) == Role.MEMBER:
         return (
-            hub.beneficiaries.filter(user=user).exists()
-            or hub.businesses.filter(beneficiary__user=user).exists()
+            hub.members.filter(user=user).exists()
+            or hub.businesses.filter(member__user=user).exists()
         )
     if getattr(user, "role", None) == Role.WORKER:
         return hub.workers.filter(user=user).exists()
@@ -60,6 +60,12 @@ def selected_hub(request, user=None):
 
 
 def _resolve_selected_hub(request, user):
+    user_hub = getattr(user, "hub", None)
+    if user_hub is not None:
+        if request.session.get("active_hub_id") != str(user_hub.pk):
+            request.session["active_hub_id"] = str(user_hub.pk)
+        return Hub.objects.filter(pk=user_hub.pk), user_hub, ""
+
     hubs = hubs_for_user(user)
 
     if hub_is_locked(user, hubs):

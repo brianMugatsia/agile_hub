@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.hubs.models import Hub
 from apps.products.models import Product
-from apps.beneficiaries.models import Business
+from apps.members.models import Business
 
 
 class CompleteSaleSerializer(serializers.Serializer):
