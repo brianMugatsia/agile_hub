@@ -23,10 +23,10 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
     assert b"Edit" in member_list.content
     assert reverse("members:detail", args=[member.pk]).encode() in member_list.content
 
-    business_list = client.get(reverse("members:businesses"))
+    business_list = client.get(reverse("members:contributions"))
     assert business_list.status_code == 200
-    assert b"Add business" in business_list.content
-    assert reverse("members:business_edit", args=[business.pk]).encode() in business_list.content
+    assert b"Add contribution" in business_list.content
+    assert reverse("members:contribution_edit", args=[business.pk]).encode() in business_list.content
 
     member_update = client.post(
         reverse("members:edit", args=[member.pk]),
@@ -45,7 +45,7 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
     assert member.address == "Nairobi"
 
     business_update = client.post(
-        reverse("members:business_edit", args=[business.pk]),
+        reverse("members:contribution_edit", args=[business.pk]),
         {
             "member": member.pk,
             "hub": hub.pk,
@@ -103,9 +103,9 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
     detail = client.get(reverse("members:detail", args=[own_profile.pk]))
     assert detail.status_code == 200
     assert b"Edit member" in detail.content
-    assert b"Add business" in detail.content
-    assert reverse("members:business_edit", args=[own_business.pk]).encode() in detail.content
-    assert reverse("members:business_edit", args=[other_business.pk]).encode() not in detail.content
+    assert b"Add contribution" in detail.content
+    assert reverse("members:contribution_edit", args=[own_business.pk]).encode() in detail.content
+    assert reverse("members:contribution_edit", args=[other_business.pk]).encode() not in detail.content
 
     own_update = client.get(reverse("members:edit", args=[own_profile.pk]))
     assert own_update.status_code == 200
@@ -122,7 +122,7 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
     )
     assert profile_update.status_code == 302
     business_update = client.post(
-        reverse("members:business_edit", args=[own_business.pk]),
+        reverse("members:contribution_edit", args=[own_business.pk]),
         {
             "member": own_profile.pk,
             "hub": hub.pk,
@@ -138,7 +138,7 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
     own_business.refresh_from_db()
     assert own_business.name == "Own business updated"
     assert client.get(reverse("members:edit", args=[other_profile.pk])).status_code == 404
-    assert client.get(reverse("members:business_edit", args=[other_business.pk])).status_code == 404
+    assert client.get(reverse("members:contribution_edit", args=[other_business.pk])).status_code == 404
 
 
 def test_roles_without_change_permission_do_not_see_edit_buttons(client, make_user, roles):
@@ -173,3 +173,161 @@ def test_hub_manager_sees_only_businesses_in_their_hub(client, make_user, roles)
     assert b"Visible business" in response.content
     assert b"Hidden business" not in response.content
     assert b"Edit member" in response.content
+
+
+def test_member_excel_upload_previews_then_creates_only_after_confirmation(
+    client, make_user, roles
+):
+    from io import BytesIO
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from openpyxl import Workbook
+    from apps.core.models import StagedSpreadsheetImport
+
+    def _xlsx(headers, rows):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.append(headers)
+        for row in rows:
+            sheet.append(row)
+        output = BytesIO()
+        workbook.save(output)
+        return SimpleUploadedFile(
+            "import.xlsx",
+            output.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="IMP-HUB", name="Import Hub")
+    client.force_login(admin)
+    uploaded = _xlsx(
+        ["username", "first_name", "last_name", "phone_number"],
+        [["johndoe", "John", "Doe", "0712345678"]],
+    )
+    preview = client.post(
+        reverse("members:import"),
+        {"file": uploaded},
+    )
+
+    assert preview.status_code == 200
+    assert b"John" in preview.content
+    assert not MemberProfile.objects.filter(user__username="johndoe").exists()
+    staged = StagedSpreadsheetImport.objects.get(import_type="members")
+    response = client.post(
+        reverse("members:import"),
+        {"confirm_import": "1", "stage_token": str(staged.token)},
+    )
+
+    assert response.status_code == 302
+    profile = MemberProfile.objects.get(user__username="johndoe")
+    assert profile.user.first_name == "John"
+    assert profile.phone_number == "0712345678"
+    assert profile.hub == hub
+    staged.refresh_from_db()
+    assert staged.consumed_at is not None
+    assert staged.rows == []
+
+
+def test_business_excel_upload_previews_then_creates_only_after_confirmation(
+    client, make_user, roles
+):
+    from io import BytesIO
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from openpyxl import Workbook
+    from apps.core.models import StagedSpreadsheetImport
+
+    def _xlsx(headers, rows):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.append(headers)
+        for row in rows:
+            sheet.append(row)
+        output = BytesIO()
+        workbook.save(output)
+        return SimpleUploadedFile(
+            "import.xlsx",
+            output.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="BIZ-HUB", name="Biz Hub")
+    member_user = make_user(role=Role.MEMBER, username="bizowner")
+    MemberProfile.objects.create(user=member_user, hub=hub)
+    client.force_login(admin)
+
+    uploaded = _xlsx(
+        ["member_username", "name", "business_type", "status"],
+        [["bizowner", "Super Shop", "Retail", "ACTIVE"]],
+    )
+    preview = client.post(
+        reverse("members:contribution_import"),
+        {"file": uploaded},
+    )
+
+    assert preview.status_code == 200
+    assert b"Super Shop" in preview.content
+    assert not Business.objects.filter(name="Super Shop").exists()
+    staged = StagedSpreadsheetImport.objects.get(import_type="businesses")
+    response = client.post(
+        reverse("members:contribution_import"),
+        {"confirm_import": "1", "stage_token": str(staged.token)},
+    )
+
+    assert response.status_code == 302
+    biz = Business.objects.get(name="Super Shop")
+    assert biz.member.user.username == "bizowner"
+    assert biz.business_type == "Retail"
+    assert biz.hub == hub
+    staged.refresh_from_db()
+    assert staged.consumed_at is not None
+
+
+def test_download_member_and_business_import_templates(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    client.force_login(admin)
+
+    res_member = client.get(reverse("members:import_template"))
+    assert res_member.status_code == 200
+    assert res_member["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    res_biz = client.get(reverse("members:contribution_import_template"))
+    assert res_biz.status_code == 200
+    assert res_biz["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def test_admin_can_add_member_without_hub_dropdown(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    member_user = make_user(role=Role.MEMBER, username="newmember")
+    hub = Hub.objects.create(code="NEW-HUB", name="New Hub")
+    admin.hub = hub
+    admin.save()
+    client.force_login(admin)
+
+    response = client.get(reverse("members:create"))
+    assert response.status_code == 200
+
+    create_res = client.post(
+        reverse("members:create"),
+        {
+            "user": member_user.pk,
+            "phone_number": "0799999999",
+            "national_id": "12345678",
+            "address": "Test Address",
+            "notes": "Test Notes",
+        },
+    )
+    assert create_res.status_code == 302
+    profile = MemberProfile.objects.get(user=member_user)
+    assert profile.phone_number == "0799999999"
+    assert profile.hub == hub
+
+
+def test_contribution_list_has_search_bar_without_shard_or_hub_filters(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    client.force_login(admin)
+
+    response = client.get(reverse("members:contributions"))
+    assert response.status_code == 200
+    assert b"record-search" in response.content
+    assert b"All hubs" not in response.content
