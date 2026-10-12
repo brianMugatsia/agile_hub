@@ -65,7 +65,7 @@ class CommissionListView(ScopedModelListView):
 
 
 class PendingCommissionListView(CommissionListView):
-    template_name = "commissions/pending_commissions.html"
+    template_name = "commissions/commission_list.html"
     page_title = "Pending commissions"
     filter_fields = ()
 
@@ -77,6 +77,40 @@ class PendingCommissionListView(CommissionListView):
         query = self.request.GET.copy()
         query.pop("page", None)
         query["status"] = SalesAgentCommission.Status.PENDING
+        context["export_query"] = query.urlencode()
+        return context
+
+
+class ApprovedCommissionListView(CommissionListView):
+    template_name = "commissions/commission_list.html"
+    page_title = "Approved commissions"
+    filter_fields = ()
+
+    def get_queryset(self):
+        return super().get_queryset().filter(status=SalesAgentCommission.Status.APPROVED)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = self.request.GET.copy()
+        query.pop("page", None)
+        query["status"] = SalesAgentCommission.Status.APPROVED
+        context["export_query"] = query.urlencode()
+        return context
+
+
+class PaidCommissionListView(CommissionListView):
+    template_name = "commissions/commission_list.html"
+    page_title = "Paid commissions"
+    filter_fields = ()
+
+    def get_queryset(self):
+        return super().get_queryset().filter(status=SalesAgentCommission.Status.PAID)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = self.request.GET.copy()
+        query.pop("page", None)
+        query["status"] = SalesAgentCommission.Status.PAID
         context["export_query"] = query.urlencode()
         return context
 

@@ -77,15 +77,15 @@
     </div>
   </section>
 
-  <!-- BUSINESSES -->
-  {% if businesses or can_add_business %}
+  <!-- CONTRIBUTIONS -->
+  {% if contributions or can_add_contribution %}
     <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
         <div class="dashboard-section__heading">
-          <h2 class="card__title">Businesses <span class="dash-count">{{ businesses|length }}</span></h2>
-          {% if can_add_business %}<a class="btn btn--primary btn--sm" href="{% url 'members:business_create' %}">Add business</a>{% endif %}
+          <h2 class="card__title">Contributions <span class="dash-count">{{ contributions|length }}</span></h2>
+          {% if can_add_contribution %}<a class="btn btn--primary btn--sm" href="{% url 'members:contribution_create' %}">Add contribution</a>{% endif %}
         </div>
-        {% include "components/data_table.html" with object_list=businesses columns=business_columns %}
+        {% include "components/data_table.html" with object_list=contributions columns=contribution_columns %}
       </div>
     </section>
   {% endif %}

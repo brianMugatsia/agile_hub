@@ -20,9 +20,13 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
 from apps.audit.services import record_event
+from apps.accounts.models import User
+from apps.accounts.roles import Role
+from apps.hubs.models import Hub
 from apps.hubs.permissions import hubs_for_user
 from apps.inventory.models import InventoryBalance, InventoryTransaction
 from apps.inventory.services import record_movement
+from apps.members.models import MemberProfile, Business
 from apps.products.forms import ProductForm
 from apps.products.models import Product
 
@@ -59,10 +63,30 @@ def read_workbook(uploaded, required_headers, allowed_headers):
     try:
         sheet = workbook.active
         header_cells = next(sheet.iter_rows(min_row=1, max_row=1), ())
-        headers = [
+        raw_headers = [
             str(cell.value or "").strip().lower().replace(" ", "_")
             for cell in header_cells
         ]
+        alias_map = {
+            "product": "product_sku",
+            "item_sku": "product_sku",
+            "product_code": "product_sku",
+            "type": "kind",
+            "movement_kind": "kind",
+            "action": "kind",
+            "movement": "kind",
+            "qty": "quantity",
+            "amount": "quantity",
+            "hub": "hub_code",
+            "hub_name": "hub_code",
+            "location": "hub_code",
+            "user": "username",
+            "login": "username",
+            "handle": "username",
+            "business_name": "name",
+            "company": "name",
+        }
+        headers = [alias_map.get(h, h) for h in raw_headers]
         non_empty_headers = [header for header in headers if header]
         if len(non_empty_headers) != len(set(non_empty_headers)):
             raise ValidationError("The workbook contains duplicate column headings.")
@@ -90,9 +114,9 @@ def read_workbook(uploaded, required_headers, allowed_headers):
             if any(cell.data_type == "f" for cell in cells):
                 raise ValidationError(f"Row {line_number} contains a formula; use values only.")
             values = {
-                header: cells[index].value
-                for index, header in enumerate(headers)
-                if header and index < len(cells)
+                headers[index]: cells[index].value
+                for index, header in enumerate(raw_headers)
+                if headers[index] and index < len(cells)
             }
             rows.append({"line": line_number, "values": values})
         if not rows:
@@ -406,7 +430,7 @@ class InventoryImportView(SpreadsheetImportView):
     template_url = "inventory:import_template"
     page_title = "Import stock movements"
     description = "Record stock receipts, issues, and adjustments through the inventory ledger."
-    required_headers = ("hub_code", "product_sku", "kind", "quantity")
+    required_headers = ("product_sku", "kind", "quantity")
     template_headers = (
         "hub_code", "product_sku", "kind", "quantity", "direction",
         "unit_cost", "reference", "notes",
@@ -415,22 +439,29 @@ class InventoryImportView(SpreadsheetImportView):
     def validate_rows(self, rows, user):
         errors = []
         accepted = []
-        hub_codes = {
-            str(row["values"].get("hub_code", "")).strip().casefold()
-            for row in rows
-            if row["values"].get("hub_code")
-        }
         product_skus = {
             str(row["values"].get("product_sku", "")).strip().casefold()
             for row in rows
             if row["values"].get("product_sku")
         }
-        available_hubs = {
+        available_hubs = {}
+        for hub in hubs_for_user(user, active_only=False).annotate(
+            normalized_code=Lower("code"),
+            normalized_name=Lower("name")
+        ):
+            available_hubs[hub.normalized_code] = hub
+            available_hubs[hub.normalized_name] = hub
+
+        all_hubs = {
             hub.normalized_code: hub
-            for hub in hubs_for_user(user, active_only=True)
-            .annotate(normalized_code=Lower("code"))
-            .filter(normalized_code__in=hub_codes)
+            for hub in Hub.objects.all().annotate(
+                normalized_code=Lower("code"),
+                normalized_name=Lower("name")
+            )
         }
+
+        default_hub = getattr(user, "hub", None) or hubs_for_user(user, active_only=False).first() or Hub.objects.first()
+
         products = {
             product.normalized_sku: product
             for product in Product.objects.filter(is_active=True)
@@ -440,23 +471,52 @@ class InventoryImportView(SpreadsheetImportView):
         candidates = []
         for row in rows:
             data = row["values"]
-            hub = available_hubs.get(str(data.get("hub_code", "")).strip().casefold())
+            hub_input = str(data.get("hub_code", "")).strip()
+            hub = None
+            if hub_input:
+                hub = available_hubs.get(hub_input.casefold())
+                if hub is None:
+                    errors.append(f"Row {row['line']}: Hub is unknown, inactive, or outside your access.")
+                    continue
+            else:
+                hub = default_hub
+                if hub is None:
+                    errors.append(f"Row {row['line']}: Hub is required.")
+                    continue
+
             product = products.get(str(data.get("product_sku", "")).strip().casefold())
-            if hub is None:
-                errors.append(f"Row {row['line']}: Hub is unknown, inactive, or outside your access.")
-                continue
             if product is None:
                 errors.append(f"Row {row['line']}: Active product SKU was not found.")
                 continue
-            kind = str(data.get("kind", "")).strip().upper()
+            kind_str = str(data.get("kind", "")).strip().casefold()
+            kind_map = {
+                "receipt": InventoryTransaction.Kind.RECEIPT,
+                "received": InventoryTransaction.Kind.RECEIPT,
+                "stock received": InventoryTransaction.Kind.RECEIPT,
+                "rec": InventoryTransaction.Kind.RECEIPT,
+                "issue": InventoryTransaction.Kind.ISSUE,
+                "issued": InventoryTransaction.Kind.ISSUE,
+                "stock issued": InventoryTransaction.Kind.ISSUE,
+                "out": InventoryTransaction.Kind.ISSUE,
+                "adjustment": InventoryTransaction.Kind.ADJUSTMENT,
+                "adjust": InventoryTransaction.Kind.ADJUSTMENT,
+                "adj": InventoryTransaction.Kind.ADJUSTMENT,
+                "sale": InventoryTransaction.Kind.SALE,
+                "sold": InventoryTransaction.Kind.SALE,
+                "refund": InventoryTransaction.Kind.REFUND,
+                "return": InventoryTransaction.Kind.REFUND,
+            }
+            kind = kind_map.get(kind_str) or kind_str.upper()
             direction = str(data.get("direction", "") or "").strip().upper() or None
             allowed_kinds = {
                 InventoryTransaction.Kind.RECEIPT,
                 InventoryTransaction.Kind.ISSUE,
                 InventoryTransaction.Kind.ADJUSTMENT,
+                InventoryTransaction.Kind.SALE,
+                InventoryTransaction.Kind.REFUND,
             }
             if kind not in allowed_kinds:
-                errors.append(f"Row {row['line']}: Choose a valid movement kind.")
+                errors.append(f"Row {row['line']}: Choose a valid movement kind (RECEIPT, ISSUE, ADJUSTMENT).")
                 continue
             try:
                 quantity_decimal = forms.DecimalField(min_value=1).clean(data.get("quantity"))
@@ -484,8 +544,13 @@ class InventoryImportView(SpreadsheetImportView):
                 continue
             unit_cost = data.get("unit_cost")
             if unit_cost not in (None, ""):
+                cost_str = str(unit_cost).strip()
+                for prefix in ("kes", "ksh", "usd", "$", "€", "£"):
+                    if cost_str.lower().startswith(prefix):
+                        cost_str = cost_str[len(prefix):].strip()
+                cost_str = cost_str.replace(",", "")
                 try:
-                    unit_cost = str(forms.DecimalField(min_value=0, max_digits=12, decimal_places=2).clean(unit_cost))
+                    unit_cost = str(forms.DecimalField(min_value=0, max_digits=12, decimal_places=2).clean(cost_str))
                 except ValidationError:
                     errors.append(f"Row {row['line']}: Unit cost must be a non-negative amount with at most two decimals.")
                     continue
@@ -561,3 +626,230 @@ class InventoryImportTemplateView(ExcelTemplateView):
     permission_required = "inventory.add_inventorytransaction"
     headers = InventoryImportView.template_headers
     filename = "inventory-import-template.xlsx"
+
+
+class MemberImportView(SpreadsheetImportView):
+    import_type = StagedSpreadsheetImport.ImportType.MEMBERS
+    permission_required = "members.add_memberprofile"
+    list_url = "members:list"
+    template_url = "members:import_template"
+    page_title = "Import members"
+    description = "Create member profiles from a validated Excel workbook."
+    required_headers = ("username", "first_name", "last_name")
+    template_headers = (
+        "username", "email", "first_name", "last_name", "phone_number",
+        "national_id", "address", "notes",
+    )
+
+    def validate_rows(self, rows, user):
+        errors = []
+        accepted = []
+        usernames = {
+            str(row["values"].get("username", "")).strip().casefold()
+            for row in rows
+            if row["values"].get("username")
+        }
+        default_hub = getattr(user, "hub", None) or hubs_for_user(user, active_only=True).first()
+
+        existing_users = {
+            u.normalized_username: u
+            for u in User.objects.annotate(normalized_username=Lower("username"))
+            .filter(normalized_username__in=usernames)
+        }
+        existing_profiles = set(
+            MemberProfile.objects.filter(user__in=existing_users.values())
+            .values_list("user_id", flat=True)
+        )
+        seen_usernames = set()
+
+        for row in rows:
+            data = row["values"]
+            username = str(data.get("username", "")).strip()
+            email = str(data.get("email", "")).strip()
+            if not username and email:
+                username = email.split("@")[0]
+            if not username:
+                errors.append(f"Row {row['line']}: Username or email is required.")
+                continue
+            if username.casefold() in seen_usernames:
+                errors.append(f"Row {row['line']}: Username {username} is duplicated in this workbook.")
+                continue
+            seen_usernames.add(username.casefold())
+
+            first_name = str(data.get("first_name", "")).strip()
+            last_name = str(data.get("last_name", "")).strip()
+            if not first_name or not last_name:
+                errors.append(f"Row {row['line']}: First name and last name are required.")
+                continue
+
+            existing_user = existing_users.get(username.casefold())
+            if existing_user and existing_user.pk in existing_profiles:
+                errors.append(f"Row {row['line']}: Member profile already exists for username {username}.")
+                continue
+
+            accepted.append({
+                "username": username,
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "phone_number": str(data.get("phone_number", "")).strip(),
+                "national_id": str(data.get("national_id", "")).strip(),
+                "hub_id": str(default_hub.pk) if default_hub else "",
+                "address": str(data.get("address", "")).strip(),
+                "notes": str(data.get("notes", "")).strip(),
+            })
+
+        preview = _preview_rows(rows, self.template_headers)
+        return preview, errors, accepted
+
+    def commit_rows(self, rows, user, *, request):
+        for row in rows:
+            username = row["username"]
+            email = row["email"]
+            first_name = row["first_name"]
+            last_name = row["last_name"]
+            phone_number = row["phone_number"]
+            national_id = row["national_id"]
+            hub_id = row["hub_id"]
+            address = row["address"]
+            notes = row["notes"]
+
+            member_user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "role": Role.MEMBER,
+                    "is_active": True,
+                }
+            )
+            if not created:
+                member_user.email = email or member_user.email
+                member_user.first_name = first_name
+                member_user.last_name = last_name
+                member_user.role = Role.MEMBER
+                member_user.is_active = True
+                member_user.save()
+
+            hub = Hub.objects.filter(pk=hub_id).first() if hub_id else None
+            profile, _ = MemberProfile.objects.update_or_create(
+                user=member_user,
+                defaults={
+                    "hub": hub,
+                    "phone_number": phone_number,
+                    "national_id": national_id,
+                    "address": address,
+                    "notes": notes,
+                }
+            )
+            record_event(
+                action="members.memberprofile.imported",
+                summary=f"Imported member profile {profile}",
+                actor=user,
+                target=profile,
+                request=request,
+            )
+
+
+class MemberImportTemplateView(ExcelTemplateView):
+    permission_required = "members.add_memberprofile"
+    headers = MemberImportView.template_headers
+    filename = "member-import-template.xlsx"
+
+
+class BusinessImportView(SpreadsheetImportView):
+    import_type = StagedSpreadsheetImport.ImportType.BUSINESSES
+    permission_required = "members.add_business"
+    list_url = "members:contributions"
+    template_url = "members:contribution_import_template"
+    page_title = "Import member businesses"
+    description = "Create member businesses from a validated Excel workbook."
+    required_headers = ("member_username", "name")
+    template_headers = (
+        "member_username", "name", "business_type", "registration_number",
+        "phone_number", "address", "status", "notes",
+    )
+
+    def validate_rows(self, rows, user):
+        errors = []
+        accepted = []
+        member_usernames = {
+            str(row["values"].get("member_username", "")).strip().casefold()
+            for row in rows
+            if row["values"].get("member_username")
+        }
+        members = {
+            m.normalized_username: m
+            for m in MemberProfile.objects.select_related("user", "hub")
+            .annotate(normalized_username=Lower("user__username"))
+            .filter(normalized_username__in=member_usernames)
+        }
+        default_hub = getattr(user, "hub", None) or hubs_for_user(user, active_only=True).first()
+
+        for row in rows:
+            data = row["values"]
+            member_username = str(data.get("member_username", "")).strip()
+            if not member_username:
+                errors.append(f"Row {row['line']}: Member username is required.")
+                continue
+
+            member = members.get(member_username.casefold())
+            if not member:
+                errors.append(f"Row {row['line']}: Member with username {member_username} was not found.")
+                continue
+
+            name = str(data.get("name", "")).strip()
+            if not name:
+                errors.append(f"Row {row['line']}: Business name is required.")
+                continue
+
+            hub = member.hub or default_hub
+            status_str = str(data.get("status", "")).strip().upper()
+            status = Business.Status.ACTIVE if status_str in ("ACTIVE", "ACT", "1", "TRUE") else (
+                Business.Status.INACTIVE if status_str in ("INACTIVE", "INACT", "0", "FALSE") else Business.Status.ACTIVE
+            )
+
+            accepted.append({
+                "member_id": member.pk,
+                "name": name,
+                "business_type": str(data.get("business_type", "")).strip()[:100],
+                "registration_number": str(data.get("registration_number", "")).strip()[:80],
+                "hub_id": str(hub.pk) if hub else "",
+                "phone_number": str(data.get("phone_number", "")).strip()[:24],
+                "address": str(data.get("address", "")).strip()[:255],
+                "status": status,
+            })
+
+        preview = _preview_rows(rows, self.template_headers)
+        return preview, errors, accepted
+
+    def commit_rows(self, rows, user, *, request):
+        for row in rows:
+            member = MemberProfile.objects.get(pk=row["member_id"])
+            hub = Hub.objects.filter(pk=row["hub_id"]).first() if row["hub_id"] else None
+            business, _ = Business.objects.update_or_create(
+                member=member,
+                name=row["name"],
+                defaults={
+                    "hub": hub,
+                    "business_type": row["business_type"],
+                    "registration_number": row["registration_number"],
+                    "phone_number": row["phone_number"],
+                    "address": row["address"],
+                    "status": row["status"],
+                }
+            )
+            record_event(
+                action="members.business.imported",
+                summary=f"Imported business {business}",
+                actor=user,
+                target=business,
+                request=request,
+            )
+
+
+class BusinessImportTemplateView(ExcelTemplateView):
+    permission_required = "members.add_business"
+    headers = BusinessImportView.template_headers
+    filename = "business-import-template.xlsx"
