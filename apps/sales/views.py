@@ -155,7 +155,7 @@ class SalesAgentListView(ScopedModelListView):
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(
-            role=Role.SALES_AGENT, is_active=True
+            role__in=[Role.SALES_AGENT, Role.MEMBER], is_active=True
         ).order_by("last_name", "first_name")
         if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN):
             hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)

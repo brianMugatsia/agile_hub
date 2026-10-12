@@ -3,7 +3,12 @@
 {% load static %}
 
 {% block page_actions %}
-  {% if can_approve_commissions %}<a class="btn btn--secondary" href="{% url 'commissions:pending' %}">Pending approvals</a>{% endif %}
+  <a class="btn btn--secondary" href="{% url 'commissions:list' %}">All</a>
+  {% if can_approve_commissions %}
+    <a class="btn btn--secondary" href="{% url 'commissions:pending' %}">Pending</a>
+    <a class="btn btn--secondary" href="{% url 'commissions:approved' %}">Approved</a>
+    <a class="btn btn--secondary" href="{% url 'commissions:paid' %}">Paid</a>
+  {% endif %}
   {% if can_view_commission_settings %}<a class="btn btn--secondary" href="{% url 'commissions:settings' %}">Commission settings</a>{% endif %}
 {% endblock %}
 

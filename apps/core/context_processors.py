@@ -30,7 +30,7 @@ NAV_ITEMS = (
     NavItem("Notifications", "notifications:list", "inbox", EVERYONE, "Overview"),
     NavItem("Hubs", "hubs:list", "map-pin", (SA,), "Operations"),
     NavItem("Members", "members:list", "heart", (SA, AD, HM, BN), "Operations"),
-    NavItem("Member Businesses", "members:businesses", "briefcase", (SA, AD, HM, FO, BN, VW), "Operations"),
+    NavItem("Member Contributions", "members:contributions", "briefcase", (SA, AD, HM, FO, BN, VW), "Operations"),
     NavItem("Products", "products:list", "package", (SA, AD, HM, FO, AG, VW), "Operations"),
     NavItem("Inventory", "inventory:list", "layers", (SA, AD, HM, FO), "Operations"),
     NavItem("Purchase orders", "inventory:purchase_orders", "package", (SA, AD, HM), "Operations"),

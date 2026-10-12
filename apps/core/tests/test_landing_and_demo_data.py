@@ -140,7 +140,7 @@ def test_demo_seed_creates_real_records_and_is_idempotent(capsys):
     with override_settings(DEMO_DATA_ENABLED=True):
         call_command("seed_demo_data", sales=12, batch="pytest")
 
-    hub = Hub.objects.get(code="NAI-001")
+    hub = Hub.objects.get(code="KIM-001")
     assert Sale.objects.filter(hub=hub).exists()
     assert InventoryBalance.objects.filter(hub=hub).exists()
     assert Product.objects.exists()

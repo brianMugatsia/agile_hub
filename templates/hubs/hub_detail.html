@@ -137,7 +137,7 @@
         {% if perms.products.view_product %}<a class="link-row" href="{% url 'products:list' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-box"/></svg> Products and stock</a>{% endif %}
         {% if perms.inventory.view_inventorytransaction %}<a class="link-row" href="{% url 'inventory:list' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-box"/></svg> Inventory movements</a>{% endif %}
         {% if perms.inventory.view_purchaseorder %}<a class="link-row" href="{% url 'inventory:purchase_orders' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-store"/></svg> Purchase orders</a>{% endif %}
-        {% if perms.members.view_business %}<a class="link-row" href="{% url 'members:businesses' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-store"/></svg> Businesses</a>{% endif %}
+        {% if perms.members.view_business %}<a class="link-row" href="{% url 'members:contributions' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-store"/></svg> Contributions</a>{% endif %}
         {% if perms.payroll.view_workerprofile %}<a class="link-row" href="{% url 'payroll:worker_list' %}?hub={{ hub.pk }}"><svg class="dash-icon" aria-hidden="true"><use href="#hub-i-users"/></svg> Workers</a>{% endif %}
       </div>
     </article>

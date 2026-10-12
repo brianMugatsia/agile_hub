@@ -101,6 +101,7 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
         from apps.commissions.models import SalesAgentCommission
         from apps.hubs.models import Hub
         from apps.inventory.models import InventoryBalance
+        from apps.members.models import MemberProfile, Business
         from apps.payroll.models import SalaryRecord
         from apps.products.models import Product
         from apps.sales.models import Sale
@@ -114,9 +115,18 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
         elif hub_error:
             hubs = hubs.none()
         sales = Sale.objects.filter(status=Sale.Status.COMPLETED)
+
+        total_members = MemberProfile.objects.count() if is_platform_admin else MemberProfile.objects.filter(hub__in=hubs).count()
+        total_contributions = Business.objects.count() if is_platform_admin else Business.objects.filter(hub__in=hubs).count()
+        total_contribution_amount = (
+            Business.objects.aggregate(total=Sum("amount"))["total"] or 0
+            if is_platform_admin
+            else Business.objects.filter(hub__in=hubs).aggregate(total=Sum("amount"))["total"] or 0
+        )
+
         if is_platform_admin:
             context["dashboard_intro"] = (
-                "A live overview of hubs, products, completed sales and commission activity."
+                "A live overview of total members, contributions (some eligible for commissions), completed sales and commission activity."
             )
         elif user.role in (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER):
             sales = sales.filter(hub__in=hubs)
@@ -134,11 +144,11 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
 
         if not is_platform_admin:
             context["dashboard_intro"] = {
-                Role.HUB_MANAGER: "Recent sales, stock levels and approvals for your hubs.",
+                Role.HUB_MANAGER: "Recent sales, stock levels, member contributions, and approvals for your hubs (some members receive commissions).",
                 Role.FINANCE_OFFICER: "Recent sales and outstanding payment approvals for your hubs.",
                 Role.SALES_AGENT: "Your completed sales and commission activity.",
                 Role.WORKER: "Your salary records and payment history.",
-                Role.MEMBER: "Your businesses and associated sales activity.",
+                Role.MEMBER: "Your contributions and associated sales activity.",
                 Role.VIEWER: "A read-only summary of activity at your hubs.",
             }.get(user.role, "Your latest Agile Hub activity.")
 
@@ -168,7 +178,9 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
                 sale__hub__in=hubs,
             )
             context["dashboard_stats"] = [
-                ("Active hubs", hubs.filter(status=Hub.Status.ACTIVE).count()),
+                ("Total members", total_members),
+                ("Total contributions", total_contributions),
+                ("Total amount contributed", total_contribution_amount),
                 ("Products", Product.objects.filter(is_active=True).count()),
                 ("Completed sales", sales.count()),
                 ("Sales value", sales.aggregate(total=Sum("total"))["total"] or 0),
@@ -185,6 +197,9 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
                 sale__hub__in=hubs,
             )
             context["dashboard_stats"] = [
+                ("Total members", total_members),
+                ("Total contributions", total_contributions),
+                ("Total amount contributed", total_contribution_amount),
                 ("Completed sales", agent_sales.count()),
                 ("Sales total", agent_sales.aggregate(total=Sum("total"))["total"] or 0),
                 ("Pending commission", agent_pending_commissions.aggregate(total=Sum("amount"))["total"] or 0),
@@ -206,6 +221,9 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             all_salaries = all_salaries.filter(worker__hub__in=hubs)
             salaries = self.apply_date_range(all_salaries, "period_start")
             context["dashboard_stats"] = [
+                ("Total members", total_members),
+                ("Total contributions", total_contributions),
+                ("Total amount contributed", total_contribution_amount),
                 ("Salary records", salaries.count()),
                 (
                     "Awaiting payment (current)",
@@ -214,23 +232,25 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             ]
             context["recent_salaries"] = salaries.select_related("worker").order_by("-period_start")[:8]
         elif user.role == Role.MEMBER:
-            from apps.members.models import Business
-
             businesses = Business.objects.filter(member__user=user)
             if active_hub:
                 businesses = businesses.filter(hub=active_hub)
             elif hub_error:
                 businesses = businesses.none()
+            member_contrib_amount = businesses.aggregate(total=Sum("amount"))["total"] or 0
             context["dashboard_stats"] = [
-                ("Businesses", businesses.count()),
-                ("Active businesses", businesses.filter(status=Business.Status.ACTIVE).count()),
+                ("Total contributions", businesses.count()),
+                ("Total amount contributed", member_contrib_amount),
+                ("Active contributions", businesses.filter(status=Business.Status.ACTIVE).count()),
                 ("Completed sales", sales.count()),
                 ("Sales value", sales.aggregate(total=Sum("total"))["total"] or 0),
             ]
             context["recent_businesses"] = businesses.select_related("hub").order_by("name")[:8]
         else:
             context["dashboard_stats"] = [
-                ("Your hubs", hubs.count()),
+                ("Total members", total_members),
+                ("Total contributions", total_contributions),
+                ("Total amount contributed", total_contribution_amount),
                 ("Completed sales", sales.count()),
                 ("Sales value", sales.aggregate(total=Sum("total"))["total"] or 0),
             ]

@@ -46,6 +46,13 @@ class Command(BaseCommand):
         if not getattr(settings, "DEMO_DATA_ENABLED", False):
             raise CommandError("Sample seeding is disabled for this database.")
 
+        Hub.objects.filter(code="NAI-001").update(
+            code="KIM-001",
+            name="Kimilili Hub",
+            region="Western",
+            address="Main Street, Kimilili"
+        )
+
         sales_target = options["sales"]
         batch = options["batch"]
         if not 0 <= sales_target <= 10_000:
@@ -55,7 +62,7 @@ class Command(BaseCommand):
 
         # Define 3 realistic hubs
         hub_specs = [
-            ("NAI-001", "Nairobi Central Hub", "Nairobi", "Kenyatta Avenue, Nairobi"),
+            ("KIM-001", "Kimilili Hub", "Western", "Main Street, Kimilili"),
             ("MBA-002", "Mombasa Coastal Hub", "Coast", "Moi Avenue, Mombasa"),
             ("KSM-003", "Kisumu Lakeside Hub", "Western", "Oginga Odinga Road, Kisumu"),
         ]
@@ -195,12 +202,15 @@ class Command(BaseCommand):
                         "notes": f"Comprehensive member in {hub.name}",
                     },
                 )
-                Business.objects.get_or_create(
+                contrib_amount = Decimal("10000.00") if (m % 2 == 0) else Decimal("0.00")
+                Business.objects.update_or_create(
                     member=profile,
-                    name=f"{hub.region} Agricultural Enterprise {m}",
+                    name="Land Buying Contribution",
                     defaults={
                         "hub": hub,
-                        "business_type": "Mixed Farming",
+                        "business_type": "Land Buying",
+                        "amount": contrib_amount,
+                        "is_paid": (contrib_amount > 0),
                         "status": Business.Status.ACTIVE,
                     },
                 )

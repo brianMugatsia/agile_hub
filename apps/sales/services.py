@@ -89,7 +89,7 @@ def complete_sale(*, hub, agent, items, actor=None, customer_name="", customer_p
     sale.status = Sale.Status.COMPLETED
     sale.completed_at = timezone.now()
     sale.save(update_fields=["total", "status", "completed_at", "updated_at"])
-    if getattr(agent, "role", None) == "SALES_AGENT":
+    if getattr(agent, "role", None) in ("SALES_AGENT", "MEMBER"):
         accrue_for_sale(sale)
     if payment_method != Sale.PaymentMethod.CREDIT:
         CashFlow.objects.create(
