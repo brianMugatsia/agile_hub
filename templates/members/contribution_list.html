@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block page_actions %}
+  {% if can_create %}
+    <a class="btn btn--primary" href="{% url create_url_name %}">
+      {% icon "plus" %}<span>{{ create_label }}</span>
+    </a>
+  {% endif %}
+  {% if import_url_name and can_import %}
+    <a class="btn btn--secondary" href="{% url import_url_name %}">Import Excel</a>
+  {% endif %}
+  {% if export_url_name %}
+    <a class="btn btn--secondary" href="{% url export_url_name 'csv' %}{% if export_query %}?{{ export_query }}{% endif %}">Download CSV</a>
+    <a class="btn btn--secondary" href="{% url export_url_name 'xlsx' %}{% if export_query %}?{{ export_query }}{% endif %}">Download Excel</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="dash" style="margin-bottom: 1.5rem;">
+    <div class="grid grid--2">
+      <div class="card stat-card">
+        <div class="stat-card__label">Total Contributions Count</div>
+        <div class="stat-card__value">{{ page_obj.paginator.count|default:object_list|length }}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-card__label">Total Amount Contributed</div>
+        <div class="stat-card__value">{{ CURRENCY_CODE }} {{ total_contribution_amount|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card__body">
+      {% if search_fields %}
+        <form class="filter-bar" method="get" role="search" aria-label="Filter {{ page_title|lower }}">
+          <label class="sr-only" for="record-search">Search records</label>
+          <input id="record-search" class="input" type="search" name="q" value="{{ search_query }}"
+                 placeholder="Search {{ page_title|lower }}…" autocomplete="off">
+          <button class="btn btn--secondary" type="submit">{% icon "search" %} Search</button>
+        </form>
+      {% endif %}
+
+      {% include "components/data_table.html" %}
+      {% include "partials/pagination.html" %}
+    </div>
+  </section>
+{% endblock %}

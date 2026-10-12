@@ -36,16 +36,33 @@ class MemberProfileForm(forms.ModelForm):
             self.fields["user"].queryset = User.objects.filter(pk=user.pk, role=Role.MEMBER)
 
 
+class MemberCreateForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(role="MEMBER", is_active=True).order_by("last_name", "first_name")
+    )
+
+    class Meta:
+        model = MemberProfile
+        fields = ["user", "phone_number", "national_id", "address", "notes"]
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user and user.role == Role.MEMBER:
+            self.fields["user"].queryset = User.objects.filter(pk=user.pk, role=Role.MEMBER)
+
+
 class BusinessForm(forms.ModelForm):
     class Meta:
         model = Business
         fields = [
             "member", "hub", "name", "business_type", "registration_number",
-            "phone_number", "address", "status",
+            "phone_number", "address", "amount", "is_paid", "status",
         ]
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["amount"].required = False
+        self.fields["is_paid"].required = False
         if user:
             self.fields["hub"].queryset = _hub_choices(self.fields["hub"], self.instance, user)
         if user and user.role == Role.MEMBER:

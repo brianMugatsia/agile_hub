@@ -1,4 +1,6 @@
+from decimal import Decimal
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 
@@ -43,6 +45,11 @@ class Business(models.Model):
     registration_number = models.CharField(max_length=80, blank=True)
     phone_number = models.CharField(max_length=24, blank=True)
     address = models.CharField(max_length=255, blank=True)
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    is_paid = models.BooleanField(default=False)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -52,3 +59,9 @@ class Business(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def payment_status_display(self):
+        if self.amount and self.amount > 0:
+            return "Paid"
+        return "Not Paid"
