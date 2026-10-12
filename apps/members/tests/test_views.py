@@ -31,8 +31,8 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
     member_update = client.post(
         reverse("members:edit", args=[member.pk]),
         {
-            "user": str(member_user.pk),
-            "hub": hub.pk,
+            "first_name": "Amina Updated",
+            "last_name": "Njeri Updated",
             "phone_number": "0722000000",
             "national_id": "",
             "address": "Nairobi",
@@ -43,6 +43,8 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
     member.refresh_from_db()
     assert member.phone_number == "0722000000"
     assert member.address == "Nairobi"
+    assert member.user.first_name == "Amina Updated"
+    assert member.user.last_name == "Njeri Updated"
 
     business_update = client.post(
         reverse("members:contribution_edit", args=[business.pk]),
@@ -64,7 +66,7 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
 
 def test_admin_can_edit_profile_with_inactive_member_user(client, make_user, roles):
     admin = make_user(role=Role.ADMIN)
-    inactive_user = make_user(role=Role.MEMBER, is_active=False)
+    inactive_user = make_user(role=Role.MEMBER, is_active=False, first_name="Inactive", last_name="User")
     hub = Hub.objects.create(code="INACTIVE-BEN", name="Inactive user's hub")
     profile = MemberProfile.objects.create(user=inactive_user, hub=hub)
     client.force_login(admin)
@@ -72,8 +74,8 @@ def test_admin_can_edit_profile_with_inactive_member_user(client, make_user, rol
     response = client.post(
         reverse("members:edit", args=[profile.pk]),
         {
-            "user": str(inactive_user.pk),
-            "hub": hub.pk,
+            "first_name": "Inactive",
+            "last_name": "User",
             "phone_number": "0712345678",
             "national_id": "",
             "address": "",
@@ -112,8 +114,8 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
     profile_update = client.post(
         reverse("members:edit", args=[own_profile.pk]),
         {
-            "user": str(own_user.pk),
-            "hub": hub.pk,
+            "first_name": "Own",
+            "last_name": "User",
             "phone_number": "0700000000",
             "national_id": "",
             "address": "",
@@ -331,3 +333,7 @@ def test_contribution_list_has_search_bar_without_shard_or_hub_filters(client, m
     assert response.status_code == 200
     assert b"record-search" in response.content
     assert b"All hubs" not in response.content
+    assert b"Total Contribution Expected" in response.content
+    assert b"Total Collected" in response.content
+    assert b"Number of Members Paid" in response.content
+    assert b"Number of Members Not Paid" in response.content

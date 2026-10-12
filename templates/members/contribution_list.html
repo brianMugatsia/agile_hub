@@ -18,15 +18,35 @@
 
 {% block content %}
   <div class="dash" style="margin-bottom: 1.5rem;">
-    <div class="grid grid--2">
-      <div class="card stat-card">
-        <div class="stat-card__label">Total Contributions Count</div>
-        <div class="stat-card__value">{{ page_obj.paginator.count|default:object_list|length }}</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-card__label">Total Amount Contributed</div>
-        <div class="stat-card__value">{{ CURRENCY_CODE }} {{ total_contribution_amount|floatformat:2 }}</div>
-      </div>
+    <div class="grid grid--2 grid--4-desktop" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+      <article class="card stat-card" data-reveal="up" data-spot style="--i: 0">
+        <div class="card__body">
+          <span class="stat-card__icon" aria-hidden="true">{% icon "bar-chart" %}</span>
+          <span class="stat-card__label">Total Contribution Expected</span>
+          <strong class="stat-card__value" data-count>{{ CURRENCY_CODE }} {{ total_expected_amount|floatformat:2 }}</strong>
+        </div>
+      </article>
+      <article class="card stat-card" data-reveal="up" data-spot style="--i: 1">
+        <div class="card__body">
+          <span class="stat-card__icon" aria-hidden="true">{% icon "trending-up" %}</span>
+          <span class="stat-card__label">Total Collected</span>
+          <strong class="stat-card__value" data-count>{{ CURRENCY_CODE }} {{ total_collected_amount|floatformat:2 }}</strong>
+        </div>
+      </article>
+      <article class="card stat-card" data-reveal="up" data-spot style="--i: 2">
+        <div class="card__body">
+          <span class="stat-card__icon" aria-hidden="true">{% icon "user-check" %}</span>
+          <span class="stat-card__label">Number of Members Paid</span>
+          <strong class="stat-card__value" data-count>{{ members_paid_count }}</strong>
+        </div>
+      </article>
+      <article class="card stat-card" data-reveal="up" data-spot style="--i: 3">
+        <div class="card__body">
+          <span class="stat-card__icon" aria-hidden="true">{% icon "users" %}</span>
+          <span class="stat-card__label">Number of Members Not Paid</span>
+          <strong class="stat-card__value" data-count>{{ members_unpaid_count }}</strong>
+        </div>
+      </article>
     </div>
   </div>
 

@@ -2,7 +2,10 @@
 {% load ui_tags %}
 
 {% block page_actions %}
-  {% if can_edit %}<a class="btn" href="{% url 'accounts:user_edit' profile_user.pk %}">{% icon "edit" %} Edit</a>{% endif %}
+  {% if profile_user.member_profile %}
+    <a class="btn btn--primary" href="{% url 'members:edit' profile_user.member_profile.pk %}">{% icon "edit" %} Edit Member Details</a>
+  {% endif %}
+  {% if can_edit %}<a class="btn" href="{% url 'accounts:user_edit' profile_user.pk %}">{% icon "edit" %} Edit User</a>{% endif %}
   {% if can_assign_role %}<a class="btn btn--primary" href="{% url 'accounts:user_role' profile_user.pk %}">{% icon "shield" %} Change role</a>{% endif %}
 {% endblock %}
 

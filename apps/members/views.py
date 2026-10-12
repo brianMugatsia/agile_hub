@@ -83,9 +83,6 @@ class MemberUpdateView(ProtectedUpdateView):
     def get_queryset(self):
         return scope_queryset(MemberProfile.objects.all(), self.request.user)
 
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), "user": self.request.user}
-
 
 class MemberCreateView(ActiveHubInitialMixin, ProtectedCreateView):
     model = MemberProfile

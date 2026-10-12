@@ -74,7 +74,7 @@ def create_user_from_form(form, *, actor, request=None):
 @transaction.atomic
 def update_user_from_form(form, *, actor, request=None):
     """Save a validated UserUpdateForm and audit only the fields that changed."""
-    if not can_manage_user(actor, form.instance):
+    if actor.pk != form.instance.pk and not can_manage_user(actor, form.instance):
         raise PermissionDenied("You cannot edit this user.")
     previous = {f: _jsonable(form.initial.get(f)) for f in form.changed_data if f != "profile_photo"}
     user = form.save()

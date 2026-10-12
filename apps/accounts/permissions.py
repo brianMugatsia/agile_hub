@@ -21,6 +21,12 @@ def can_manage_user(actor, target):
         return True
     if actor.role == Role.ADMIN:
         return target.role not in (Role.SUPER_ADMIN, Role.ADMIN)
+    if actor.role == Role.HUB_MANAGER:
+        if target.role in (Role.SUPER_ADMIN, Role.ADMIN):
+            return False
+        from .selectors import users_visible_to
+        visible_pks = users_visible_to(actor).values_list("pk", flat=True)
+        return target.pk in visible_pks
     return False
 
 
