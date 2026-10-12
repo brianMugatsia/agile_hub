@@ -27,13 +27,15 @@
   </form>
   {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
 
-  <section class="grid grid--3 finance-summary" aria-label="Income statement summary">
-    <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Revenue</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ revenue|floatformat:2 }}</strong></div></article>
+  <section class="grid grid--3 finance-summary" aria-label="Income statement summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+    <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Total Revenue</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ revenue|floatformat:2 }}</strong></div></article>
+    <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Sales Revenue</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ sales_revenue|floatformat:2 }}</strong></div></article>
+    <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Member Contributions</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ member_contributions_total|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Cost of goods sold</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ cost_of_goods|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Gross profit</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ gross_profit|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Commissions</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ commissions|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Payroll</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ payroll|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Net profit</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ net_profit|floatformat:2 }}</strong></div></article>
   </section>
-  <p class="text-muted">Accrual view for {{ period_start|date:"M j, Y" }} through {{ period_end|date:"M j, Y" }}. Includes completed sales, cost of goods, accrued commissions, approved or pending payroll, and entered statement expenses.</p>
+  <p class="text-muted">Accrual view for {{ period_start|date:"M j, Y" }} through {{ period_end|date:"M j, Y" }}. Includes completed sales, member contributions, cost of goods, accrued commissions, approved or pending payroll, and entered statement expenses.</p>
 {% endblock %}

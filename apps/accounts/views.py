@@ -187,7 +187,7 @@ class UserUpdateView(PermissionRequiredMixin, PageMixin, UpdateView):
 
     def get_object(self, queryset=None):
         user = super().get_object(queryset)
-        if not can_manage_user(self.request.user, user):
+        if self.request.user.pk != user.pk and not can_manage_user(self.request.user, user):
             raise PermissionDenied
         return user
 

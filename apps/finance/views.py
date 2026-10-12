@@ -95,7 +95,24 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             sales = sales.filter(hub=selected)
         elif hub_error:
             sales = sales.none()
-        revenue = _sum(sales, "total")
+        sales_revenue = _sum(sales, "total")
+        businesses = Business.objects.filter(
+            amount__gt=0,
+            created_at__date__gte=period_start,
+            created_at__date__lte=period_end,
+        )
+        if role in hub_scoped_roles:
+            businesses = businesses.filter(hub_id__in=hub_ids)
+        elif role == Role.MEMBER:
+            businesses = businesses.filter(member__user=self.request.user)
+        elif not is_platform_admin:
+            businesses = businesses.none()
+        if selected:
+            businesses = businesses.filter(hub=selected)
+        elif hub_error:
+            businesses = businesses.none()
+        member_contributions_total = _sum(businesses, "amount")
+        revenue = sales_revenue + member_contributions_total
         sale_items = SaleItem.objects.filter(sale__in=sales)
         cost_of_goods = _sum(
             sale_items,
@@ -162,6 +179,8 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             filter_hubs=available_hubs,
             selected_hub=selected.pk if selected else "",
             hub_error=hub_error,
+            sales_revenue=sales_revenue,
+            member_contributions_total=member_contributions_total,
             revenue=revenue,
             cost_of_goods=cost_of_goods,
             gross_profit=revenue - cost_of_goods,

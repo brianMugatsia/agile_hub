@@ -69,7 +69,14 @@
                 {% else %}{% include "components/status_badge.html" with tone="danger" label="Inactive" %}{% endif %}
               </td>
               <td>{{ u.last_login|date:"d M Y, H:i"|default:"Never" }}</td>
-              <td class="text-right"><a class="btn btn--sm" href="{% url 'accounts:user_detail' u.pk %}">View</a></td>
+              <td class="text-right">
+                <a class="btn btn--sm" href="{% url 'accounts:user_detail' u.pk %}">View</a>
+                {% if u.member_profile %}
+                  <a class="btn btn--sm btn--primary" href="{% url 'members:edit' u.member_profile.pk %}">Edit Member</a>
+                {% elif perms.accounts.change_user %}
+                  <a class="btn btn--sm btn--primary" href="{% url 'accounts:user_edit' u.pk %}">Edit</a>
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
