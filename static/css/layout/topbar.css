@@ -46,10 +46,11 @@
   font-weight: 800;
   font-size: 1.05rem;
   letter-spacing: -0.01em;
-  background: linear-gradient(135deg, #4f46e5, #9333ea, #db2777);
+  background: linear-gradient(135deg, #4f46e5, #9333ea, #db2777, #4f46e5);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: textShimmer 4s ease-in-out infinite alternate;
+  animation: textShimmer 3.5s ease-in-out infinite alternate;
   white-space: nowrap;
 }
 
@@ -59,13 +60,13 @@
 }
 
 @keyframes dotGlow {
-  0% { opacity: 0.5; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1.25); box-shadow: 0 0 14px #10b981; }
+  0% { opacity: 0.5; transform: scale(0.9); box-shadow: 0 0 6px #10b981; }
+  100% { opacity: 1; transform: scale(1.35); box-shadow: 0 0 16px #10b981, 0 0 24px rgba(16, 185, 129, 0.6); }
 }
 
 @keyframes textShimmer {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(35deg); }
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .topbar__hub-filter .select { width: 100%; min-height: 2.5rem; }
