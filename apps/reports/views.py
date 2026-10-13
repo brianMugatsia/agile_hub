@@ -1,12 +1,17 @@
+import csv
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
+from io import BytesIO
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Case, F, IntegerField, Q, Sum, Value, When
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView, View
+from openpyxl import Workbook
 
 from apps.commissions.models import SalesAgentCommission
 from apps.commissions.services import approve_commission
@@ -15,6 +20,7 @@ from apps.hubs.permissions import selected_hub
 from apps.inventory.models import InventoryTransaction
 from apps.payroll.models import SalaryRecord
 from apps.payroll.services import approve_salary
+from apps.products.models import Product
 from apps.sales.models import Sale, SaleItem
 
 
@@ -34,13 +40,14 @@ class ReportIndexView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView)
             ("Cash flow", "finance:cash_flow"),
             ("Audit trail", "audit:list"),
             ("Sales / stock reconciliation", "reports:inventory_reconciliation"),
+            ("Gross margins", "reports:gross_margins"),
         ]
         return context
 
 
 class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     template_name = "reports/inventory_reconciliation.html"
-    permission_required = ("sales.view_sale", "inventory.view_inventorytransaction")
+    permission_required = "sales.view_sale"
     page_title = "Sales / stock reconciliation"
     max_range_days = 366
 
@@ -149,32 +156,40 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
                 )
                 for row in movement_rows
             }
-            expected_keys = set()
+            sale_totals = {}
             for row in sale_rows:
                 key = (row["sale__hub_id"], row["product_id"], str(row["sale_id"]))
+                qty = row["quantity"] if row["sale__status"] == Sale.Status.COMPLETED else -row["quantity"]
+                existing_qty, h_name, p_name = sale_totals.get(key, (0, row["sale__hub__name"], row["product__name"]))
+                sale_totals[key] = (existing_qty + qty, h_name, p_name)
+
+            expected_keys = set()
+            for key, (sold_qty, h_name, p_name) in sale_totals.items():
                 expected_keys.add(key)
-                expected = (
-                    0 if row["sale__status"] == Sale.Status.REFUNDED else row["quantity"]
-                )
-                actual_quantity = actual.get(key, (0, "", ""))[0]
                 check_count += 1
-                if expected != actual_quantity:
+                movement_qty, mov_h_name, mov_p_name = actual.get(key, (0, "", ""))
+                hub_name = mov_h_name or h_name or "Hub"
+                product_name = mov_p_name or p_name or f"Product #{key[1]}"
+                if movement_qty == sold_qty:
+                    matched_count += 1
+                else:
                     mismatches.append({
-                        "sale_id": row["sale_id"],
-                        "hub": row["sale__hub__name"],
-                        "product": row["product__name"],
-                        "expected": expected,
-                        "recorded": actual_quantity,
-                        "variance": actual_quantity - expected,
-                        "issue": "Missing stock movement" if actual_quantity < expected else "Excess stock movement",
+                        "sale_id": key[2],
+                        "hub": hub_name,
+                        "product": product_name,
+                        "expected": sold_qty,
+                        "recorded": movement_qty,
+                        "variance": movement_qty - sold_qty,
+                        "issue": "Missing stock movement" if movement_qty < sold_qty else "Excess stock movement",
                     })
+
             for key, (recorded, hub_name, product_name) in actual.items():
                 if key not in expected_keys and recorded:
                     check_count += 1
                     mismatches.append({
                         "sale_id": key[2],
-                        "hub": hub_name,
-                        "product": product_name,
+                        "hub": hub_name or "Hub",
+                        "product": product_name or f"Product #{key[1]}",
                         "expected": 0,
                         "recorded": recorded,
                         "variance": recorded,
@@ -194,89 +209,256 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
             check_count=check_count,
             matched_count=matched_count,
             result_limit=1000,
+            hub_error=hub_error,
         )
         return context
 
 
-class ApprovalInboxView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
-    template_name = "reports/approval_inbox.html"
-    permission_required = (
-        "payroll.approve_salaryrecord",
-        "commissions.approve_salesagentcommission",
-    )
-    page_title = "Approval inbox"
+class GrossMarginsReportView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "reports/gross_margins_report.html"
+    permission_required = "sales.view_sale"
+    page_title = "Gross Margins"
+    max_range_days = 366
 
-    def has_permission(self):
-        return any(
-            self.request.user.has_perm(permission)
-            for permission in self.get_permission_required()
+    def get(self, request, *args, **kwargs):
+        file_format = request.GET.get("format")
+        if file_format in ("csv", "xlsx"):
+            return self.export(request, file_format)
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset_data(self, request):
+        today = timezone.localdate()
+        start_value = request.GET.get("start", "")
+        end_value = request.GET.get("end", "")
+        product_id = request.GET.get("product", "")
+        errors = []
+
+        def parse_date(value):
+            if not value:
+                return None
+            try:
+                parsed = date.fromisoformat(value)
+                if parsed.isoformat() != value:
+                    raise ValueError
+                return parsed
+            except (TypeError, ValueError):
+                return None
+
+        start_date = parse_date(start_value)
+        end_date = parse_date(end_value)
+        available_hubs, chosen_hub, hub_error = selected_hub(request)
+        if hub_error:
+            errors.append(hub_error)
+        if not start_value and not end_value:
+            start_date = today - timedelta(days=29)
+            end_date = today
+        elif start_date and not end_date:
+            end_date = today
+        elif end_date and not start_date:
+            start_date = end_date
+
+        start_at = timezone.make_aware(datetime.combine(start_date, time.min))
+        end_at = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min))
+
+        sales = scope_queryset(
+            Sale.objects.filter(
+                status=Sale.Status.COMPLETED,
+                completed_at__gte=start_at,
+                completed_at__lt=end_at,
+            ),
+            request.user,
         )
+        if chosen_hub:
+            sales = sales.filter(hub=chosen_hub)
+
+        items_qs = SaleItem.objects.filter(sale__in=sales)
+        if product_id:
+            items_qs = items_qs.filter(product_id=product_id)
+
+        rows = list(
+            items_qs.values("product_id", "product__sku", "product__name")
+            .annotate(
+                total_qty=Sum("quantity"),
+                total_revenue=Sum(F("quantity") * F("unit_price")),
+                total_cost=Sum(F("quantity") * F("unit_cost")),
+            )
+            .order_by("product__name")
+        )
+
+        processed = []
+        tot_rev = Decimal("0.00")
+        tot_cost = Decimal("0.00")
+        tot_qty = 0
+        for r in rows:
+            rev = r["total_revenue"] or Decimal("0.00")
+            cost = r["total_cost"] or Decimal("0.00")
+            margin = rev - cost
+            margin_pct = (margin / rev * Decimal("100.00")) if rev > 0 else Decimal("0.00")
+            tot_rev += rev
+            tot_cost += cost
+            tot_qty += r["total_qty"]
+            processed.append({
+                "product_sku": r["product__sku"],
+                "product_name": r["product__name"],
+                "quantity": r["total_qty"],
+                "revenue": rev,
+                "cost": cost,
+                "margin_amount": margin,
+                "margin_pct": margin_pct.quantize(Decimal("0.1")),
+            })
+        tot_margin = tot_rev - tot_cost
+        tot_margin_pct = (tot_margin / tot_rev * Decimal("100.00")) if tot_rev > 0 else Decimal("0.00")
+        totals = {
+            "quantity": tot_qty,
+            "revenue": tot_rev,
+            "cost": tot_cost,
+            "margin_amount": tot_margin,
+            "margin_pct": tot_margin_pct.quantize(Decimal("0.1")),
+        }
+        return processed, totals, start_date, end_date, chosen_hub, errors
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
+        rows, totals, start_date, end_date, chosen_hub, errors = self.get_queryset_data(self.request)
+        context.update({
+            "rows": rows,
+            "totals": totals,
+            "start_date": start_date,
+            "end_date": end_date,
+            "chosen_hub": chosen_hub,
+            "errors": errors,
+            "products": Product.objects.filter(is_active=True).order_by("name"),
+            "selected_product": self.request.GET.get("product", ""),
+        })
+        return context
+
+    def export(self, request, file_format):
+        rows, totals, start_date, end_date, chosen_hub, errors = self.get_queryset_data(request)
+        headers = ["Product SKU", "Product Name", "Quantity Sold", "Revenue", "Cost", "Gross Margin", "Margin %"]
+        data = [
+            [
+                r["product_sku"],
+                r["product_name"],
+                r["quantity"],
+                str(r["revenue"]),
+                str(r["cost"]),
+                str(r["margin_amount"]),
+                f"{r['margin_pct']}%",
+            ]
+            for r in rows
+        ]
+        data.append([
+            "TOTALS",
+            "",
+            totals["quantity"],
+            str(totals["revenue"]),
+            str(totals["cost"]),
+            str(totals["margin_amount"]),
+            f"{totals['margin_pct']}%",
+        ])
+
+        if file_format == "csv":
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = 'attachment; filename="gross-margins-report.csv"'
+            writer = csv.writer(response)
+            writer.writerow(headers)
+            for row in data:
+                writer.writerow(row)
+            return response
+        else:
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Gross Margins"
+            ws.append(headers)
+            for row in data:
+                ws.append(row)
+            output = BytesIO()
+            wb.save(output)
+            response = HttpResponse(
+                output.getvalue(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            response["Content-Disposition"] = 'attachment; filename="gross-margins-report.xlsx"'
+            return response
+
+
+class ApprovalInboxView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "reports/approval_inbox.html"
+    permission_required = ("commissions.approve_salesagentcommission", "payroll.approve_salaryrecord")
+    page_title = "Approval inbox"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         available_hubs, chosen_hub, hub_error = selected_hub(self.request)
-        can_approve_salary = user.has_perm("payroll.approve_salaryrecord")
-        can_approve_commission = user.has_perm("commissions.approve_salesagentcommission")
-        salaries = (
-            scope_queryset(
-                SalaryRecord.objects.select_related("worker__user", "worker__hub"),
-                user,
-            ).filter(status=SalaryRecord.Status.PENDING)
-            if can_approve_salary
-            else SalaryRecord.objects.none()
-        )
-        commissions = (
-            scope_queryset(
-                SalesAgentCommission.objects.select_related("agent", "sale__hub"),
-                user,
-            ).filter(status=SalesAgentCommission.Status.PENDING)
-            if can_approve_commission
-            else SalesAgentCommission.objects.none()
-        )
+        hubs = available_hubs
         if chosen_hub:
-            salaries = salaries.filter(worker__hub=chosen_hub)
-            commissions = commissions.filter(sale__hub=chosen_hub)
+            hubs = hubs.filter(pk=chosen_hub.pk)
         elif hub_error:
-            salaries, commissions = salaries.none(), commissions.none()
+            hubs = hubs.none()
+
+        commissions = scope_queryset(
+            SalesAgentCommission.objects.filter(
+                status=SalesAgentCommission.Status.PENDING,
+                sale__hub__in=hubs,
+            ),
+            self.request.user,
+        ).select_related("agent", "sale", "sale__hub").order_by("-created_at")
+
+        salaries = scope_queryset(
+            SalaryRecord.objects.filter(
+                status=SalaryRecord.Status.PENDING,
+                worker__hub__in=hubs,
+            ),
+            self.request.user,
+        ).select_related("worker", "worker__user", "worker__hub").order_by("-created_at")
+
         context.update(
-            page_title=self.page_title,
-            can_approve_salary=can_approve_salary,
-            can_approve_commission=can_approve_commission,
-            pending_salaries=salaries,
+            commissions=commissions,
+            salaries=salaries,
             pending_commissions=commissions,
+            pending_salaries=salaries,
+            can_approve_salary=self.request.user.has_perm("payroll.approve_salaryrecord"),
+            can_approve_commission=self.request.user.has_perm("commissions.approve_salesagentcommission"),
+            available_hubs=available_hubs,
             filter_hubs=available_hubs,
+            chosen_hub=chosen_hub,
             selected_hub=chosen_hub.pk if chosen_hub else "",
             hub_error=hub_error,
         )
         return context
 
 
-class ApprovalActionView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    service = None
-    id_argument = ""
-    permission_required = ""
-    success_message = "Record approved."
+class ApproveInboxCommissionView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = "commissions.approve_salesagentcommission"
 
     def post(self, request, pk):
+        action = request.POST.get("action", "approve")
         try:
-            self.service(**{self.id_argument: pk, "actor": request.user})
+            if action == "reject":
+                from apps.commissions.services import reject_commission
+                reject_commission(commission_id=pk, actor=request.user, notes=request.POST.get("notes", ""))
+                messages.success(request, "Commission rejected.")
+            else:
+                approve_commission(commission_id=pk, actor=request.user)
+                messages.success(request, "Commission approved.")
         except ValidationError as error:
             messages.error(request, " ".join(error.messages))
-        else:
-            messages.success(request, self.success_message)
         return redirect("reports:approvals")
 
 
-class ApproveInboxSalaryView(ApprovalActionView):
-    service = staticmethod(approve_salary)
-    id_argument = "salary_id"
+class ApproveInboxSalaryView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = "payroll.approve_salaryrecord"
-    success_message = "Salary approved."
 
-
-class ApproveInboxCommissionView(ApprovalActionView):
-    service = staticmethod(approve_commission)
-    id_argument = "commission_id"
-    permission_required = "commissions.approve_salesagentcommission"
-    success_message = "Commission approved."
+    def post(self, request, pk):
+        action = request.POST.get("action", "approve")
+        try:
+            if action == "reject":
+                from apps.payroll.services import reject_salary
+                reject_salary(salary_id=pk, actor=request.user, notes=request.POST.get("notes", ""))
+                messages.success(request, "Salary record rejected.")
+            else:
+                approve_salary(salary_id=pk, actor=request.user)
+                messages.success(request, "Salary record approved.")
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))
+        return redirect("reports:approvals")

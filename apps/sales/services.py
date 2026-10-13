@@ -19,8 +19,13 @@ CENT = Decimal("0.01")
 
 
 @transaction.atomic
-def complete_sale(*, hub, agent, items, actor=None, customer_name="", customer_phone="",
+def complete_sale(*, hub, agent=None, member=None, items, actor=None, customer_name="", customer_phone="",
                   payment_method=Sale.PaymentMethod.CASH, payment_reference="", notes="", business=None):
+    if not agent and not member:
+        raise ValidationError("A sale must be attributed to either a sales agent or a hub member.")
+    if agent and member:
+        raise ValidationError("A sale cannot be attributed to both an agent and a member simultaneously.")
+
     normalized = {}
     for item in items:
         try:
@@ -45,7 +50,7 @@ def complete_sale(*, hub, agent, items, actor=None, customer_name="", customer_p
     if actor is not None:
         if not user_can_access_hub(actor, hub):
             raise PermissionDenied
-        if actor.role not in ("SUPER_ADMIN", "ADMIN") and agent.pk != actor.pk:
+        if actor.role not in ("SUPER_ADMIN", "ADMIN") and agent and agent.pk != actor.pk:
             raise PermissionDenied
 
     products = list(Product.objects.select_for_update().filter(pk__in=normalized).order_by("pk"))
@@ -56,6 +61,7 @@ def complete_sale(*, hub, agent, items, actor=None, customer_name="", customer_p
         hub=hub,
         business=business,
         agent=agent,
+        member=member,
         created_by=actor if getattr(actor, "is_authenticated", False) else None,
         customer_name=customer_name.strip(),
         customer_phone=customer_phone.strip(),
@@ -89,7 +95,7 @@ def complete_sale(*, hub, agent, items, actor=None, customer_name="", customer_p
     sale.status = Sale.Status.COMPLETED
     sale.completed_at = timezone.now()
     sale.save(update_fields=["total", "status", "completed_at", "updated_at"])
-    if getattr(agent, "role", None) in ("SALES_AGENT", "MEMBER"):
+    if agent or member:
         accrue_for_sale(sale)
     if payment_method != Sale.PaymentMethod.CREDIT:
         CashFlow.objects.create(
@@ -133,8 +139,6 @@ def cancel_sale(*, sale_id, actor, reason):
 
 @transaction.atomic
 def refund_sale(*, sale_id, actor, reason):
-    from django.core.exceptions import PermissionDenied
-
     if not actor.has_perm("sales.refund_sale"):
         raise PermissionDenied
     if not reason.strip():

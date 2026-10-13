@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
@@ -112,7 +113,7 @@ def test_dashboard_and_operational_pages_render_current_demo_records(client, mak
 
     dashboard = client.get(reverse("core:dashboard"))
     assert dashboard.status_code == 200
-    assert ("Completed sales", 1) in dashboard.context["dashboard_stats"]
+    assert ("Total Sales value", Decimal('75.00')) in dashboard.context["dashboard_stats"]
     assert str(sale.total).encode() in dashboard.content
     assert b"Visible demo customer" in dashboard.content
     assert b"Dashboard sample product" in dashboard.content

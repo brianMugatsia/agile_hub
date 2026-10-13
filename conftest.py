@@ -14,10 +14,11 @@ def roles(db):
 
 
 @pytest.fixture
-def make_user(db):
+def make_user(db, roles):
     """Factory: make_user(role=Role.ADMIN, username="x") -> saved User."""
     from apps.accounts.models import User
     from apps.accounts.roles import Role
+    from django.contrib.auth.models import Group
 
     counter = itertools.count(1)
 
@@ -25,6 +26,9 @@ def make_user(db):
         n = next(counter)
         extra.setdefault("username", f"user{n}")
         extra.setdefault("email", f"user{n}@example.com")
-        return User.objects.create_user(password=password, role=role, **extra)
+        user = User.objects.create_user(password=password, role=role, **extra)
+        group, _ = Group.objects.get_or_create(name=role)
+        user.groups.add(group)
+        return user
 
     return _make

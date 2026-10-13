@@ -332,3 +332,73 @@ def test_import_preview_token_is_single_use(client, make_user, roles):
     assert client.post(confirm_url, payload).status_code == 302
     assert client.post(confirm_url, payload).status_code == 404
     assert Product.objects.filter(sku="ONCE-1").count() == 1
+
+
+def test_inventory_import_five_kinds_success(client, make_user, roles):
+    manager = make_user(role=Role.HUB_MANAGER)
+    hub = Hub.objects.create(code="FIVE-HUB", name="Five Hub", manager=manager)
+    product = Product.objects.create(
+        sku="FIVE-PROD",
+        name="Widget",
+        selling_price=Decimal("10.00"),
+    )
+    InventoryBalance.objects.create(hub=hub, product=product, quantity=20)
+    client.force_login(manager)
+
+    response = client.post(
+        reverse("inventory:import"),
+        {"file": _xlsx(
+            ["hub_code", "product_sku", "kind", "quantity", "direction"],
+            [
+                [hub.code, product.sku, "Stock received", 10, "IN"],
+                [hub.code, product.sku, "issue", 5, "OUT"],
+                [hub.code, product.sku, "Adjustment", 2, "IN"],
+                [hub.code, product.sku, "sale", 3, "OUT"],
+                [hub.code, product.sku, "Refund", 1, "IN"],
+            ],
+        )},
+    )
+    assert response.status_code == 200
+    staged = StagedSpreadsheetImport.objects.get(import_type="inventory", report_only=False)
+    confirm_resp = client.post(
+        reverse("inventory:import"),
+        {"confirm_import": "1", "stage_token": str(staged.token)},
+    )
+    assert confirm_resp.status_code == 302
+    # Initial 20 + 10 (receipt) - 5 (issue) + 2 (adjustment) - 3 (sale) + 1 (refund) = 25
+    assert InventoryBalance.objects.get(hub=hub, product=product).quantity == 25
+    assert InventoryTransaction.objects.filter(hub=hub, product=product).count() == 5
+
+
+def test_inventory_import_rejects_invalid_kind_and_wrong_direction(client, make_user, roles):
+    manager = make_user(role=Role.HUB_MANAGER)
+    hub = Hub.objects.create(code="INV-HUB", name="Invalid Hub", manager=manager)
+    product = Product.objects.create(
+        sku="INV-PROD",
+        name="Widget",
+        selling_price=Decimal("10.00"),
+    )
+    client.force_login(manager)
+
+    # Invalid kind
+    resp_invalid = client.post(
+        reverse("inventory:import"),
+        {"file": _xlsx(
+            ["hub_code", "product_sku", "kind", "quantity"],
+            [[hub.code, product.sku, "BAD_KIND", 5]],
+        )},
+    )
+    assert resp_invalid.status_code == 400
+    assert b"Choose a valid movement kind (RECEIPT, ISSUE, ADJUSTMENT, SALE, REFUND)" in resp_invalid.content
+
+    # Wrong direction (Sale requires OUT)
+    resp_direction = client.post(
+        reverse("inventory:import"),
+        {"file": _xlsx(
+            ["hub_code", "product_sku", "kind", "quantity", "direction"],
+            [[hub.code, product.sku, "SALE", 5, "IN"]],
+        )},
+    )
+    assert resp_direction.status_code == 400
+    assert b"requires direction OUT" in resp_direction.content
+
