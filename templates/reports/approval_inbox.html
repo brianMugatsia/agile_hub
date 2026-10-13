@@ -19,13 +19,12 @@
         <div class="table-wrap">
           <table class="table">
             <thead>
-              <tr><th>Worker</th><th>Hub</th><th>Period</th><th>Gross</th><th>Deductions</th><th>Net</th><th><span class="sr-only">Actions</span></th></tr>
+              <tr><th>Worker</th><th>Period</th><th>Gross</th><th>Deductions</th><th>Net</th><th><span class="sr-only">Actions</span></th></tr>
             </thead>
             <tbody>
               {% for item in pending_salaries %}
                 <tr>
                   <td>{{ item.worker.user.display_name }}</td>
-                  <td>{{ item.worker.hub.name }}</td>
                   <td>{{ item.period_start|date:"Y-m" }}</td>
                   <td>{{ item.gross_amount }}</td>
                   <td>{{ item.deductions }}</td>
@@ -37,7 +36,7 @@
                   </td>
                 </tr>
               {% empty %}
-                <tr><td colspan="7">No pending salaries.</td></tr>
+                <tr><td colspan="6">No pending salaries.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -53,13 +52,12 @@
         <div class="table-wrap">
           <table class="table">
             <thead>
-              <tr><th>Agent</th><th>Hub</th><th>Sale</th><th>Rate</th><th>Amount</th><th><span class="sr-only">Actions</span></th></tr>
+              <tr><th>Agent</th><th>Sale</th><th>Rate</th><th>Amount</th><th><span class="sr-only">Actions</span></th></tr>
             </thead>
             <tbody>
               {% for item in pending_commissions %}
                 <tr>
                   <td>{{ item.agent.display_name }}</td>
-                  <td>{{ item.sale.hub.name }}</td>
                   <td>{{ item.sale }}</td>
                   <td>{{ item.rate|floatformat:2 }}%</td>
                   <td>{{ item.amount }}</td>
@@ -70,7 +68,7 @@
                   </td>
                 </tr>
               {% empty %}
-                <tr><td colspan="6">No pending commissions.</td></tr>
+                <tr><td colspan="5">No pending commissions.</td></tr>
               {% endfor %}
             </tbody>
           </table>
