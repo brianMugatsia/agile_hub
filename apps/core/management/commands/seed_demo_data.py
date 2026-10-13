@@ -15,8 +15,8 @@ from apps.members.models import Business, MemberProfile
 from apps.commissions.models import SalesAgentCommission
 from apps.commissions.services import accrue_for_sale
 from apps.hubs.models import Hub, HubMembership
-from apps.inventory.models import InventoryBalance, InventoryTransaction
-from apps.inventory.services import record_movement
+from apps.inventory.models import InventoryBalance, InventoryTransaction, Supplier, PurchaseOrder, PurchaseOrderLine
+from apps.inventory.services import record_movement, create_reorder_order
 from apps.payroll.models import SalaryRecord, WorkerProfile
 from apps.products.models import Product
 from apps.sales.models import Sale, SaleItem
@@ -24,7 +24,7 @@ from apps.sales.services import complete_sale
 
 
 class Command(BaseCommand):
-    help = "Create rich sample records with completed sales, commissions, low stock items, and approvals across 3 hubs."
+    help = "Create rich sample records with 10 sales agents (5 as members), purchase orders, sales, commissions, payroll, and approval/paid workflows across hubs."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -95,14 +95,12 @@ class Command(BaseCommand):
         super_admin.set_password("agile")
         super_admin.save()
 
-        # Create role accounts and staff for each hub
+        # Create Hub Managers and Finance Officers
         role_configs = [
             ("manager", Role.HUB_MANAGER, "Hub Manager"),
-            ("agent", Role.SALES_AGENT, "Sales Agent"),
             ("finance", Role.FINANCE_OFFICER, "Finance Officer"),
         ]
 
-        hub_agents = {}
         for i, hub in enumerate(hubs, start=1):
             for prefix, role, title in role_configs:
                 username = f"{prefix}-{i}"
@@ -120,12 +118,57 @@ class Command(BaseCommand):
                 )
                 user.set_password("password123")
                 user.save()
-                if role in (Role.HUB_MANAGER, Role.SALES_AGENT):
+                if role == Role.HUB_MANAGER:
                     HubMembership.objects.get_or_create(
                         hub=hub, user=user, defaults={"title": title}
                     )
-                if role == Role.SALES_AGENT:
-                    hub_agents[hub] = user
+
+        # Create exactly 10 Sales Agents (5 of whom are also members)
+        sales_agents = []
+        for i in range(1, 11):
+            hub = hubs[(i - 1) % len(hubs)]
+            username = f"salesagent-{i}"
+            email = f"salesagent{i}@agilehub.local"
+            agent_user, _ = User.objects.update_or_create(
+                username=username,
+                defaults={
+                    "email": email,
+                    "first_name": f"Sales Agent",
+                    "last_name": f"Number {i}",
+                    "role": Role.SALES_AGENT,
+                    "hub": hub,
+                    "is_active": True,
+                },
+            )
+            agent_user.set_password("password123")
+            agent_user.save()
+            HubMembership.objects.get_or_create(
+                hub=hub, user=agent_user, defaults={"title": "Sales Agent"}
+            )
+            sales_agents.append(agent_user)
+
+            # First 5 sales agents are also members
+            if i <= 5:
+                profile, _ = MemberProfile.objects.get_or_create(
+                    user=agent_user,
+                    defaults={
+                        "phone_number": f"07112233{i:02d}",
+                        "address": f"{hub.name} Region",
+                        "hub": hub,
+                        "notes": f"Sales agent and member #{i}",
+                    },
+                )
+                Business.objects.update_or_create(
+                    member=profile,
+                    name=f"Agent Member Business {i}",
+                    defaults={
+                        "hub": hub,
+                        "business_type": "Retail & Distribution",
+                        "amount": Decimal("15000.00"),
+                        "is_paid": True,
+                        "status": Business.Status.ACTIVE,
+                    },
+                )
 
         # Create Products & Inventory per hub
         products_data = [
@@ -167,10 +210,31 @@ class Command(BaseCommand):
                     actor=super_admin,
                 )
 
+        # Create Suppliers and Purchase Order data
+        suppliers_data = [
+            ("SUP-AGRO", "Agro-Inputs Wholesale Ltd"),
+            ("SUP-SEEDS", "East African Seed Co"),
+            ("SUP-EQUIP", "Farm Equipment Distributors"),
+        ]
+        suppliers = []
+        for code, name in suppliers_data:
+            supplier, _ = Supplier.objects.get_or_create(
+                code=code,
+                defaults={"name": name, "is_active": True, "contact_name": "Sales Manager", "phone": "0700112233"}
+            )
+            suppliers.append(supplier)
+
+        for hub in hubs:
+            supplier = random.choice(suppliers)
+            try:
+                create_reorder_order(hub=hub, supplier=supplier, actor=super_admin, notes="Seeded purchase reorder")
+            except Exception:
+                pass
+
         # Create Members, Businesses, Workers, Salary Records, and Sales per hub
         for hub in hubs:
-            agent = hub_agents.get(hub)
-            
+            hub_local_agents = [agent for agent in sales_agents if agent.hub_id == hub.pk] or sales_agents
+
             # Force low stock items for dashboard alerts
             low_stock_items = random.sample(products, 2)
             for lprod in low_stock_items:
@@ -178,7 +242,7 @@ class Command(BaseCommand):
                 bal.quantity = max(1, lprod.reorder_level - 2)
                 bal.save()
 
-            # Members & Businesses (5 per hub)
+            # Regular Members & Businesses (5 per hub)
             for m in range(1, 6):
                 m_user, _ = User.objects.update_or_create(
                     username=f"member-{hub.code.lower()}-{m}",
@@ -215,7 +279,7 @@ class Command(BaseCommand):
                     },
                 )
 
-            # Workers & Pending Salary Records (3 per hub)
+            # Workers & Salary Records (3 per hub)
             for w in range(1, 4):
                 w_user, _ = User.objects.update_or_create(
                     username=f"worker-{hub.code.lower()}-{w}",
@@ -252,15 +316,16 @@ class Command(BaseCommand):
                     },
                 )
 
-            # Sales & Commissions with high volume values
+            # Sales & Commissions across sales agents
             hub_sales_count = max(15, sales_target // len(hubs))
             for s in range(hub_sales_count):
+                chosen_agent = random.choice(hub_local_agents)
                 chosen_products = random.sample(products, 2)
                 items = [{"product": p.pk, "quantity": random.randint(1, 4)} for p in chosen_products]
                 try:
                     completed_sale = complete_sale(
                         hub=hub,
-                        agent=agent,
+                        agent=chosen_agent,
                         actor=super_admin,
                         items=items,
                         customer_name=f"Customer {s+1} ({hub.region})",
@@ -274,4 +339,25 @@ class Command(BaseCommand):
                 except Exception as e:
                     pass
 
-        self.stdout.write(self.style.SUCCESS(f"Successfully seeded sales, commissions, low stock items, and approvals across all 3 hubs."))
+        # For the entire system: after approval, make as paid (commissions, salary records, and businesses)
+        for commission in SalesAgentCommission.objects.all():
+            commission.status = SalesAgentCommission.Status.APPROVED
+            commission.approved_by = super_admin
+            commission.save(update_fields=["status", "approved_by"])
+            commission.status = SalesAgentCommission.Status.PAID
+            commission.paid_by = super_admin
+            commission.paid_at = timezone.now()
+            commission.save(update_fields=["status", "paid_by", "paid_at"])
+
+        for salary in SalaryRecord.objects.all():
+            salary.status = SalaryRecord.Status.APPROVED
+            salary.approved_by = super_admin
+            salary.save(update_fields=["status", "approved_by"])
+            salary.status = SalaryRecord.Status.PAID
+            salary.paid_by = super_admin
+            salary.paid_at = timezone.now()
+            salary.save(update_fields=["status", "paid_by", "paid_at"])
+
+        Business.objects.all().update(is_paid=True)
+
+        self.stdout.write(self.style.SUCCESS(f"Successfully seeded 10 sales agents (5 as members), purchase orders, sales, commissions, payroll, and set all approved items as paid across the system."))

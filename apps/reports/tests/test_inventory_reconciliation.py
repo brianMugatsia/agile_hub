@@ -1,3 +1,4 @@
+from datetime import datetime, time
 from decimal import Decimal
 
 import pytest
@@ -13,12 +14,18 @@ from apps.sales.models import Sale, SaleItem
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def _setup_roles(roles):
+    pass
+
+
 def _sale(*, hub, agent, product, quantity, status=Sale.Status.COMPLETED):
+    HubMembership.objects.get_or_create(hub=hub, user=agent)
     sale = Sale.objects.create(
         hub=hub,
         agent=agent,
         status=status,
-        completed_at=timezone.now(),
+        completed_at=timezone.make_aware(datetime.combine(timezone.localdate(), time(12, 0))),
         total=Decimal("30.00"),
     )
     SaleItem.objects.create(
@@ -36,7 +43,8 @@ def test_reconciliation_flags_missing_sale_movement_and_clears_after_matching_le
 ):
     manager = make_user(role=Role.HUB_MANAGER)
     agent = make_user(role=Role.SALES_AGENT)
-    hub = Hub.objects.create(code="REC-1", name="Reconcile Hub", manager=manager)
+    hub = Hub.objects.create(code="REC-1", name="Reconcile Hub")
+    HubMembership.objects.create(hub=hub, user=manager)
     product = Product.objects.create(
         sku="REC-P",
         name="Reconcile item",
@@ -104,8 +112,9 @@ def test_reconciliation_is_scoped_to_user_hubs_and_rejects_long_ranges(
 ):
     manager = make_user(role=Role.HUB_MANAGER)
     agent = make_user(role=Role.SALES_AGENT)
-    accessible = Hub.objects.create(code="REC-2", name="Accessible Hub", manager=manager)
+    accessible = Hub.objects.create(code="REC-2", name="Accessible Hub")
     other = Hub.objects.create(code="REC-3", name="Other Hub")
+    HubMembership.objects.create(hub=accessible, user=manager)
     product = Product.objects.create(
         sku="REC-S",
         name="Scoped item",
@@ -113,7 +122,6 @@ def test_reconciliation_is_scoped_to_user_hubs_and_rejects_long_ranges(
     )
     _sale(hub=accessible, agent=agent, product=product, quantity=1)
     _sale(hub=other, agent=agent, product=product, quantity=2)
-    HubMembership.objects.create(hub=accessible, user=manager)
     client.force_login(manager)
 
     scoped = client.get(reverse("reports:inventory_reconciliation"))

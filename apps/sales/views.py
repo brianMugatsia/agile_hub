@@ -12,7 +12,7 @@ from apps.core.generic import ProtectedUpdateView, ScopedModelListView, hubs_for
 from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin
 from apps.core.scoping import scope_queryset
-from apps.hubs.models import HubMembership
+from apps.hubs.permissions import selected_hub
 from apps.sales.services import complete_sale
 
 from .forms import SaleEntryForm, SaleUpdateForm
@@ -24,9 +24,8 @@ class SaleListView(ScopedModelListView):
     page_title = "Sales"
     columns = (
         {"label": "Date", "field": "created_at"},
-        {"label": "Hub", "field": "hub__name"},
-        {"label": "Agent", "field": "agent__display_name"},
-        {"label": "Customer", "field": "customer_name"},
+        {"label": "Agent / Member", "field": "seller_display"},
+        {"label": "Customer", "field": "customer_display"},
         {"label": "Total", "field": "total"},
         {"label": "Status", "field": "status"},
     )
@@ -39,6 +38,23 @@ class SaleListView(ScopedModelListView):
     row_edit_url_name = "sales:edit"
     row_edit_permission = "sales.change_sale"
     filter_hub = True
+
+    def get_context_data(self, **kwargs):
+        user = self.request.user
+        is_platform_admin = user.role in (Role.SUPER_ADMIN, Role.ADMIN)
+        available_hubs, active_hub, hub_error = selected_hub(self.request)
+        show_hub_column = is_platform_admin and not self.selected_hub and not active_hub
+        cols = [{"label": "Date", "field": "created_at"}]
+        if show_hub_column:
+            cols.append({"label": "Hub", "field": "hub__name"})
+        cols.extend([
+            {"label": "Agent / Member", "field": "seller_display"},
+            {"label": "Customer", "field": "customer_display"},
+            {"label": "Total", "field": "total"},
+            {"label": "Status", "field": "status"},
+        ])
+        self.columns = tuple(cols)
+        return super().get_context_data(**kwargs)
 
 
 class SaleExportView(ScopedModelExportView):
@@ -54,7 +70,7 @@ class SaleDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, Det
 
     def get_queryset(self):
         return scope_queryset(
-            Sale.objects.select_related("hub", "agent", "business", "created_by")
+            Sale.objects.select_related("hub", "agent", "member", "business", "created_by")
             .prefetch_related("items__product"),
             self.request.user,
         )
@@ -114,7 +130,8 @@ class SaleCreateView(FormView):
         try:
             sale = complete_sale(
                 hub=data["hub"],
-                agent=self.request.user,
+                agent=data.get("agent"),
+                member=data.get("member"),
                 items=[{"product": data["product"].pk, "quantity": data["quantity"]}],
                 actor=self.request.user,
                 customer_name=data["customer_name"],

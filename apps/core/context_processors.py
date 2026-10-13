@@ -42,6 +42,7 @@ NAV_ITEMS = (
     NavItem("Approval inbox", "reports:approvals", "check-circle", (SA, AD, HM, FO), "Staff & Payments"),
     NavItem("Finance", "finance:income_statement", "trending-up", (SA, AD, HM, FO, BN, VW), "Finance & Insight"),
     NavItem("Reports", "reports:index", "bar-chart", (SA, AD, HM, FO, VW), "Finance & Insight"),
+    NavItem("Gross Margins", "reports:gross_margins", "bar-chart", (SA, AD, HM, FO, VW), "Finance & Insight"),
     NavItem("Sales / stock reconciliation", "reports:inventory_reconciliation", "check-circle", (SA, AD, HM, FO, VW), "Finance & Insight"),
     NavItem("Users", "accounts:user_list", "users", (SA, AD, HM), "Administration"),
     NavItem("Audit Logs", "audit:list", "shield", (SA,), "Administration"),

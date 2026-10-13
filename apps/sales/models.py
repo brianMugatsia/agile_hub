@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -25,7 +26,12 @@ class Sale(models.Model):
     business = models.ForeignKey(
         "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="sales"
     )
-    agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sales")
+    agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name="sales"
+    )
+    member = models.ForeignKey(
+        "members.MemberProfile", on_delete=models.PROTECT, null=True, blank=True, related_name="sales"
+    )
     customer_name = models.CharField(max_length=160, blank=True)
     customer_phone = models.CharField(max_length=24, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT, db_index=True)
@@ -35,7 +41,7 @@ class Sale(models.Model):
     notes = models.TextField(blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_sales"
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_sales"
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -47,6 +53,39 @@ class Sale(models.Model):
             ("refund_sale", "Can refund a completed sale"),
         ]
         indexes = [models.Index(fields=["hub", "status", "-created_at"])]
+
+    def clean(self):
+        super().clean()
+        if not self.agent and not self.member:
+            raise ValidationError("A sale must be attributed to either a sales agent or a hub member.")
+        if self.agent and self.member:
+            raise ValidationError("A sale cannot be attributed to both an agent and a member simultaneously.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def seller(self):
+        return self.agent or (self.member.user if self.member else None)
+
+    @property
+    def seller_display(self):
+        if self.agent:
+            return self.agent.display_name
+        elif self.member:
+            return str(self.member)
+        return "—"
+
+    @property
+    def customer_type_display(self):
+        return "Registered" if self.business else "Walk-in"
+
+    @property
+    def customer_display(self):
+        if self.business:
+            return self.business.name
+        return self.customer_name or "Walk-in"
 
     def __str__(self):
         return f"Sale {self.pk}"

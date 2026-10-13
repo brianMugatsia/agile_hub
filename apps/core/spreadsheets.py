@@ -429,7 +429,7 @@ class InventoryImportView(SpreadsheetImportView):
     list_url = "inventory:list"
     template_url = "inventory:import_template"
     page_title = "Import stock movements"
-    description = "Record stock receipts, issues, and adjustments through the inventory ledger."
+    description = "Record stock receipts, issues, adjustments, sales, and refunds through the inventory ledger. Accepted kinds: RECEIPT, ISSUE, ADJUSTMENT, SALE, REFUND."
     required_headers = ("product_sku", "kind", "quantity")
     template_headers = (
         "hub_code", "product_sku", "kind", "quantity", "direction",
@@ -489,34 +489,27 @@ class InventoryImportView(SpreadsheetImportView):
                 errors.append(f"Row {row['line']}: Active product SKU was not found.")
                 continue
             kind_str = str(data.get("kind", "")).strip().casefold()
-            kind_map = {
-                "receipt": InventoryTransaction.Kind.RECEIPT,
+            kind_map = {}
+            for choice, label in InventoryTransaction.Kind.choices:
+                kind_map[choice.lower()] = choice
+                kind_map[label.lower()] = choice
+            kind_map.update({
                 "received": InventoryTransaction.Kind.RECEIPT,
                 "stock received": InventoryTransaction.Kind.RECEIPT,
                 "rec": InventoryTransaction.Kind.RECEIPT,
-                "issue": InventoryTransaction.Kind.ISSUE,
                 "issued": InventoryTransaction.Kind.ISSUE,
                 "stock issued": InventoryTransaction.Kind.ISSUE,
                 "out": InventoryTransaction.Kind.ISSUE,
-                "adjustment": InventoryTransaction.Kind.ADJUSTMENT,
                 "adjust": InventoryTransaction.Kind.ADJUSTMENT,
                 "adj": InventoryTransaction.Kind.ADJUSTMENT,
-                "sale": InventoryTransaction.Kind.SALE,
                 "sold": InventoryTransaction.Kind.SALE,
-                "refund": InventoryTransaction.Kind.REFUND,
                 "return": InventoryTransaction.Kind.REFUND,
-            }
+            })
             kind = kind_map.get(kind_str) or kind_str.upper()
             direction = str(data.get("direction", "") or "").strip().upper() or None
-            allowed_kinds = {
-                InventoryTransaction.Kind.RECEIPT,
-                InventoryTransaction.Kind.ISSUE,
-                InventoryTransaction.Kind.ADJUSTMENT,
-                InventoryTransaction.Kind.SALE,
-                InventoryTransaction.Kind.REFUND,
-            }
+            allowed_kinds = set(InventoryTransaction.Kind.values)
             if kind not in allowed_kinds:
-                errors.append(f"Row {row['line']}: Choose a valid movement kind (RECEIPT, ISSUE, ADJUSTMENT).")
+                errors.append(f"Row {row['line']}: Choose a valid movement kind ({', '.join(InventoryTransaction.Kind.values)}).")
                 continue
             try:
                 quantity_decimal = forms.DecimalField(min_value=1).clean(data.get("quantity"))
@@ -626,6 +619,24 @@ class InventoryImportTemplateView(ExcelTemplateView):
     permission_required = "inventory.add_inventorytransaction"
     headers = InventoryImportView.template_headers
     filename = "inventory-import-template.xlsx"
+
+    def get(self, request):
+        workbook = Workbook(write_only=True)
+        sheet = workbook.create_sheet("Import")
+        sheet.append(self.headers)
+        sheet.append(["", "", "RECEIPT", "", "", "", "", ""])
+        sheet.append(["", "", "ISSUE", "", "", "", "", ""])
+        sheet.append(["", "", "ADJUSTMENT", "", "", "", "", ""])
+        sheet.append(["", "", "SALE", "", "", "", "", ""])
+        sheet.append(["", "", "REFUND", "", "", "", "", ""])
+        output = BytesIO()
+        workbook.save(output)
+        response = HttpResponse(
+            output.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{self.filename}"'
+        return response
 
 
 class MemberImportView(SpreadsheetImportView):

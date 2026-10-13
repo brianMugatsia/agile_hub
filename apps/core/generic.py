@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.hubs.permissions import hubs_for_user, selected_hub
+from apps.accounts.roles import Role
 
 from apps.audit.services import record_event
 from .mixins import PageMixin
@@ -189,10 +190,23 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
             selected_hub=self.selected_hub.pk if getattr(self, "selected_hub", None) else "",
             selected_hub_object=getattr(self, "selected_hub", None),
         )
+        user = self.request.user
+        is_platform_admin = user.role in (Role.SUPER_ADMIN, Role.ADMIN)
+        available_hubs, active_hub, hub_error = selected_hub(self.request)
+        show_hub_column = is_platform_admin and not getattr(self, "selected_hub", None) and not active_hub
+
+        cols = []
+        for col in self.columns:
+            field_name = col.get("field", "")
+            if field_name in ("hub__name", "hub") and not show_hub_column:
+                continue
+            cols.append(col)
+        columns_to_show = tuple(cols)
+
         context.update(
             page_title=self.page_title,
             breadcrumbs=self.get_breadcrumbs(),
-            columns=self.columns,
+            columns=columns_to_show,
             create_url_name=self.create_url_name,
             create_label=self.create_label,
             search_query=self.request.GET.get("q", ""),
