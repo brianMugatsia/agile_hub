@@ -5,6 +5,8 @@ from io import BytesIO
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponse, HttpResponseBadRequest, StreamingHttpResponse
+from django.shortcuts import render
+from django.utils import timezone
 from django.views import View
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
@@ -61,8 +63,8 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
         )
 
     def get(self, request, file_format):
-        if file_format not in {"csv", "xlsx"}:
-            return HttpResponseBadRequest("Choose csv or xlsx.")
+        if file_format not in {"csv", "xlsx", "pdf"}:
+            return HttpResponseBadRequest("Choose csv, xlsx, or pdf.")
         list_view = self.list_view_class()
         list_view.setup(request)
         queryset = list_view.get_queryset()
@@ -90,7 +92,7 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
                     ])
 
             response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
-        else:
+        elif file_format == "xlsx":
             workbook = Workbook(write_only=True)
             sheet = workbook.create_sheet(title=model._meta.verbose_name_plural[:31])
             sheet.freeze_panes = "A2"
@@ -112,5 +114,18 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 output.getvalue(),
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+        else:
+            rows = [
+                [_cell_value(row, column["field"]) for column in columns]
+                for row in queryset.iterator(chunk_size=1000)
+            ]
+            context = {
+                "page_title": f"{model._meta.verbose_name_plural} export",
+                "columns": columns,
+                "rows": rows,
+                "generated_at": timezone.now(),
+                "now": timezone.now(),
+            }
+            return render(request, "components/record_print.html", context)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

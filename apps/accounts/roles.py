@@ -62,7 +62,7 @@ def perms(model, *actions):
 FINANCE_MODELS = (
     "memberprofile", "business", "revenuestream", "incomestatement",
     "incomestatementitem", "cashflow", "asset", "liability", "equityrecord",
-    "projection", "startupcost", "fundingsource",
+    "projection", "startupcost", "fundingsource", "expense",
 )
 
 

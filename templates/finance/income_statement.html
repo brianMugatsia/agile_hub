@@ -3,6 +3,8 @@
 
 {% block content %}
   <nav class="cluster" aria-label="Finance tools">
+    <a class="btn btn--secondary" href="{% url 'finance:expenses' %}">Expenses</a>
+    <a class="btn btn--secondary" href="{% url 'finance:cash_flow' %}">Cash flow</a>
     <a class="btn btn--secondary" href="{% url 'finance:break_even' %}">Break-even</a>
     <a class="btn btn--secondary" href="{% url 'finance:projections' %}">Projections</a>
     <a class="btn btn--secondary" href="{% url 'finance:ratios' %}">Financial ratios</a>
@@ -35,6 +37,7 @@
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Gross profit</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ gross_profit|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Commissions</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ commissions|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Payroll</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ payroll|floatformat:2 }}</strong></div></article>
+    <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Total Expenses</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ total_expenses|floatformat:2 }}</strong></div></article>
     <article class="card stat-card"><div class="card__body"><span class="stat-card__label">Net profit</span><strong class="stat-card__value">{{ CURRENCY_CODE|default:"KES" }} {{ net_profit|floatformat:2 }}</strong></div></article>
   </section>
   <p class="text-muted">Accrual view for {{ period_start|date:"M j, Y" }} through {{ period_end|date:"M j, Y" }}. Includes completed sales, member contributions, cost of goods, accrued commissions, approved or pending payroll, and entered statement expenses.</p>

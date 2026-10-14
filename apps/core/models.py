@@ -24,6 +24,7 @@ class StagedSpreadsheetImport(models.Model):
         INVENTORY = "inventory", "Inventory movements"
         MEMBERS = "members", "Members"
         BUSINESSES = "businesses", "Businesses"
+        EXPENSES = "expenses", "Expenses"
 
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     import_type = models.CharField(max_length=16, choices=ImportType.choices, db_index=True)

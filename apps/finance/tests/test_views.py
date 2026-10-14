@@ -8,7 +8,7 @@ from apps.accounts.roles import Role
 from apps.members.models import MemberProfile, Business
 from apps.core.scoping import scope_queryset
 from apps.finance.forms import CashFlowForm
-from apps.finance.models import Asset, CashFlow, IncomeStatement, IncomeStatementItem
+from apps.finance.models import Asset, CashFlow, Expense, IncomeStatement, IncomeStatementItem
 from apps.hubs.models import Hub, HubMembership
 from apps.payroll.models import SalaryRecord, WorkerProfile
 from apps.products.models import Product
@@ -240,3 +240,112 @@ def test_cash_flow_create_limits_hubs_and_businesses_to_manager_scope(
     assert list(form.fields["hub"].queryset) == [visible_hub]
     assert list(form.fields["business"].queryset) == [visible_business]
     assert hidden_business not in form.fields["business"].queryset
+
+
+def test_expense_list_and_categories(client, make_user):
+    admin = make_user(role=Role.SUPER_ADMIN)
+    hub = Hub.objects.create(code="EXP-HUB", name="Expense hub")
+    today = timezone.localdate()
+
+    for category, _ in Expense.Category.choices:
+        Expense.objects.create(
+            hub=hub,
+            category=category,
+            title=f"Test {category}",
+            amount=Decimal("100.00"),
+            expense_date=today,
+        )
+
+    client.force_login(admin)
+    response = client.get(reverse("finance:expenses"))
+    assert response.status_code == 200
+    assert len(response.context["object_list"]) == len(Expense.Category.choices)
+
+    # Test filtering by category
+    response_filtered = client.get(reverse("finance:expenses"), {"category": "RENT"})
+    assert response_filtered.status_code == 200
+    assert len(response_filtered.context["object_list"]) == 1
+    assert response_filtered.context["object_list"][0].category == "RENT"
+
+
+def test_expense_integration_with_income_statement(client, make_user):
+    admin = make_user(role=Role.SUPER_ADMIN)
+    hub = Hub.objects.create(code="EXP-IS-HUB", name="Expense IS hub")
+    today = timezone.localdate()
+
+    Expense.objects.create(
+        hub=hub,
+        category=Expense.Category.STOCK_COST_OF_GOODS,
+        title="Stock purchase",
+        amount=Decimal("150.00"),
+        expense_date=today,
+    )
+    Expense.objects.create(
+        hub=hub,
+        category=Expense.Category.RENT,
+        title="Office rent",
+        amount=Decimal("500.00"),
+        expense_date=today,
+    )
+
+    client.force_login(admin)
+    response = client.get(reverse("finance:income_statement"), {"start": today.isoformat()})
+    assert response.status_code == 200
+    assert response.context["cost_of_goods"] == Decimal("150.00")
+    assert response.context["manual_expenses"] == Decimal("500.00")
+    assert response.context["operating_expenses"] == Decimal("500.00")
+
+
+def test_expense_import_and_export(client, make_user):
+    from io import BytesIO
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from openpyxl import Workbook, load_workbook
+
+    admin = make_user(role=Role.SUPER_ADMIN)
+    hub = Hub.objects.create(code="IMP-HUB", name="Import hub")
+    client.force_login(admin)
+
+    # 1. Test template download
+    template_response = client.get(reverse("finance:expense_import_template"))
+    assert template_response.status_code == 200
+
+    # 2. Test Excel import upload and confirmation
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["hub_code", "category", "title", "amount", "expense_date", "reference", "notes"])
+    sheet.append([hub.code, "RENT", "HQ Office Rent", "1200.00", "2026-10-01", "REF-001", "Monthly rent"])
+    output = BytesIO()
+    workbook.save(output)
+    uploaded_file = SimpleUploadedFile(
+        "expenses.xlsx",
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+    # Post upload (preview)
+    response = client.get(reverse("finance:import"))
+    assert response.status_code == 200
+
+    post_response = client.post(reverse("finance:import"), {"file": uploaded_file})
+    assert post_response.status_code == 200
+    assert "stage_token" in post_response.context
+
+    stage_token = post_response.context["stage_token"]
+    # Confirm import
+    confirm_response = client.post(reverse("finance:import"), {"confirm_import": "1", "stage_token": stage_token})
+    assert confirm_response.status_code == 302
+
+    assert Expense.objects.filter(title="HQ Office Rent", amount=Decimal("1200.00")).exists()
+
+    # 3. Test exports (CSV, Excel, PDF)
+    for file_format in ("csv", "xlsx", "pdf"):
+        export_response = client.get(reverse("finance:export", args=[file_format]))
+        assert export_response.status_code == 200
+        if file_format == "csv":
+            assert b"HQ Office Rent" in b"".join(export_response.streaming_content)
+        elif file_format == "xlsx":
+            exported = load_workbook(BytesIO(export_response.content), read_only=True)
+            assert next(exported.active.iter_rows(values_only=True), None) is not None
+            exported.close()
+        elif file_format == "pdf":
+            assert b"HQ Office Rent" in export_response.content

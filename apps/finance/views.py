@@ -9,17 +9,19 @@ from django.utils.dateparse import parse_date
 from django.views.generic import TemplateView
 
 from apps.accounts.roles import Role
-from apps.core.generic import ProtectedCreateView, ScopedModelListView, hubs_for_user
+from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView, hubs_for_user
+from apps.core.exports import ScopedModelExportView
 from apps.core.scoping import scope_queryset
 from apps.hubs.permissions import selected_hub
 from apps.sales.models import Sale, SaleItem
 from apps.members.models import Business
 
-from .forms import BreakEvenForm, CashFlowForm, ProjectionForm
+from .forms import BreakEvenForm, CashFlowForm, ExpenseForm, ProjectionForm
 from .models import (
     Asset,
     CashFlow,
     EquityRecord,
+    Expense,
     FundingSource,
     IncomeStatementItem,
     Liability,
@@ -52,7 +54,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             end = parse_date(end_value)
         except ValueError:
             end = None
-        if start_value and (not start or start.isoformat() != start_value):
+        if start_value and (not start or start.isoformat() != start_value): 
             return HttpResponseBadRequest("Use YYYY-MM-DD for the start date.")
         if end_value and (not end or end.isoformat() != end_value):
             return HttpResponseBadRequest("Use YYYY-MM-DD for the end date.")
@@ -81,14 +83,14 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             completed_at__date__lte=period_end,
         )
         role = self.request.user.role
-        available_hubs, selected, hub_error = selected_hub(self.request)
+        available_hubs, selected, hub_error = selected_hub(self.request)    
         hub_ids = available_hubs.values_list("pk", flat=True)
         is_platform_admin = role in (Role.SUPER_ADMIN, Role.ADMIN)
         hub_scoped_roles = (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER)
         if role in hub_scoped_roles:
             sales = sales.filter(hub_id__in=hub_ids)
         elif role == Role.MEMBER:
-            sales = sales.filter(business__member__user=self.request.user)
+            sales = sales.filter(business__member__user=self.request.user)  
         elif not is_platform_admin:
             sales = sales.none()
         if selected:
@@ -104,7 +106,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         if role in hub_scoped_roles:
             businesses = businesses.filter(hub_id__in=hub_ids)
         elif role == Role.MEMBER:
-            businesses = businesses.filter(member__user=self.request.user)
+            businesses = businesses.filter(member__user=self.request.user)  
         elif not is_platform_admin:
             businesses = businesses.none()
         if selected:
@@ -119,7 +121,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             None,
             expression=ExpressionWrapper(
                 F("quantity") * F("unit_cost"),
-                output_field=DecimalField(max_digits=14, decimal_places=2),
+                output_field=DecimalField(max_digits=14, decimal_places=2), 
             ),
         )
         commissions = _sum(
@@ -147,6 +149,36 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         elif hub_error:
             salaries = salaries.none()
         payroll = _sum(salaries, "gross_amount")
+
+        expenses_qs = Expense.objects.filter(
+            expense_date__gte=period_start,
+            expense_date__lte=period_end,
+        )
+        if role in hub_scoped_roles:
+            expenses_qs = expenses_qs.filter(
+                Q(hub_id__in=hub_ids) | Q(business__hub_id__in=hub_ids)
+            )
+        elif role == Role.MEMBER:
+            expenses_qs = expenses_qs.filter(business__member__user=self.request.user)
+        elif not is_platform_admin:
+            expenses_qs = expenses_qs.none()
+        if selected:
+            expenses_qs = expenses_qs.filter(
+                Q(hub=selected) | Q(business__hub=selected)
+            )
+        elif hub_error:
+            expenses_qs = expenses_qs.none()
+
+        cogs_from_expenses = _sum(
+            expenses_qs.filter(category=Expense.Category.STOCK_COST_OF_GOODS),
+            "amount",
+        )
+        other_expenses_total = _sum(
+            expenses_qs.exclude(category=Expense.Category.STOCK_COST_OF_GOODS),
+            "amount",
+        )
+        cost_of_goods = cost_of_goods + cogs_from_expenses
+
         expense_items = IncomeStatementItem.objects.filter(
             is_expense=True,
             statement__period_start__lte=period_end,
@@ -170,8 +202,10 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         manual_expenses = _sum(
             expense_items,
             "amount",
-        )
-        operating_expenses = commissions + payroll + manual_expenses
+        ) + other_expenses_total
+
+        operating_expenses = commissions + payroll + manual_expenses        
+        total_expenses = cost_of_goods + operating_expenses
         context.update(
             page_title=self.page_title,
             period_start=period_start,
@@ -188,7 +222,8 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             payroll=payroll,
             manual_expenses=manual_expenses,
             operating_expenses=operating_expenses,
-            net_profit=revenue - cost_of_goods - operating_expenses,
+            total_expenses=total_expenses,
+            net_profit=revenue - cost_of_goods - operating_expenses,        
         )
         return context
 
@@ -216,6 +251,81 @@ class CashFlowCreateView(ProtectedCreateView):
     form_class = CashFlowForm
     page_title = "Record cash flow"
     success_url_name = "finance:cash_flow"
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        available_hubs = hubs_for_user(self.request.user)
+        form.fields["hub"].queryset = available_hubs
+        if self.request.user.role == "MEMBER":
+            form.fields["business"].queryset = Business.objects.filter(     
+                member__user=self.request.user
+            )
+        else:
+            form.fields["business"].queryset = Business.objects.filter(     
+                Q(hub__in=available_hubs) | Q(hub__isnull=True)
+            ).select_related("member__user")
+        return form
+
+
+class ExpenseListView(ScopedModelListView):
+    model = Expense
+    page_title = "Expenses"
+    columns = (
+        {"label": "Date", "field": "expense_date"},
+        {"label": "Category", "field": "get_category_display"},
+        {"label": "Title", "field": "title"},
+        {"label": "Amount", "field": "amount"},
+        {"label": "Hub", "field": "hub__name"},
+        {"label": "Reference", "field": "reference"},
+    )
+    search_fields = ("title", "reference", "notes")
+    create_url_name = "finance:expense_create"
+    create_label = "Record expense"
+    create_permission = "finance.add_expense"
+    export_url_name = "finance:export"
+    import_url_name = "finance:import"
+    import_permission = "finance.add_expense"
+    filter_hub = True
+    filter_fields = (
+        ("category", Expense.Category.choices),
+    )
+    date_filter_field = "expense_date"
+    row_edit_url_name = "finance:expense_edit"
+    row_edit_permission = "finance.change_expense"
+
+
+class ExpenseExportView(ScopedModelExportView):
+    list_view_class = ExpenseListView
+
+
+class ExpenseCreateView(ProtectedCreateView):
+    model = Expense
+    form_class = ExpenseForm
+    page_title = "Record expense"
+    success_url_name = "finance:expenses"
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        available_hubs = hubs_for_user(self.request.user)
+        form.fields["hub"].queryset = available_hubs
+        if self.request.user.role == "MEMBER":
+            form.fields["business"].queryset = Business.objects.filter(
+                member__user=self.request.user
+            )
+        else:
+            form.fields["business"].queryset = Business.objects.filter(
+                Q(hub__in=available_hubs) | Q(hub__isnull=True)
+            ).select_related("member__user")
+        return form
+
+
+class ExpenseUpdateView(ProtectedUpdateView):
+    model = Expense
+    form_class = ExpenseForm
+    page_title = "Edit expense"
+    success_url_name = "finance:expenses"
+    cancel_url_name = "finance:expenses"
+    permission_required = "finance.change_expense"
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -351,8 +461,8 @@ class FinancialRatiosView(LoginRequiredMixin, PermissionRequiredMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        available_hubs, selected, hub_error = selected_hub(self.request)
-        assets = scope_queryset(Asset.objects.all(), self.request.user)
+        available_hubs, selected, hub_error = selected_hub(self.request)    
+        assets = scope_queryset(Asset.objects.all(), self.request.user)     
         liabilities = scope_queryset(Liability.objects.all(), self.request.user)
         equity = scope_queryset(EquityRecord.objects.all(), self.request.user)
         if selected:

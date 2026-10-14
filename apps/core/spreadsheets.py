@@ -1,9 +1,10 @@
-from datetime import timedelta
+from datetime import timedelta, date, datetime
 from io import BytesIO
 from uuid import UUID
 from zipfile import BadZipFile
 from xml.etree.ElementTree import ParseError
 from zipfile import ZipFile
+from decimal import Decimal
 
 from django import forms
 from django.contrib import messages
@@ -23,6 +24,8 @@ from apps.audit.services import record_event
 from apps.accounts.models import User
 from apps.accounts.roles import Role
 from apps.hubs.models import Hub
+from apps.finance.models import Expense
+from apps.finance.forms import ExpenseForm
 from apps.hubs.permissions import hubs_for_user
 from apps.inventory.models import InventoryBalance, InventoryTransaction
 from apps.inventory.services import record_movement
@@ -76,7 +79,6 @@ def read_workbook(uploaded, required_headers, allowed_headers):
             "action": "kind",
             "movement": "kind",
             "qty": "quantity",
-            "amount": "quantity",
             "hub": "hub_code",
             "hub_name": "hub_code",
             "location": "hub_code",
@@ -864,3 +866,169 @@ class BusinessImportTemplateView(ExcelTemplateView):
     permission_required = "members.add_business"
     headers = BusinessImportView.template_headers
     filename = "business-import-template.xlsx"
+
+
+class ExpenseImportView(SpreadsheetImportView):
+    import_type = StagedSpreadsheetImport.ImportType.EXPENSES
+    permission_required = "finance.add_expense"
+    list_url = "finance:expenses"
+    template_url = "finance:expense_import_template"
+    page_title = "Import expenses"
+    description = "Create expense records from a validated Excel workbook. Required columns: category, title, amount, expense_date."
+    required_headers = ("category", "title", "amount", "expense_date")
+    template_headers = (
+        "hub_code", "business_name", "category", "title", "amount",
+        "expense_date", "reference", "notes",
+    )
+
+    def validate_rows(self, rows, user):
+        errors = []
+        accepted = []
+        available_hubs = {
+            hub.normalized_code: hub
+            for hub in hubs_for_user(user, active_only=False).annotate(
+                normalized_code=Lower("code"),
+                normalized_name=Lower("name")
+            )
+        }
+        default_hub = getattr(user, "hub", None) or hubs_for_user(user, active_only=False).first() or Hub.objects.first()
+
+        business_names = {
+            str(row["values"].get("business_name", "")).strip().casefold()
+            for row in rows
+            if row["values"].get("business_name")
+        }
+        businesses = {
+            b.normalized_name: b
+            for b in Business.objects.annotate(normalized_name=Lower("name"))
+            .filter(normalized_name__in=business_names)
+        }
+
+        category_map = {}
+        for choice, label in Expense.Category.choices:
+            category_map[choice.lower()] = choice
+            category_map[label.lower()] = choice
+        category_map.update({
+            "stock": Expense.Category.STOCK_COST_OF_GOODS,
+            "cogs": Expense.Category.STOCK_COST_OF_GOODS,
+            "stock / cost of goods": Expense.Category.STOCK_COST_OF_GOODS,
+            "wage": Expense.Category.WAGES,
+            "salary": Expense.Category.WAGES,
+            "salaries": Expense.Category.WAGES,
+            "bank charge": Expense.Category.BANK_CHARGES,
+            "bank fee": Expense.Category.BANK_CHARGES,
+            "misc": Expense.Category.OTHER,
+            "miscellaneous": Expense.Category.OTHER,
+        })
+
+        for row in rows:
+            data = row["values"]
+            hub_input = str(data.get("hub_code", "")).strip()
+            hub = None
+            if hub_input:
+                hub = available_hubs.get(hub_input.casefold())
+                if hub is None:
+                    errors.append(f"Row {row['line']}: Hub is unknown or outside your access.")
+                    continue
+            else:
+                hub = default_hub
+
+            business_input = str(data.get("business_name", "")).strip()
+            business = None
+            if business_input:
+                business = businesses.get(business_input.casefold())
+                if business is None:
+                    errors.append(f"Row {row['line']}: Business {business_input} was not found.")
+                    continue
+
+            category_str = str(data.get("category", "")).strip().casefold()
+            category = category_map.get(category_str) or category_str.upper()
+            if category not in Expense.Category.values:
+                errors.append(f"Row {row['line']}: Choose a valid category ({', '.join(Expense.Category.values)}).")
+                continue
+
+            title = str(data.get("title", "")).strip()
+            if not title:
+                errors.append(f"Row {row['line']}: Title is required.")
+                continue
+
+            amount = data.get("amount")
+            if amount in (None, ""):
+                errors.append(f"Row {row['line']}: Amount is required.")
+                continue
+            amt_str = str(amount).strip()
+            for prefix in ("kes", "ksh", "usd", "$", "€", "£"):
+                if amt_str.lower().startswith(prefix):
+                    amt_str = amt_str[len(prefix):].strip()
+            amt_str = amt_str.replace(",", "")
+            try:
+                amount_decimal = forms.DecimalField(min_value=Decimal("0.01"), max_digits=14, decimal_places=2).clean(amt_str)
+            except ValidationError:
+                errors.append(f"Row {row['line']}: Amount must be at least 0.01 with at most two decimals.")
+                continue
+
+            expense_date = data.get("expense_date")
+            if not expense_date:
+                errors.append(f"Row {row['line']}: Expense date is required.")
+                continue
+            if isinstance(expense_date, datetime):
+                expense_date = expense_date.date()
+            elif isinstance(expense_date, str):
+                try:
+                    expense_date = date.fromisoformat(expense_date.strip())
+                except ValueError:
+                    errors.append(f"Row {row['line']}: Expense date must be in YYYY-MM-DD format.")
+                    continue
+
+            form_data = {
+                "hub": str(hub.pk) if hub else "",
+                "business": str(business.pk) if business else "",
+                "category": category,
+                "title": title,
+                "amount": str(amount_decimal),
+                "expense_date": expense_date.isoformat(),
+                "reference": str(data.get("reference", "") or "")[:80],
+                "notes": str(data.get("notes", "") or "")[:255],
+            }
+            form = ExpenseForm(form_data)
+            if not form.is_valid():
+                detail = "; ".join(
+                    f"{field}: {', '.join(field_errors)}"
+                    for field, field_errors in form.errors.items()
+                )
+                errors.append(f"Row {row['line']}: {detail}")
+                continue
+
+            accepted.append(form_data)
+
+        preview = _preview_rows(rows, self.template_headers)
+        return preview, errors, accepted
+
+    def commit_rows(self, rows, user, *, request):
+        for row in rows:
+            hub = Hub.objects.filter(pk=row["hub"]).first() if row["hub"] else None
+            business = Business.objects.filter(pk=row["business"]).first() if row["business"] else None
+            expense = Expense.objects.create(
+                hub=hub,
+                business=business,
+                category=row["category"],
+                title=row["title"],
+                amount=row["amount"],
+                expense_date=row["expense_date"],
+                reference=row["reference"],
+                notes=row["notes"],
+                created_by=user,
+            )
+            record_event(
+                action="finance.expense.imported",
+                summary=f"Imported expense {expense}",
+                actor=user,
+                target=expense,
+                request=request,
+            )
+
+
+class ExpenseImportTemplateView(ExcelTemplateView):
+    permission_required = "finance.add_expense"
+    headers = ExpenseImportView.template_headers
+    filename = "expense-import-template.xlsx"

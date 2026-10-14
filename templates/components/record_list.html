@@ -17,6 +17,7 @@
   {% if export_url_name %}
     <a class="btn btn--secondary" href="{% url export_url_name 'csv' %}{% if export_query %}?{{ export_query }}{% endif %}">Download CSV</a>
     <a class="btn btn--secondary" href="{% url export_url_name 'xlsx' %}{% if export_query %}?{{ export_query }}{% endif %}">Download Excel</a>
+    <a class="btn btn--secondary" href="{% url export_url_name 'pdf' %}{% if export_query %}?{{ export_query }}{% endif %}">Export PDF</a>
   {% endif %}
 {% endblock %}
 
