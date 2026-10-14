@@ -1,17 +1,37 @@
 from django import forms
 from decimal import Decimal
 
-from .models import CashFlow
+from .models import CashFlow, Expense
 
 
 class CashFlowForm(forms.ModelForm):
     class Meta:
         model = CashFlow
         fields = [
-            "direction", "category", "amount", "transaction_date", "hub",
+            "direction", "category", "amount", "transaction_date", "hub",   
             "business", "reference", "description",
         ]
         widgets = {"transaction_date": forms.DateInput(attrs={"type": "date"})}
+
+    def clean(self):
+        cleaned_data = super().clean()
+        hub = cleaned_data.get("hub")
+        business = cleaned_data.get("business")
+        if hub and business and business.hub_id and business.hub_id != hub.pk:
+            self.add_error("business", "Choose a business assigned to the selected hub.")
+        return cleaned_data
+
+
+class ExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = [
+            "hub", "business", "category", "title", "amount",
+            "expense_date", "reference", "notes",
+        ]
+        widgets = {
+            "expense_date": forms.DateInput(attrs={"type": "date"}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()

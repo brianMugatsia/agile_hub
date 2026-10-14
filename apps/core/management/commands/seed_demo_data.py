@@ -13,7 +13,7 @@ from django.utils import timezone
 from apps.accounts.roles import Role
 from apps.commissions.models import SalesAgentCommission
 from apps.commissions.services import accrue_for_sale
-from apps.finance.models import CashFlow, IncomeStatement, IncomeStatementItem
+from apps.finance.models import CashFlow, Expense, IncomeStatement, IncomeStatementItem
 from apps.hubs.models import Hub, HubMembership
 from apps.inventory.models import InventoryBalance, InventoryTransaction, Supplier, PurchaseOrder, PurchaseOrderLine
 from apps.inventory.services import record_movement, create_reorder_order, receive_purchase_order
@@ -446,6 +446,29 @@ class Command(BaseCommand):
             description="Hub utilities, logistics and transport",
             created_by=super_admin,
         )
+
+        expense_categories = [
+            (Expense.Category.STOCK_COST_OF_GOODS, (total_sales_revenue * Decimal("0.05")).quantize(Decimal("0.01")), "Wholesale stock restocking"),
+            (Expense.Category.WAGES, (total_sales_revenue * Decimal("0.04")).quantize(Decimal("0.01")), "Staff and agent monthly wages"),
+            (Expense.Category.RENT, (total_sales_revenue * Decimal("0.02")).quantize(Decimal("0.01")), "Hub warehouse and office rent"),
+            (Expense.Category.UTILITIES, (total_sales_revenue * Decimal("0.005")).quantize(Decimal("0.01")), "Electricity and water utility bills"),
+            (Expense.Category.TRANSPORT, (total_sales_revenue * Decimal("0.01")).quantize(Decimal("0.01")), "Delivery and transport logistics"),
+            (Expense.Category.MARKETING, (total_sales_revenue * Decimal("0.005")).quantize(Decimal("0.01")), "Promotional campaigns"),
+            (Expense.Category.BANK_CHARGES, (total_sales_revenue * Decimal("0.002")).quantize(Decimal("0.01")), "Bank and mobile money transaction fees"),
+            (Expense.Category.OTHER, (total_sales_revenue * Decimal("0.003")).quantize(Decimal("0.01")), "Miscellaneous office supplies"),
+        ]
+        for cat, amount, title in expense_categories:
+            if amount > 0:
+                Expense.objects.create(
+                    hub=hubs[0],
+                    category=cat,
+                    title=title,
+                    amount=amount,
+                    expense_date=timezone.localdate(),
+                    reference=f"SEED-{cat}",
+                    notes="Auto-seeded demo expense record for positive net profit balance.",
+                    created_by=super_admin,
+                )
 
         self.stdout.write(self.style.SUCCESS(
             f"Successfully seeded production dataset with 0 inventory reconciliation discrepancies."

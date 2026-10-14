@@ -222,3 +222,36 @@ class FundingSource(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Expense(models.Model):
+    class Category(models.TextChoices):
+        STOCK_COST_OF_GOODS = "STOCK_COST_OF_GOODS", "Stock / Cost of Goods"
+        WAGES = "WAGES", "Wages"
+        RENT = "RENT", "Rent"
+        UTILITIES = "UTILITIES", "Utilities"
+        TRANSPORT = "TRANSPORT", "Transport"
+        MARKETING = "MARKETING", "Marketing"
+        BANK_CHARGES = "BANK_CHARGES", "Bank Charges"
+        OTHER = "OTHER", "Other"
+
+    hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, null=True, blank=True, related_name="expenses")
+    business = models.ForeignKey(
+        "members.Business", on_delete=models.PROTECT, null=True, blank=True, related_name="expenses"
+    )
+    category = models.CharField(max_length=40, choices=Category.choices, db_index=True)
+    title = models.CharField(max_length=160)
+    amount = models.DecimalField(
+        max_digits=14, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
+    )
+    expense_date = models.DateField(db_index=True)
+    reference = models.CharField(max_length=80, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-expense_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.get_category_display()} — {self.title}: {self.amount}"
