@@ -161,16 +161,16 @@ class AgentCommissionStatementView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         agent = get_object_or_404(
-            User.objects.filter(role=Role.SALES_AGENT),
+            User.objects.filter(Q(role=Role.SALES_AGENT) | Q(role=Role.MEMBER) | Q(commissions__isnull=False)).distinct(),
             pk=self.kwargs["agent_id"],
         )
         commissions = scope_queryset(
             SalesAgentCommission.objects.select_related("sale", "sale__hub", "agent"),
             self.request.user,
         ).filter(agent=agent)
-        if self.request.user.role == Role.SALES_AGENT and agent.pk != self.request.user.pk:
+        if self.request.user.role in (Role.SALES_AGENT, Role.MEMBER) and agent.pk != self.request.user.pk:
             raise PermissionDenied
-        if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_AGENT):
+        if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN, Role.SALES_AGENT, Role.MEMBER):
             if not commissions.exists():
                 raise PermissionDenied
         totals = commissions.aggregate(

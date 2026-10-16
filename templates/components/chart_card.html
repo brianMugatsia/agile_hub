@@ -1,14 +1,20 @@
 <article class="card chart-card">
   <div class="card__header"><h2 class="card__title">{{ title|default:"Performance" }}</h2></div>
-  <div class="card__body chart-card__body">
+  <div class="card__body chart-card__body" style="padding: 1.5rem;">
     {% if chart_data %}
-      <div class="chart-empty" role="img" aria-label="{{ title }} chart data">
+      <div style="display: flex; align-items: flex-end; gap: 0.75rem; height: 180px; padding-top: 1.5rem; border-bottom: 2px solid var(--color-border, #e2e8f2); overflow-x: auto;">
         {% for point in chart_data %}
-          <span class="badge badge--success" data-chart-value="{{ point.value|default:0 }}">{{ point.label }}: {{ point.value }}</span>
+          <div style="flex: 1; min-width: 45px; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; position: relative;" title="{{ point.label }}: {{ point.value }}">
+            <span style="font-size: 0.7rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--color-text, #0f1c33);">{{ point.value }}</span>
+            <div style="width: 100%; max-width: 36px; background: linear-gradient(180deg, #3b82f6, #1d4ed8); border-radius: 6px 6px 0 0; height: {{ point.pct|default:50 }}%; transition: height 0.3s ease; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);"></div>
+            <span style="font-size: 0.7rem; color: var(--color-text-muted, #5b6b86); margin-top: 0.5rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{ point.label }}</span>
+          </div>
         {% endfor %}
       </div>
     {% else %}
-      <p class="chart-empty">{{ empty_message|default:"Chart data will appear when records are available." }}</p>
+      <div class="chart-empty">
+        <p>{{ empty_message|default:"Chart data will appear when records are available." }}</p>
+      </div>
     {% endif %}
   </div>
 </article>

@@ -1,11 +1,14 @@
 from decimal import Decimal
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.roles import Role
@@ -292,6 +295,21 @@ class ExpenseListView(ScopedModelListView):
     date_filter_field = "expense_date"
     row_edit_url_name = "finance:expense_edit"
     row_edit_permission = "finance.change_expense"
+    row_delete_url_name = "finance:expense_delete"
+    row_delete_permission = "finance.delete_expense"
+
+
+class ExpenseDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = "finance.delete_expense"
+
+    def post(self, request, pk):
+        expense = get_object_or_404(
+            scope_queryset(Expense.objects.all(), request.user),
+            pk=pk,
+        )
+        expense.delete()
+        messages.success(request, "Expense deleted.")
+        return redirect("finance:expenses")
 
 
 class ExpenseExportView(ScopedModelExportView):

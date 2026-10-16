@@ -37,6 +37,14 @@ ROLE_ASSIGNMENT = {
         Role.MEMBER,
         Role.VIEWER,
     ),
+    Role.HUB_MANAGER: (
+        Role.HUB_MANAGER,
+        Role.FINANCE_OFFICER,
+        Role.SALES_AGENT,
+        Role.WORKER,
+        Role.MEMBER,
+        Role.VIEWER,
+    ),
 }
 
 
@@ -83,11 +91,12 @@ ROLE_PERMISSIONS = {
         *perms("purchaseorder", "view", "add", "change"),
         *perms("sale", "view", "add", "change"), *perms("saleitem", "view"),
         *perms("commissionsetting", "view"),
-        *perms("salesagentcommission", "view", "approve", "reject"),
+        *perms("salesagentcommission", "view", "approve", "reject", "pay", "reverse"),
         *perms("workerprofile", "view", "add", "change"),
         *perms("salaryrecord", "view", "add", "change", "approve"),
         *_finance("view"),
         *_finance("add", "change", models=("memberprofile", "business")),
+        *_finance("delete", models=("expense",)),
         "export_reports",
     ],
     Role.HUB_MANAGER: [
@@ -100,11 +109,12 @@ ROLE_PERMISSIONS = {
         *perms("purchaseorder", "view", "add", "change"),
         *perms("sale", "view", "add", "change", "cancel"),
         *perms("saleitem", "view", "add", "change"),
-        *perms("salesagentcommission", "view", "approve", "reject"),
+        *perms("salesagentcommission", "view", "approve", "reject", "pay", "reverse"),
         *perms("workerprofile", "view", "add", "change"),
         *perms("salaryrecord", "view", "approve"),
         *_finance("view"),
         *_finance("add", "change", models=("memberprofile", "business", "cashflow", "incomestatement", "incomestatementitem")),
+        *_finance("delete", models=("expense",)),
         "export_reports",
     ],
     Role.FINANCE_OFFICER: [

@@ -349,3 +349,19 @@ def test_expense_import_and_export(client, make_user):
             exported.close()
         elif file_format == "pdf":
             assert b"HQ Office Rent" in export_response.content
+
+
+def test_expense_deletion(client, make_user, roles):
+    hub = Hub.objects.create(code="DEL-HUB", name="Delete Hub")
+    admin = make_user(role=Role.ADMIN)
+    expense = Expense.objects.create(
+        hub=hub,
+        category=Expense.Category.RENT,
+        title="Test Rent",
+        amount=Decimal("500.00"),
+        expense_date=timezone.localdate(),
+    )
+    client.force_login(admin)
+    response = client.post(reverse("finance:expense_delete", args=[expense.pk]))
+    assert response.status_code == 302
+    assert not Expense.objects.filter(pk=expense.pk).exists()

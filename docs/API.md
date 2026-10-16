@@ -1,5 +1,7 @@
 # API
 
+**Agile Hub** is an enterprise multi-tenant retail and business management platform designed to streamline multi-hub retail operations, inventory tracking, sales attribution, staff payroll, agent commissions, and financial accounting.
+
 The API is mounted at `/api/v1/`. The OpenAPI schema is available through the project schema route, and the documentation UI is restricted to administrators. All API routes require authentication unless explicitly stated otherwise. The default authentication methods are JWT bearer tokens and Django session authentication; global throttles are configured in settings.
 
 ## Authentication

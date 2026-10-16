@@ -1,4 +1,6 @@
-# Backup and recovery
+# Backup and Recovery
+
+**Agile Hub** is an enterprise multi-tenant retail and business management platform designed to streamline multi-hub retail operations, inventory tracking, sales attribution, staff payroll, agent commissions, and financial accounting.
 
 Database backups and media backups are separate responsibilities. Configure encrypted, automated PostgreSQL backups (including point-in-time recovery where available) and separately back up uploaded media and any deployment-specific files. The repository's `backups/` directory is not a production backup target and is ignored by Git.
 

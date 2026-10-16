@@ -1,5 +1,7 @@
 # Deployment
 
+**Agile Hub** is an enterprise multi-tenant retail and business management platform designed to streamline multi-hub retail operations, inventory tracking, sales attribution, staff payroll, agent commissions, and financial accounting.
+
 ## Runtime configuration
 
 Run Django with `config.settings.production`. Use a dedicated PostgreSQL database and least-privileged service account. Provide configuration through the deployment platform's secret/environment facility; never copy a real `.env` into an image or commit it.

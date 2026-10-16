@@ -32,6 +32,8 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
     create_permission = ""
     row_edit_url_name = ""
     row_edit_permission = ""
+    row_delete_url_name = ""
+    row_delete_permission = ""
     export_url_name = ""
     import_url_name = ""
     import_permission = ""
@@ -221,6 +223,12 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
                 self.row_edit_url_name
                 and self.row_edit_permission
                 and self.request.user.has_perm(self.row_edit_permission)
+            ),
+            row_delete_url_name=self.row_delete_url_name,
+            can_delete_rows=bool(
+                self.row_delete_url_name
+                and self.row_delete_permission
+                and self.request.user.has_perm(self.row_delete_permission)
             ),
         )
         return context

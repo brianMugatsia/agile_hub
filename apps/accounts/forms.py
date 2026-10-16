@@ -84,8 +84,11 @@ class UserCreateForm(StyledFormMixin, UniqueEmailMixin, UserCreationForm):
         fields = ("username", "email", "first_name", "last_name", "phone_number", "role")
 
     def __init__(self, *args, actor=None, **kwargs):
+        actor = kwargs.pop("actor", actor)
         super().__init__(*args, **kwargs)
         self.fields["role"].choices = role_choices_for(actor)
+        if not self.fields["role"].initial and self.fields["role"].choices:
+            self.fields["role"].initial = self.fields["role"].choices[0][0]
         self.fields["role"].initial = Role.VIEWER
         self.fields["email"].required = True
         self.fields["first_name"].required = True

@@ -1,4 +1,6 @@
-# Roles and permissions
+# Roles and Permissions
+
+**Agile Hub** is an enterprise multi-tenant retail and business management platform designed to streamline multi-hub retail operations, inventory tracking, sales attribution, staff payroll, agent commissions, and financial accounting.
 
 Django permissions are assigned through the role matrix in `apps/accounts/roles.py`. Access is enforced at the view/API permission layer and, for hub-scoped records, by shared queryset scoping. A user must be authenticated, have the required model/action permission, and belong to or manage the record's hub when applicable.
 
