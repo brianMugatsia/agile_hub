@@ -63,7 +63,17 @@ def create_user_from_form(form, *, actor, request=None):
     """Save a validated UserCreateForm and audit it. Enforces role-assignment rules again."""
     if form.cleaned_data["role"] not in assignable_roles(actor):
         raise PermissionDenied("You are not allowed to assign this role.")
-    user = form.save()
+    user = form.save(commit=False)
+    if actor.role == Role.HUB_MANAGER and not user.hub:
+        user.hub = getattr(actor, "hub", None)
+        if not user.hub:
+            from apps.hubs.models import HubMembership
+            membership = actor.hub_memberships.filter(is_active=True).first()
+            if membership:
+                user.hub = membership.hub
+    user.save()
+    if hasattr(form, "save_m2m"):
+        form.save_m2m()
     log_action(
         user=actor, action=AuditAction.USER_CREATED, model_name="User",
         object_id=user.pk, new_data=_snapshot(user), request=request,
