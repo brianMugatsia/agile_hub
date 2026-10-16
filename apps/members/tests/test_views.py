@@ -52,8 +52,6 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
             "member": member.pk,
             "hub": hub.pk,
             "name": "New name",
-            "business_type": "Retail",
-            "registration_number": "",
             "phone_number": "",
             "address": "",
             "status": Business.Status.ACTIVE,
@@ -129,8 +127,6 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
             "member": own_profile.pk,
             "hub": hub.pk,
             "name": "Own business updated",
-            "business_type": "",
-            "registration_number": "",
             "phone_number": "",
             "address": "",
             "status": Business.Status.ACTIVE,
@@ -141,6 +137,17 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
     assert own_business.name == "Own business updated"
     assert client.get(reverse("members:edit", args=[other_profile.pk])).status_code == 404
     assert client.get(reverse("members:contribution_edit", args=[other_business.pk])).status_code == 404
+
+
+def test_contribution_form_has_contribution_name_label_and_placeholder(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    client.force_login(admin)
+    response = client.get(reverse("members:contribution_create"))
+    assert response.status_code == 200
+    assert b"Contribution Name" in response.content
+    assert b'placeholder="Enter contribution name"' in response.content
+    assert b"business_type" not in response.content
+    assert b"registration_number" not in response.content
 
 
 def test_roles_without_change_permission_do_not_see_edit_buttons(client, make_user, roles):
