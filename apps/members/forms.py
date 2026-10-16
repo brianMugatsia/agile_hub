@@ -67,10 +67,15 @@ class MemberCreateForm(forms.ModelForm):
 
 
 class BusinessForm(forms.ModelForm):
+    name = forms.CharField(
+        label="Contribution Name",
+        widget=forms.TextInput(attrs={"placeholder": "Enter contribution name"})
+    )
+
     class Meta:
         model = Business
         fields = [
-            "member", "hub", "name", "business_type", "registration_number",
+            "member", "hub", "name",
             "phone_number", "address", "amount", "is_paid", "status",
         ]
 
