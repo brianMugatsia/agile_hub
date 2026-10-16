@@ -62,6 +62,6 @@ class Business(models.Model):
 
     @property
     def payment_status_display(self):
-        if self.amount and self.amount > 0:
+        if self.is_paid:
             return "Paid"
         return "Not Paid"

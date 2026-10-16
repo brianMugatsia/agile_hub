@@ -56,10 +56,12 @@ class MemberCreateForm(forms.ModelForm):
 
     class Meta:
         model = MemberProfile
-        fields = ["user", "phone_number", "national_id", "address", "notes"]
+        fields = ["user", "hub", "phone_number", "national_id", "address", "notes"]
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if user:
+            self.fields["hub"].queryset = _hub_choices(self.fields["hub"], self.instance, user)
         if user and user.role == Role.MEMBER:
             self.fields["user"].queryset = User.objects.filter(pk=user.pk, role=Role.MEMBER)
 

@@ -113,32 +113,51 @@ class ContributionListView(ScopedModelListView):
     row_edit_url_name = "members:contribution_edit"
     row_edit_permission = "members.change_business"
     filter_hub = False
+    filter_fields = (
+        ("is_paid", (("True", "Paid"), ("False", "Not Paid"))),
+    )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        is_paid = self.request.GET.get("is_paid", "")
+        if is_paid == "True":
+            queryset = queryset.filter(is_paid=True)
+        elif is_paid == "False":
+            queryset = queryset.filter(is_paid=False)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        queryset = self.get_queryset()
         
-        total_contributions_count = queryset.count()
+        # Members available on the system (scoped to user/hub)
+        scoped_members = scope_queryset(MemberProfile.objects.all(), self.request.user)
+        total_members_count = scoped_members.count()
+
         equal_unit_amount = Decimal("10000.00")
-        total_expected_amount = total_contributions_count * equal_unit_amount
-        
-        paid_qs = queryset.filter(amount__gt=0)
-        unpaid_qs = queryset.filter(Q(amount__isnull=True) | Q(amount=0))
-        
-        total_collected_amount = paid_qs.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-        total_unpaid_amount = unpaid_qs.count() * equal_unit_amount
-        
-        members_paid_count = paid_qs.count()
-        members_unpaid_count = unpaid_qs.count()
+        total_expected_amount = total_members_count * equal_unit_amount
+
+        # Contributions scoped to user
+        scoped_businesses = scope_queryset(Business.objects.all(), self.request.user)
+        paid_businesses = scoped_businesses.filter(is_paid=True)
+
+        total_collected_amount = paid_businesses.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        # Members paid vs unpaid working together with total members available
+        paid_member_ids = paid_businesses.values_list("member_id", flat=True).distinct()
+        members_paid_count = scoped_members.filter(pk__in=paid_member_ids).count()
+        members_unpaid_count = max(0, total_members_count - members_paid_count)
+
+        total_unpaid_amount = members_unpaid_count * equal_unit_amount
 
         context.update(
-            total_contributions_count=total_contributions_count,
+            total_contributions_count=scoped_businesses.count(),
             total_expected_amount=total_expected_amount,
             total_collected_amount=total_collected_amount,
             total_unpaid_amount=total_unpaid_amount,
             members_paid_count=members_paid_count,
             members_unpaid_count=members_unpaid_count,
             total_contribution_amount=total_collected_amount,
+            total_members_count=total_members_count,
         )
         return context
 
