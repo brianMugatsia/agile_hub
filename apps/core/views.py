@@ -198,6 +198,31 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
 
         total_sales_value = sales.aggregate(total=Sum("total"))["total"] or 0
 
+        from django.db.models.functions import TruncDate
+        daily_sales = (
+            sales.annotate(day=TruncDate("completed_at"))
+            .values("day")
+            .annotate(total=Sum("total"))
+            .order_by("day")
+        )
+        raw_chart_data = [
+            {"label": item["day"].strftime("%b %d") if item["day"] else "Unknown", "value": float(item["total"] or 0)}
+            for item in daily_sales if item["day"]
+        ]
+        max_val = max([item["value"] for item in raw_chart_data], default=1)
+        if max_val == 0:
+            max_val = 1
+        chart_data = [
+            {
+                "label": item["label"],
+                "value": item["value"],
+                "pct": max(10, int((item["value"] / max_val) * 100))
+            }
+            for item in raw_chart_data
+        ]
+        context["chart_data"] = chart_data
+        context["chart_title"] = "Daily Sales Overview"
+
         context["dashboard_stats"] = [
             ("Total membership", total_members),
             ("Total Membership Contribution", total_contribution_amount),

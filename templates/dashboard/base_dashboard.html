@@ -50,31 +50,64 @@
     {% endif %}
   </section>
 
+  <!-- RETAIL INVENTORY QUICK STATS / HIGHLIGHT BAR -->
+  <section class="dash-retail-banner" data-reveal="up" style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f2); border-radius: 16px; padding: 1.25rem 1.75rem; box-shadow: 0 4px 12px rgb(0 0 / 4%);">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(249, 115, 22, 0.12); color: #f97316;">
+        <svg class="dash-icon" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </span>
+      <div>
+        <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-text, #0f1c33);">Inventory & Stock Analytics</h4>
+        <p style="margin: 0.15rem 0 0 0; font-size: 0.85rem; color: var(--color-text-muted, #5b6b86);">Live item tracking, order fulfillment rates, and revenue metrics active.</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-weight: 600;">System Online</span>
+      <span class="badge" style="background: rgba(249, 115, 22, 0.1); color: #f97316; font-weight: 600;">Active Hubs Synced</span>
+    </div>
+  </section>
+
   <!-- STATS -->
-  <section class="grid grid--3 dashboard-stats" aria-label="Business summary">
+  <section class="grid grid--3 dashboard-stats" aria-label="Business summary" style="margin-top: 1.5rem;">
     {% for label, value in dashboard_stats %}
       <article class="card stat-card" data-reveal="up" data-spot style="--i: {{ forloop.counter0 }}">
         <div class="card__body">
-          <span class="stat-card__icon" aria-hidden="true">
-            <svg class="dash-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-8"/></svg>
-          </span>
-          <span class="stat-card__label">{{ label }}</span>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span class="stat-card__icon" aria-hidden="true" style="color: #2563eb;">
+              <svg class="dash-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-8"/></svg>
+            </span>
+            <span class="badge badge--positive" style="font-size: 0.75rem;">Live</span>
+          </div>
+          <span class="stat-card__label" style="margin-top: 0.75rem;">{{ label }}</span>
           <strong class="stat-card__value" data-count>{{ value }}</strong>
         </div>
       </article>
     {% endfor %}
   </section>
 
+  {% if chart_data %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot style="margin-top: 1.5rem;">
+      <div class="card__body">
+        <div class="dashboard-section__heading"><h2 class="card__title">{{ chart_title|default:"Daily Sales Overview" }}</h2></div>
+        {% include "components/chart_card.html" with title=chart_title chart_data=chart_data %}
+      </div>
+    </section>
+    <script type="module">
+      import { initDashboardCharts } from "{% static 'js/pages/dashboard-charts.js' %}";
+      initDashboardCharts();
+    </script>
+  {% endif %}
+
   {% if recent_sales and perms.sales.view_sale %}
     <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
-        <div class="dashboard-section__heading"><h2 class="card__title">Recent sales</h2><a href="{% url 'sales:list' %}">View all sales</a></div>
+        <div class="dashboard-section__heading"><h2 class="card__title">Recent sales</h2><a href="{% url 'sales:list' %}">View all sales</a></div>      
         {% include "components/data_table.html" with object_list=recent_sales columns=sales_columns %}
       </div>
     </section>
   {% endif %}
 
-  {% if recent_stock and perms.inventory.view_inventorytransaction %}
+  {% if recent_stock and perms.inventory.view_inventorytransaction %}       
     <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
       <div class="card__body">
         <div class="dashboard-section__heading"><h2 class="card__title">Stock by hub</h2><a href="{% url 'inventory:list' %}">View stock movements</a></div>
@@ -113,7 +146,7 @@
         <div class="dashboard-section__heading"><h2 class="card__title">Your businesses</h2><a href="{% url 'members:list' %}">View businesses</a></div>
         <div class="table-wrap"><table class="table">
           <thead><tr><th scope="col">Business</th><th scope="col">Hub</th><th scope="col">Type</th><th scope="col">Status</th></tr></thead>
-          <tbody>{% for row in recent_businesses %}<tr><td>{{ row.name }}</td><td>{{ row.hub|default:"—" }}</td><td>{{ row.business_type|default:"—" }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>
+          <tbody>{% for row in recent_businesses %}<tr><td>{{ row.name }}</td><td>{{ row.hub|default:"—" }}</td><td>{{ row.business_type|default:"—" }}</td><td>{{ row.get_status_display }}</td></tr>{% endfor %}</tbody>      
         </table></div>
       </div>
     </section>
@@ -162,8 +195,6 @@
         {% endif %}
       </div>
     </article>
-
-    
   </section>
 
 </div>

@@ -4,7 +4,7 @@
     <thead>
       <tr>
         {% for column in columns %}<th scope="col">{{ column.label }}</th>{% endfor %}
-        {% if can_edit_rows %}<th scope="col">Actions</th>{% endif %}
+        {% if can_edit_rows or can_delete_rows %}<th scope="col">Actions</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -15,12 +15,22 @@
               <td>{% if forloop.first and row.get_absolute_url %}<a href="{{ row.get_absolute_url }}">{% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</a>{% elif column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</td>
             {% endwith %}
           {% endfor %}
-          {% if can_edit_rows %}
-            <td><a class="btn btn--secondary btn--sm" href="{% url row_edit_url_name row.pk %}">Edit</a></td>
+          {% if can_edit_rows or can_delete_rows %}
+            <td>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if can_edit_rows %}<a class="btn btn--secondary btn--sm" href="{% url row_edit_url_name row.pk %}">Edit</a>{% endif %}
+                {% if can_delete_rows %}
+                  <form method="post" action="{% url row_delete_url_name row.pk %}" style="display:inline; margin:0;" onsubmit="return confirm('Are you sure you want to delete this record?');">
+                    {% csrf_token %}
+                    <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
           {% endif %}
         </tr>
       {% empty %}
-        <tr><td colspan="{% if can_edit_rows %}{{ columns|length|add:1 }}{% else %}{{ columns|length }}{% endif %}">
+        <tr><td colspan="{% if can_edit_rows or can_delete_rows %}{{ columns|length|add:1 }}{% else %}{{ columns|length }}{% endif %}">
           {% include "partials/empty_state.html" with title="Nothing here yet" message="Records will appear here when they are added." %}
         </td></tr>
       {% endfor %}

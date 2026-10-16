@@ -1,6 +1,8 @@
 # Architecture
 
-Agile Hub is a Django monolith organized as business-domain apps. `config` owns settings and URL composition; `apps/core` provides shared views, scoping, navigation, and templates; domain apps own their models, web routes, API routes, and transactional services.
+**Agile Hub** is an enterprise multi-tenant retail and business management platform designed to streamline multi-hub retail operations, inventory tracking, sales attribution, staff payroll, agent commissions, and financial accounting.
+
+Agile Hub is built as a Django monolith organized into modular business-domain apps. `config` owns settings and URL composition; `apps/core` provides shared views, scoping, navigation, and templates; domain apps own their models, web routes, API routes, and transactional services.
 
 ## Domains
 

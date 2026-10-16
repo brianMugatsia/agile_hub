@@ -58,7 +58,8 @@ def test_admin_cannot_assign_admin_or_super_admin(make_user):
 
 
 def test_non_managers_assign_no_roles(make_user):
-    assert assignable_roles(make_user(role=Role.HUB_MANAGER)) == ()
+    assert assignable_roles(make_user(role=Role.VIEWER)) == ()
+    assert assignable_roles(make_user(role=Role.SALES_AGENT)) == ()
 
 
 def test_salary_and_commission_permissions_are_kept_apart():

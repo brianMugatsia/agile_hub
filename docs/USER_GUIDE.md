@@ -1,6 +1,8 @@
-# Agile Hub user guide
+# Agile Hub User Guide
 
-This guide follows the normal application screens. The sidebar is role-filtered, so you only see sections available to your account. If an expected screen or button is missing, ask an administrator to check your role, permissions, and hub membership; do not share accounts.
+**Agile Hub** is an enterprise multi-tenant retail and business management platform designed to streamline multi-hub retail operations, inventory tracking, sales attribution, staff payroll, agent commissions, and financial accounting.
+
+This user guide follows the normal application screens. The sidebar is role-filtered, so you only see sections available to your account. If an expected screen or button is missing, ask an administrator to check your role, permissions, and hub membership; do not share accounts.
 
 ## 1. Sign in and orient yourself
 
