@@ -17,8 +17,6 @@ from apps.audit.services import record_event
 from .mixins import PageMixin
 from .scoping import scope_queryset
 
-from .models import SavedFilter
-
 
 class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, ListView):
     """Permission-checked, paginated list with role-aware row scoping."""
@@ -140,9 +138,6 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        filter_key = f"{self.model._meta.app_label}.{self.model._meta.model_name}"
-        filters = SavedFilter.objects.filter(model_key=filter_key).select_related("created_by")[:20]
-        return_to = self.request.path
         filter_fields = [
             {
                 "name": field_name,
@@ -154,24 +149,6 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
         ]
         hubs = hubs_for_user(self.request.user) if self.filter_hub else ()
         context.update(
-            saved_filters=[
-                {
-                    "name": saved_filter.name,
-                    "created_by": saved_filter.created_by,
-                    "created_by_id": saved_filter.created_by_id,
-                    "url": f"{return_to}?{urlencode(saved_filter.query_params, doseq=True)}",
-                    "delete_url": reverse("core:saved_filter_delete", args=[saved_filter.pk]),
-                    "id": saved_filter.pk,
-                }
-                for saved_filter in filters
-            ],
-            saved_filter_model_key=filter_key,
-            saved_filter_return_to=return_to,
-            saved_filter_query=json.dumps({
-                key: self.request.GET.getlist(key)
-                for key in self.request.GET
-                if key != "page"
-            }),
             export_url_name=self.export_url_name,
             import_url_name=self.import_url_name,
             can_import=bool(

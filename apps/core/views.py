@@ -3,8 +3,10 @@ from datetime import date, datetime, time, timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.conf import settings
+from django.core.cache import cache
+from django.db import connection, models
 from django.db.models import F, Sum
-from django.db import models
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -273,3 +275,28 @@ def page_not_found(request, exception=None):
 
 def server_error(request):
     return render(request, "errors/500.html", status=500)
+
+
+def health_check(request):
+    """Liveness and readiness health probe for container orchestrators and load balancers."""
+    data = {"status": "ok", "timestamp": timezone.now().isoformat()}
+    status_code = 200
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        data["database"] = "ok"
+    except Exception as exc:
+        data["database"] = f"unhealthy: {exc}"
+        data["status"] = "unhealthy"
+        status_code = 503
+
+    try:
+        cache.set("_health_probe", "1", 10)
+        cached = cache.get("_health_probe")
+        data["cache"] = "ok" if cached == "1" else "degraded"
+    except Exception as exc:
+        data["cache"] = f"degraded: {exc}"
+
+    return JsonResponse(data, status=status_code)

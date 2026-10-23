@@ -95,7 +95,7 @@ class UserListView(PermissionRequiredMixin, PageMixin, ListView):
     breadcrumbs = (("Users", None),)
 
     def get_queryset(self):
-        queryset = users_visible_to(self.request.user)
+        queryset = users_visible_to(self.request.user).exclude(role__in=[Role.MEMBER, Role.SALES_AGENT])
         query = self.request.GET.get("q", "").strip()
         role = self.request.GET.get("role", "")
         status = self.request.GET.get("status", "")
@@ -107,7 +107,7 @@ class UserListView(PermissionRequiredMixin, PageMixin, ListView):
                 | Q(email__icontains=query)
                 | Q(phone_number__icontains=query)
             )
-        if role in Role.values:
+        if role in Role.values and role not in (Role.MEMBER, Role.SALES_AGENT):
             queryset = queryset.filter(role=role)
         if status == "active":
             queryset = queryset.filter(is_active=True)
@@ -117,7 +117,7 @@ class UserListView(PermissionRequiredMixin, PageMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["role_choices"] = Role.choices
+        context["role_choices"] = [(v, l) for v, l in Role.choices if v not in (Role.MEMBER, Role.SALES_AGENT)]
         context["filters"] = {
             "q": self.request.GET.get("q", "").strip(),
             "role": self.request.GET.get("role", ""),

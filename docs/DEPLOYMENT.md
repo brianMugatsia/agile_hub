@@ -40,3 +40,18 @@ HSTS preload is deliberately opt-in. Enable `SECURE_HSTS_PRELOAD=True` only afte
 Use structured application logs and forward them to a protected central logging system. Audit events and application logs may contain sensitive business identifiers; apply access controls and retention limits. Alert on 5xx rates, database connection failures, disk usage, backup failures, and authentication lockouts. Establish a process for dependency and security updates.
 
 Production readiness also requires a deployment-specific rollback plan and a tested database restore. Operational reports are not a substitute for reviewed financial statements or a double-entry ledger.
+
+## Container deployment & Health checks
+
+A production-ready `Dockerfile` and `docker-compose.yml` are provided.
+
+### Quick Start with Docker Compose
+```bash
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py setup_roles
+```
+
+### Health Check Endpoints
+Container orchestrators (Kubernetes, AWS ECS, GCP Cloud Run) and load balancers can probe:
+- `/healthz/` or `/health/`: Returns HTTP 200 with JSON payload `{"status": "ok", "database": "ok", "cache": "ok"}` when healthy, or HTTP 503 if the database is unreachable.

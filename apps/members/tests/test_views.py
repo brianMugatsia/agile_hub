@@ -307,7 +307,6 @@ def test_download_member_and_business_import_templates(client, make_user, roles)
 
 def test_admin_can_add_member_without_hub_dropdown(client, make_user, roles):
     admin = make_user(role=Role.ADMIN)
-    member_user = make_user(role=Role.MEMBER, username="newmember")
     hub = Hub.objects.create(code="NEW-HUB", name="New Hub")
     admin.hub = hub
     admin.save()
@@ -319,7 +318,9 @@ def test_admin_can_add_member_without_hub_dropdown(client, make_user, roles):
     create_res = client.post(
         reverse("members:create"),
         {
-            "user": member_user.pk,
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "email": "jane@example.com",
             "phone_number": "0799999999",
             "national_id": "12345678",
             "address": "Test Address",
@@ -327,7 +328,7 @@ def test_admin_can_add_member_without_hub_dropdown(client, make_user, roles):
         },
     )
     assert create_res.status_code == 302
-    profile = MemberProfile.objects.get(user=member_user)
+    profile = MemberProfile.objects.get(user__email="jane@example.com")
     assert profile.phone_number == "0799999999"
     assert profile.hub == hub
 

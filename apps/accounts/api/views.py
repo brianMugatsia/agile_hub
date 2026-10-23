@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.models import User
 from apps.accounts.permissions import DjangoViewPermission
+from apps.accounts.roles import Role
 from apps.accounts.selectors import users_visible_to
 
 from .serializers import UserSerializer
@@ -30,4 +31,4 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return User.objects.none()
-        return users_visible_to(self.request.user)
+        return users_visible_to(self.request.user).exclude(role__in=[Role.MEMBER, Role.SALES_AGENT, Role.WORKER])

@@ -192,3 +192,16 @@ def test_dashboard_approval_badges_show_totals_not_preview_lengths(client, make_
     assert len(response.context["pending_commissions"]) == 8
     assert len(response.context["pending_salaries"]) == 8
     assert b'<span class="dash-count">9</span>' in response.content
+
+
+def test_health_check_endpoint(client):
+    response = client.get("/healthz/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["database"] == "ok"
+
+    response2 = client.get("/health/")
+    assert response2.status_code == 200
+    assert response2.json()["status"] == "ok"
+

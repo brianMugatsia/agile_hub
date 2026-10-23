@@ -29,3 +29,31 @@ if env_bool("USE_PROXY_SSL_HEADER", True):  # noqa: F405
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+# Redis Cache Backend
+REDIS_URL = os.environ.get("REDIS_URL")  # noqa: F405
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "KEY_PREFIX": "agile_hub",
+            "TIMEOUT": env_int("CACHE_TIMEOUT", 300),  # noqa: F405
+        }
+    }
+
+# Cloud Object Storage for Media Files (Optional S3/R2/GCS via django-storages)
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+if AWS_STORAGE_BUCKET_NAME:
+    AWS_S3_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+    AWS_S3_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
+    AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
+    AWS_DEFAULT_ACL = "private"
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = 3600
+
+    STORAGES["default"] = {  # noqa: F405
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    }

@@ -1,0 +1,213 @@
+import uuid
+from decimal import Decimal
+
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.urls import reverse
+from django.utils import timezone
+
+
+class ServiceCategory(models.TextChoices):
+    RIPENING = "RIPENING", "Produce Ripening"
+    HARVESTING = "HARVESTING", "Harvesting & Machinery Hire"
+    PROCESSING = "PROCESSING", "Processing & Milling"
+    STORAGE = "STORAGE", "Cold & Dry Storage"
+    TRANSPORT = "TRANSPORT", "Transport & Haulage"
+    OTHER = "OTHER", "Other Service"
+
+
+class ServicePricingUnit(models.TextChoices):
+    PER_KG = "PER_KG", "Per Kg"
+    PER_CRATE = "PER_CRATE", "Per Crate/Box"
+    PER_ACRE = "PER_ACRE", "Per Acre"
+    PER_HOUR = "PER_HOUR", "Per Hour"
+    PER_DAY = "PER_DAY", "Per Day"
+    FIXED = "FIXED", "Fixed Charge"
+
+
+class ServiceType(models.Model):
+    """Catalog of services offered by hubs (e.g. Banana Ripening, Combine Harvester Hire)."""
+
+    code = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=160)
+    category = models.CharField(
+        max_length=24, choices=ServiceCategory.choices, default=ServiceCategory.OTHER, db_index=True
+    )
+    pricing_unit = models.CharField(
+        max_length=24, choices=ServicePricingUnit.choices, default=ServicePricingUnit.PER_DAY
+    )
+    standard_rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category", "name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+    def get_absolute_url(self):
+        return reverse("services:service_type_detail", kwargs={"pk": self.pk})
+
+
+class HubResource(models.Model):
+    """Specific physical machine, ripening room, or equipment stationed at a hub."""
+
+    class Status(models.TextChoices):
+        AVAILABLE = "AVAILABLE", "Available"
+        IN_USE = "IN_USE", "In Use / Booked"
+        MAINTENANCE = "MAINTENANCE", "Under Maintenance"
+        RETIRED = "RETIRED", "Retired"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, related_name="service_resources")
+    service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, related_name="resources")
+    name = models.CharField(max_length=160)
+    code = models.CharField(max_length=40)
+    capacity = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("1.00"),
+        validators=[MinValueValidator(Decimal("0.01"))],
+        help_text="Maximum batch weight, acreage per day, or volume capacity.",
+    )
+    capacity_unit = models.CharField(max_length=32, default="units", help_text="e.g. kg, crates, acres/day, units")
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.AVAILABLE, db_index=True)
+    operator_name = models.CharField(max_length=120, blank=True, help_text="Assigned driver, technician, or supervisor.")
+    operator_phone = models.CharField(max_length=24, blank=True)
+    hourly_or_daily_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+        help_text="Operating or maintenance cost rate.",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["hub__name", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["hub", "code"], name="unique_hub_resource_code")
+        ]
+
+    def __str__(self):
+        return f"{self.hub.name}: {self.name} [{self.get_status_display()}]"
+
+    def get_absolute_url(self):
+        return reverse("services:resource_detail", kwargs={"pk": self.pk})
+
+
+class ServiceBooking(models.Model):
+    """A scheduled or active service engagement (e.g. banana ripening batch, combine harvester job)."""
+
+    class Status(models.TextChoices):
+        SCHEDULED = "SCHEDULED", "Scheduled"
+        IN_PROGRESS = "IN_PROGRESS", "In Progress"
+        COMPLETED = "COMPLETED", "Completed"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    class PaymentStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending Payment"
+        PAID = "PAID", "Paid"
+        INVOICED = "INVOICED", "Invoiced"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, related_name="service_bookings")
+    resource = models.ForeignKey(HubResource, on_delete=models.PROTECT, related_name="bookings")
+    service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, related_name="bookings")
+    member = models.ForeignKey(
+        "members.MemberProfile", on_delete=models.SET_NULL, null=True, blank=True, related_name="service_bookings"
+    )
+    business = models.ForeignKey(
+        "members.Business", on_delete=models.SET_NULL, null=True, blank=True, related_name="service_bookings"
+    )
+    customer_name = models.CharField(max_length=160, blank=True)
+    customer_phone = models.CharField(max_length=24, blank=True)
+    start_date = models.DateTimeField(db_index=True)
+    end_date = models.DateTimeField(db_index=True)
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("1.00"),
+        validators=[MinValueValidator(Decimal("0.01"))],
+        help_text="Volume, weight (kg), or duration (hours/days/acres) serviced.",
+    )
+    unit_rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    total_amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
+    payment_status = models.CharField(
+        max_length=16, choices=PaymentStatus.choices, default=PaymentStatus.PENDING, db_index=True
+    )
+    payment_reference = models.CharField(max_length=80, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_service_bookings",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-start_date", "-created_at"]
+        permissions = [
+            ("can_start_booking", "Can start service booking"),
+            ("can_complete_booking", "Can complete service booking"),
+            ("can_cancel_booking", "Can cancel service booking"),
+            ("can_record_payment", "Can record booking payment"),
+        ]
+        indexes = [
+            models.Index(fields=["hub", "status", "-start_date"]),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.start_date and self.end_date and self.start_date >= self.end_date:
+            raise ValidationError({"end_date": "Booking end time must be after start time."})
+        if self.resource_id and self.resource.hub_id != self.hub_id:
+            raise ValidationError({"resource": "Selected resource belongs to a different hub."})
+
+    def save(self, *args, **kwargs):
+        if not self.total_amount:
+            raw_total = (self.quantity or Decimal("1.00")) * (self.unit_rate or Decimal("0.00"))
+            self.total_amount = raw_total.quantize(Decimal("0.01"))
+        elif self.total_amount is not None:
+            self.total_amount = self.total_amount.quantize(Decimal("0.01"))
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def client_display(self):
+        if self.member:
+            return self.member.user.display_name
+        if self.business:
+            return self.business.name
+        return self.customer_name or "Walk-in Farmer/Client"
+
+    def __str__(self):
+        return f"{self.service_type.name} - {self.client_display} ({self.get_status_display()})"
+
+    def get_absolute_url(self):
+        return reverse("services:booking_detail", kwargs={"pk": self.pk})

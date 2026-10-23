@@ -1,17 +1,25 @@
+from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
-from django.urls import reverse
+from django.db.models.functions import Lower
+from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
 from django.views.generic import DetailView, FormView
 
 from apps.accounts.models import User
 from apps.accounts.roles import Role
+from apps.accounts.forms import UserCreateForm
+from apps.accounts.services import create_user_from_form, sync_user_group
 from apps.members.models import Business
 from apps.core.generic import ProtectedUpdateView, ScopedModelListView, hubs_for_user
 from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin
 from apps.core.scoping import scope_queryset
+from apps.core.spreadsheets import SpreadsheetImportView, ExcelTemplateView
+from apps.core.models import StagedSpreadsheetImport
 from apps.hubs.permissions import selected_hub
 from apps.sales.services import complete_sale
 
@@ -164,17 +172,145 @@ class SalesAgentListView(ScopedModelListView):
         {"label": "Agent", "field": "display_name"},
         {"label": "Email", "field": "email"},
         {"label": "Phone", "field": "phone_number"},
+        {"label": "Hub", "field": "hub__name"},
     )
     search_fields = ("first_name", "last_name", "email", "username")
     permission_required = "sales.view_sale"
+    create_url_name = "sales:agent_create"
+    create_label = "Add sales agent"
+    create_permission = "accounts.add_user"
+    import_url_name = "sales:agent_import"
+    import_permission = "accounts.add_user"
+    row_edit_url_name = "accounts:user_edit"
+    row_edit_permission = "accounts.change_user"
     filter_hub = True
     hub_filter_paths = ("hub_memberships__hub_id",)
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(
-            role__in=[Role.SALES_AGENT, Role.MEMBER], is_active=True
+            role=Role.SALES_AGENT, is_active=True
         ).order_by("last_name", "first_name")
         if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN):
             hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)
             queryset = queryset.filter(hub_memberships__hub_id__in=hub_ids, hub_memberships__is_active=True)
         return queryset.distinct()
+
+
+class SalesAgentCreateView(PermissionRequiredMixin, PageMixin, FormView):
+    permission_required = "accounts.add_user"
+    form_class = UserCreateForm
+    template_name = "accounts/user_form.html"
+    page_title = "Add sales agent"
+    breadcrumbs = (("Sales agents", reverse_lazy("sales:agent_list")), ("New sales agent", None))
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["role"].choices = [(Role.SALES_AGENT, "Sales Agent")]
+        form.fields["role"].initial = Role.SALES_AGENT
+        form.fields["role"].widget = forms.HiddenInput()
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["submit_label"] = "Create sales agent"
+        context["multipart"] = False
+        return context
+
+    def form_valid(self, form):
+        form.cleaned_data["role"] = Role.SALES_AGENT
+        user = create_user_from_form(form, actor=self.request.user, request=self.request)
+        user.role = Role.SALES_AGENT
+        user.save()
+        messages.success(self.request, f"{user.display_name} was created as a sales agent.")
+        return redirect("sales:agent_list")
+
+
+class SalesAgentImportView(SpreadsheetImportView):
+    import_type = StagedSpreadsheetImport.ImportType.SALES_AGENTS
+    permission_required = "accounts.add_user"
+    list_url = "sales:agent_list"
+    template_url = "sales:agent_import_template"
+    page_title = "Import sales agents"
+    description = "Create sales agents from a validated Excel workbook."
+    required_headers = ("username", "first_name", "last_name")
+    template_headers = ("username", "email", "first_name", "last_name", "phone_number")
+
+    def validate_rows(self, rows, user):
+        errors = []
+        accepted = []
+        usernames = {
+            str(row["values"].get("username", "")).strip().casefold()
+            for row in rows
+            if row["values"].get("username")
+        }
+        default_hub = getattr(user, "hub", None) or hubs_for_user(user, active_only=True).first()
+        existing_users = {
+            u.normalized_username: u
+            for u in User.objects.annotate(normalized_username=Lower("username"))
+            .filter(normalized_username__in=usernames)
+        }
+        seen_usernames = set()
+        for row in rows:
+            data = row["values"]
+            username = str(data.get("username", "")).strip()
+            email = str(data.get("email", "")).strip()
+            if not username and email:
+                username = email.split("@")[0]
+            if not username:
+                errors.append(f"Row {row['line']}: Username or email is required.")
+                continue
+            if username.casefold() in seen_usernames:
+                errors.append(f"Row {row['line']}: Username {username} is duplicated in this workbook.")
+                continue
+            seen_usernames.add(username.casefold())
+
+            first_name = str(data.get("first_name", "")).strip()
+            last_name = str(data.get("last_name", "")).strip()
+            if not first_name or not last_name:
+                errors.append(f"Row {row['line']}: First name and last name are required.")
+                continue
+
+            existing_user = existing_users.get(username.casefold())
+            if existing_user:
+                errors.append(f"Row {row['line']}: User already exists with username {username}.")
+                continue
+
+            accepted.append({
+                "line": row["line"],
+                "username": username,
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "phone_number": str(data.get("phone_number", "")).strip(),
+                "hub_id": default_hub.pk if default_hub else None,
+            })
+        return accepted, errors
+
+    @transaction.atomic
+    def commit_rows(self, accepted, user):
+        created_count = 0
+        for item in accepted:
+            new_user = User.objects.create_user(
+                username=item["username"],
+                email=item["email"],
+                password=User.objects.make_random_password(),
+                first_name=item["first_name"],
+                last_name=item["last_name"],
+                phone_number=item["phone_number"],
+                role=Role.SALES_AGENT,
+                hub_id=item["hub_id"],
+            )
+            sync_user_group(new_user)
+            created_count += 1
+        messages.success(self.request, f"Successfully imported {created_count} sales agents.")
+
+
+class SalesAgentImportTemplateView(ExcelTemplateView):
+    permission_required = "accounts.add_user"
+    filename = "sales_agents_import_template.xlsx"
+    headers = ("username", "email", "first_name", "last_name", "phone_number")

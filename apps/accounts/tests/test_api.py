@@ -35,12 +35,25 @@ def test_viewer_cannot_list_users(make_user, roles):
 
 def test_admin_user_list_excludes_super_admins(make_user, roles):
     make_user(role=Role.SUPER_ADMIN, username="boss")
-    make_user(role=Role.WORKER, username="worker1")
+    make_user(role=Role.FINANCE_OFFICER, username="fin1")
     client = APIClient()
     client.force_authenticate(make_user(role=Role.ADMIN))
 
     response = client.get(reverse("accounts_api:user-list"))
     assert response.status_code == 200
     usernames = [row["username"] for row in response.data["results"]]
-    assert "worker1" in usernames
+    assert "fin1" in usernames
     assert "boss" not in usernames
+
+
+def test_admin_user_list_excludes_members(make_user, roles):
+    make_user(role=Role.MEMBER, username="member1")
+    make_user(role=Role.FINANCE_OFFICER, username="fin1")
+    client = APIClient()
+    client.force_authenticate(make_user(role=Role.ADMIN))
+
+    response = client.get(reverse("accounts_api:user-list"))
+    assert response.status_code == 200
+    usernames = [row["username"] for row in response.data["results"]]
+    assert "fin1" in usernames
+    assert "member1" not in usernames

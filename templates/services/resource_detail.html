@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="resource-detail">
+  <p>
+    <a class="btn btn--secondary" href="{% url 'services:resource_list' %}">Back to resources</a>
+    {% if perms.services.change_hubresource %}
+      <a class="btn btn--secondary" href="{% url 'services:resource_edit' hubresource.pk %}">Edit equipment</a>
+    {% endif %}
+    {% if perms.services.add_servicebooking %}
+      <a class="btn btn--primary" href="{% url 'services:booking_create' %}">New booking for this resource</a>
+    {% endif %}
+  </p>
+
+  <section class="grid grid--2">
+    <article class="card">
+      <div class="card__header">
+        <h2 class="card__title">Equipment / Facility Information</h2>
+      </div>
+      <div class="card__body">
+        <dl class="detail-list">
+          <div><dt>Identifier Code</dt><dd><strong>{{ hubresource.code }}</strong></dd></div>
+          <div><dt>Name</dt><dd>{{ hubresource.name }}</dd></div>
+          <div><dt>Hub</dt><dd>{{ hubresource.hub.name }}</dd></div>
+          <div><dt>Service Category</dt><dd>{{ hubresource.service_type.name }} ({{ hubresource.service_type.get_category_display }})</dd></div>
+          <div><dt>Status</dt><dd><span class="badge badge--{{ hubresource.status|lower }}">{{ hubresource.get_status_display }}</span></dd></div>
+          <div><dt>Capacity</dt><dd>{{ hubresource.capacity }} {{ hubresource.capacity_unit }}</dd></div>
+          <div><dt>Assigned Operator</dt><dd>{{ hubresource.operator_name|default:"—" }}</dd></div>
+          <div><dt>Operator Phone</dt><dd>{{ hubresource.operator_phone|default:"—" }}</dd></div>
+          <div><dt>Operating Cost Rate</dt><dd>{{ hubresource.hourly_or_daily_cost }}</dd></div>
+        </dl>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__header">
+        <h2 class="card__title">Recent & Active Engagements</h2>
+      </div>
+      <div class="card__body">
+        {% if recent_bookings %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Booking</th>
+                <th>Client</th>
+                <th>Start</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in recent_bookings %}
+                <tr>
+                  <td><a href="{% url 'services:booking_detail' b.pk %}">{{ b.service_type.name }}</a></td>
+                  <td>{{ b.client_display }}</td>
+                  <td>{{ b.start_date|date:"j M Y" }}</td>
+                  <td><span class="badge badge--{{ b.status|lower }}">{{ b.get_status_display }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No recent bookings for this equipment.</p>
+        {% endif %}
+        {% if hubresource.notes %}
+          <hr style="margin: 1rem 0;">
+          <h4>Specifications / Notes</h4>
+          <p>{{ hubresource.notes|linebreaksbr }}</p>
+        {% endif %}
+      </div>
+    </article>
+  </section>
+</div>
+{% endblock %}

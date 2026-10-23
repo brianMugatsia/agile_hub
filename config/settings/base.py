@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "apps.commissions",
     "apps.payroll",
     "apps.finance",
+    "apps.services",
     "apps.notifications",
     "apps.reports",
 ]

@@ -89,7 +89,6 @@ class UserCreateForm(StyledFormMixin, UniqueEmailMixin, UserCreationForm):
         self.fields["role"].choices = role_choices_for(actor)
         if not self.fields["role"].initial and self.fields["role"].choices:
             self.fields["role"].initial = self.fields["role"].choices[0][0]
-        self.fields["role"].initial = Role.VIEWER
         self.fields["email"].required = True
         self.fields["first_name"].required = True
         self.fields["last_name"].required = True

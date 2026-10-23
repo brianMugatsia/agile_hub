@@ -28,21 +28,21 @@ class Role(models.TextChoices):
 
 # Which roles an actor may hand out. Roles absent here cannot assign any.
 ROLE_ASSIGNMENT = {
-    Role.SUPER_ADMIN: tuple(Role.values),
-    Role.ADMIN: (
+    Role.SUPER_ADMIN: (
+        Role.ADMIN,
         Role.HUB_MANAGER,
         Role.FINANCE_OFFICER,
-        Role.SALES_AGENT,
-        Role.WORKER,
-        Role.MEMBER,
+        Role.VIEWER,
+    ),
+    Role.ADMIN: (
+        Role.ADMIN,
+        Role.HUB_MANAGER,
+        Role.FINANCE_OFFICER,
         Role.VIEWER,
     ),
     Role.HUB_MANAGER: (
         Role.HUB_MANAGER,
         Role.FINANCE_OFFICER,
-        Role.SALES_AGENT,
-        Role.WORKER,
-        Role.MEMBER,
         Role.VIEWER,
     ),
 }
@@ -78,6 +78,13 @@ def _finance(*actions, models=FINANCE_MODELS):
     return [code for model in models for code in perms(model, *actions)]
 
 
+SERVICES_MODELS = ("servicetype", "hubresource", "servicebooking")
+
+
+def _services(*actions, models=SERVICES_MODELS):
+    return [code for model in models for code in perms(model, *actions)]
+
+
 ROLE_PERMISSIONS = {
     Role.SUPER_ADMIN: ALL_PERMISSIONS,
     Role.ADMIN: [
@@ -94,6 +101,8 @@ ROLE_PERMISSIONS = {
         *perms("salesagentcommission", "view", "approve", "reject", "pay", "reverse"),
         *perms("workerprofile", "view", "add", "change"),
         *perms("salaryrecord", "view", "add", "change", "approve"),
+        *_services("view", "add", "change", "delete"),
+        "can_start_booking", "can_complete_booking", "can_cancel_booking", "can_record_payment",
         *_finance("view"),
         *_finance("add", "change", models=("memberprofile", "business")),
         *_finance("delete", models=("expense",)),
@@ -112,6 +121,8 @@ ROLE_PERMISSIONS = {
         *perms("salesagentcommission", "view", "approve", "reject", "pay", "reverse"),
         *perms("workerprofile", "view", "add", "change"),
         *perms("salaryrecord", "view", "approve"),
+        *_services("view", "add", "change"),
+        "can_start_booking", "can_complete_booking", "can_cancel_booking", "can_record_payment",
         *_finance("view"),
         *_finance("add", "change", models=("memberprofile", "business", "cashflow", "incomestatement", "incomestatementitem")),
         *_finance("delete", models=("expense",)),
@@ -128,6 +139,7 @@ ROLE_PERMISSIONS = {
         *perms("salesagentcommission", "view", "approve", "reject", "pay", "reverse"),
         *perms("workerprofile", "view"),
         *perms("salaryrecord", "view", "add", "change", "approve", "pay"),
+        *_services("view"), "can_record_payment",
         *_finance("view"),
         *_finance("add", "change", models=("cashflow",)),
         "export_reports",
@@ -136,12 +148,18 @@ ROLE_PERMISSIONS = {
         *perms("product", "view"),
         *perms("sale", "view", "add"), *perms("saleitem", "view", "add"),
         *perms("salesagentcommission", "view"),
+        *perms("servicebooking", "view", "add"),
+        *perms("hubresource", "view"),
+        *perms("servicetype", "view"),
     ],
     Role.WORKER: [
         *perms("workerprofile", "view"),
         *perms("salaryrecord", "view"),
     ],
     Role.MEMBER: [
+        *perms("servicebooking", "view", "add"),
+        *perms("hubresource", "view"),
+        *perms("servicetype", "view"),
         *_finance("view", "add", "change", models=("memberprofile", "business")),
         *_finance("view", "add", "change", "delete",
                   models=tuple(m for m in FINANCE_MODELS if m not in ("memberprofile", "business"))),
@@ -151,6 +169,7 @@ ROLE_PERMISSIONS = {
         *perms("product", "view"),
         *perms("inventorytransaction", "view"),
         *perms("sale", "view"),
+        *_services("view"),
         *_finance("view"),
     ],
 }

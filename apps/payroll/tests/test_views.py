@@ -35,6 +35,9 @@ def test_admin_can_edit_worker_profile_from_worker_list(client, make_user, roles
     response = client.post(
         edit_url,
         {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": worker_user.email,
             "hub": hub.pk,
             "employee_code": worker.employee_code,
             "job_title": "Senior storekeeper",

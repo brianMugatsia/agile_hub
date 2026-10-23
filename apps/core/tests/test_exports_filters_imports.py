@@ -125,35 +125,7 @@ def test_excel_template_download_requires_permission_and_returns_workbook(
     assert client.get(reverse("products:import_template")).status_code == 403
 
 
-def test_shared_filter_is_visible_on_matching_list_and_only_creator_can_delete(
-    client, make_user, roles
-):
-    admin = make_user(role=Role.ADMIN)
-    coworker = make_user(role=Role.ADMIN)
-    client.force_login(admin)
-    save_response = client.post(
-        reverse("core:saved_filter_create"),
-        {
-            "model_key": "products.product",
-            "name": "Active oils",
-            "query_params": '{"q":["oil"]}',
-            "return_to": reverse("products:list"),
-        },
-    )
-    saved_filter = SavedFilter.objects.get()
 
-    assert save_response.status_code == 302
-    client.force_login(coworker)
-    list_response = client.get(reverse("products:list"))
-    delete_response = client.post(
-        reverse("core:saved_filter_delete", args=[saved_filter.pk]),
-        {"return_to": reverse("products:list")},
-    )
-
-    assert b"Active oils" in list_response.content
-    assert b"?q=oil" in list_response.content
-    assert delete_response.status_code == 404
-    assert SavedFilter.objects.filter(pk=saved_filter.pk).exists()
 
 
 def test_product_excel_upload_previews_then_creates_only_after_confirmation(

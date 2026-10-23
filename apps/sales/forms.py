@@ -16,14 +16,20 @@ class SaleEntryForm(forms.Form):
         choices=[("agent", "Sales Agent"), ("member", "Hub Member")],
         initial="agent",
         widget=forms.RadioSelect,
+        label="Seller Type",
+        help_text="Choose whether the sale was made by a Sales Agent or a Hub Member. Both automatically accrue commissions.",
     )
     agent = forms.ModelChoiceField(
         queryset=User.objects.filter(role=Role.SALES_AGENT, is_active=True),
         required=False,
+        label="Sales Agent",
+        help_text="Select the sales agent earning commission for this sale.",
     )
     member = forms.ModelChoiceField(
         queryset=MemberProfile.objects.select_related("user").all(),
         required=False,
+        label="Hub Member",
+        help_text="Select the hub member earning commission for this sale.",
     )
     business = forms.ModelChoiceField(
         queryset=Business.objects.filter(status=Business.Status.ACTIVE),

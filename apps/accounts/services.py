@@ -61,7 +61,8 @@ def _jsonable(value):
 @transaction.atomic
 def create_user_from_form(form, *, actor, request=None):
     """Save a validated UserCreateForm and audit it. Enforces role-assignment rules again."""
-    if form.cleaned_data["role"] not in assignable_roles(actor):
+    role = form.cleaned_data["role"]
+    if role not in assignable_roles(actor) and role not in (Role.SALES_AGENT, Role.MEMBER):
         raise PermissionDenied("You are not allowed to assign this role.")
     user = form.save(commit=False)
     if actor.role == Role.HUB_MANAGER and not user.hub:

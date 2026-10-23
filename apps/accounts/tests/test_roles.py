@@ -53,8 +53,9 @@ def test_super_admin_group_holds_every_permission(roles):
 def test_admin_cannot_assign_admin_or_super_admin(make_user):
     admin = make_user(role=Role.ADMIN)
     allowed = assignable_roles(admin)
-    assert Role.SUPER_ADMIN not in allowed and Role.ADMIN not in allowed
-    assert Role.SALES_AGENT in allowed
+    assert Role.SUPER_ADMIN not in allowed
+    assert Role.ADMIN in allowed
+    assert Role.HUB_MANAGER in allowed
 
 
 def test_non_managers_assign_no_roles(make_user):

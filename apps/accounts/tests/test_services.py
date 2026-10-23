@@ -43,6 +43,6 @@ def test_admin_cannot_touch_another_admin(make_user, roles):
 
 def test_setting_the_same_role_is_rejected(make_user, roles):
     boss = make_user(role=Role.SUPER_ADMIN)
-    target = make_user(role=Role.WORKER)
+    target = make_user(role=Role.HUB_MANAGER)
     with pytest.raises(ValidationError):
-        services.change_user_role(user=target, new_role=Role.WORKER, actor=boss)
+        services.change_user_role(user=target, new_role=Role.HUB_MANAGER, actor=boss)

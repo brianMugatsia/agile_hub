@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="service-type-detail">
+  <p>
+    <a class="btn btn--secondary" href="{% url 'services:service_type_list' %}">Back to catalog</a>
+    {% if perms.services.change_servicetype %}
+      <a class="btn btn--secondary" href="{% url 'services:service_type_edit' servicetype.pk %}">Edit service</a>
+    {% endif %}
+  </p>
+
+  <section class="grid grid--2">
+    <article class="card">
+      <div class="card__header">
+        <h2 class="card__title">Service Details</h2>
+      </div>
+      <div class="card__body">
+        <dl class="detail-list">
+          <div><dt>Service Code</dt><dd><strong>{{ servicetype.code }}</strong></dd></div>
+          <div><dt>Name</dt><dd>{{ servicetype.name }}</dd></div>
+          <div><dt>Category</dt><dd>{{ servicetype.get_category_display }}</dd></div>
+          <div><dt>Pricing Model</dt><dd>{{ servicetype.get_pricing_unit_display }}</dd></div>
+          <div><dt>Standard Rate</dt><dd>{{ CURRENCY_CODE }} {{ servicetype.standard_rate }}</dd></div>
+          <div><dt>Status</dt><dd>{% if servicetype.is_active %}<span class="badge badge--active">Active</span>{% else %}<span class="badge badge--inactive">Inactive</span>{% endif %}</dd></div>
+        </dl>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__header">
+        <h2 class="card__title">Description & Scope</h2>
+      </div>
+      <div class="card__body">
+        <p>{{ servicetype.description|default:"No description provided."|linebreaksbr }}</p>
+      </div>
+    </article>
+  </section>
+</div>
+{% endblock %}

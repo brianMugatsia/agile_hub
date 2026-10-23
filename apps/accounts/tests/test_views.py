@@ -97,12 +97,39 @@ def test_viewer_gets_403_on_user_list(client, make_user, roles):
 def test_admin_list_hides_super_admins(client, make_user, roles):
     client.force_login(make_user(role=Role.ADMIN))
     make_user(role=Role.SUPER_ADMIN, username="boss")
-    make_user(role=Role.SALES_AGENT, username="agent1")
+    make_user(role=Role.WORKER, username="worker1")
 
     response = client.get(reverse("accounts:user_list"))
     usernames = [u.username for u in response.context["users"]]
-    assert "agent1" in usernames
+    assert "worker1" in usernames
     assert "boss" not in usernames
+
+
+def test_admin_user_list_excludes_sales_agents(client, make_user, roles):
+    client.force_login(make_user(role=Role.ADMIN))
+    make_user(role=Role.SALES_AGENT, username="agent1")
+    make_user(role=Role.WORKER, username="worker1")
+
+    response = client.get(reverse("accounts:user_list"))
+    usernames = [u.username for u in response.context["users"]]
+    assert "worker1" in usernames
+    assert "agent1" not in usernames
+    assert Role.SALES_AGENT not in [v for v, l in response.context["role_choices"]]
+
+
+def test_sales_agent_list_and_create(client, make_user, roles):
+    client.force_login(make_user(role=Role.ADMIN))
+    response = client.get(reverse("sales:agent_list"))
+    assert response.status_code == 200
+
+    create_response = client.post(reverse("sales:agent_create"), {
+        "username": "newsagent", "email": "agent@example.com",
+        "first_name": "Sales", "last_name": "Agent", "phone_number": "+254712345678",
+        "role": Role.SALES_AGENT, "password1": PASSWORD, "password2": PASSWORD,
+    })
+    assert create_response.status_code == 302
+    agent = User.objects.get(username="newsagent")
+    assert agent.role == Role.SALES_AGENT
 
 
 def test_admin_cannot_open_super_admin_by_id(client, make_user, roles):
@@ -120,14 +147,14 @@ def test_admin_cannot_edit_another_admin(client, make_user, roles):
 def test_super_admin_can_create_user(client, make_user, roles):
     client.force_login(make_user(role=Role.SUPER_ADMIN))
     response = client.post(reverse("accounts:user_create"), {
-        "username": "newagent", "email": "agent@example.com",
+        "username": "newmanager", "email": "manager@example.com",
         "first_name": "Ann", "last_name": "Wanjiru", "phone_number": "+254712345678",
-        "role": Role.SALES_AGENT, "password1": PASSWORD, "password2": PASSWORD,
+        "role": Role.HUB_MANAGER, "password1": PASSWORD, "password2": PASSWORD,
     })
     assert response.status_code == 302
-    created = User.objects.get(username="newagent")
-    assert created.role == Role.SALES_AGENT
-    assert created.groups.filter(name=Role.SALES_AGENT).exists()
+    created = User.objects.get(username="newmanager")
+    assert created.role == Role.HUB_MANAGER
+    assert created.groups.filter(name=Role.HUB_MANAGER).exists()
 
 
 def test_admin_cannot_create_super_admin(client, make_user, roles):
@@ -157,3 +184,15 @@ def test_admin_cannot_grant_super_admin_through_the_page(client, make_user, role
     assert response.status_code == 200
     target.refresh_from_db()
     assert target.role == Role.WORKER
+
+
+def test_admin_user_list_excludes_members(client, make_user, roles):
+    client.force_login(make_user(role=Role.ADMIN))
+    make_user(role=Role.MEMBER, username="member1")
+    make_user(role=Role.WORKER, username="worker1")
+
+    response = client.get(reverse("accounts:user_list"))
+    usernames = [u.username for u in response.context["users"]]
+    assert "worker1" in usernames
+    assert "member1" not in usernames
+    assert Role.MEMBER not in [v for v, l in response.context["role_choices"]]

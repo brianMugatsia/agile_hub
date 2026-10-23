@@ -50,20 +50,41 @@ class MemberProfileForm(forms.ModelForm):
 
 
 class MemberCreateForm(forms.ModelForm):
-    user = forms.ModelChoiceField(
-        queryset=User.objects.filter(role="MEMBER", is_active=True).order_by("last_name", "first_name")
-    )
+    first_name = forms.CharField(max_length=150, label="First name")
+    last_name = forms.CharField(max_length=150, label="Last name")
+    email = forms.EmailField(label="Email")
 
     class Meta:
         model = MemberProfile
-        fields = ["user", "hub", "phone_number", "national_id", "address", "notes"]
+        fields = ["hub", "phone_number", "national_id", "address", "notes"]
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user:
             self.fields["hub"].queryset = _hub_choices(self.fields["hub"], self.instance, user)
-        if user and user.role == Role.MEMBER:
-            self.fields["user"].queryset = User.objects.filter(pk=user.pk, role=Role.MEMBER)
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        email = self.cleaned_data["email"].strip().lower()
+        username = email
+        base_username = email.split("@")[0]
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+        new_user = User.objects.create_user(
+            username=username,
+            email=email,
+            first_name=self.cleaned_data["first_name"],
+            last_name=self.cleaned_data["last_name"],
+            phone_number=self.cleaned_data.get("phone_number", ""),
+            role=Role.MEMBER,
+            is_active=True,
+        )
+        profile.user = new_user
+        if commit:
+            profile.save()
+        return profile
 
 
 class BusinessForm(forms.ModelForm):
