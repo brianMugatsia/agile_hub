@@ -1,5 +1,6 @@
 from decimal import Decimal
 from datetime import timedelta
+import random
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from apps.hubs.models import Hub
@@ -32,15 +33,15 @@ from django.contrib.auth import get_user_model
 
 
 class Command(BaseCommand):
-    help = "Seed the database with a realistic service catalogue, hub resources, service providers, and service bookings."
+    help = "Seed the database with a 3-month production history of service catalogue, hub resources, service providers, and service bookings."
 
     def handle(self, *args, **options):
-        self.stdout.write("Seeding service catalogue, resources, providers, and bookings...")
+        self.stdout.write("Seeding 3-month production service history...")
         User = get_user_model()
         admin = User.objects.filter(is_superuser=True).first()
 
         FinancialSetting.objects.get_or_create(
-            effective_from=timezone.localdate() - timedelta(days=60),
+            effective_from=timezone.localdate() - timedelta(days=120),
             defaults={
                 "default_commission_rate": Decimal("0.20"),
                 "internal_commission_rate": Decimal("0.20"),
@@ -129,12 +130,13 @@ class Command(BaseCommand):
 
         for hub in hubs:
             hub_resources = [r for r in resources if r.hub_id == hub.pk]
-            for b_idx in range(5):
-                res = hub_resources[b_idx % len(hub_resources)]
+            for b_idx in range(15):
+                res = random.choice(hub_resources)
                 srv = res.service_type
-                prov = providers[b_idx % len(providers)]
-                start = timezone.now() - timedelta(days=b_idx + 1)
-                end = start + timedelta(days=1)
+                prov = random.choice(providers)
+                days_ago = random.randint(1, 90)
+                start = timezone.now() - timedelta(days=days_ago)
+                end = start + timedelta(hours=6)
 
                 try:
                     booking = create_service_booking(
@@ -148,12 +150,12 @@ class Command(BaseCommand):
                         unit_rate=srv.standard_rate,
                         customer_name=f"Client Farmer {b_idx + 1} ({hub.region})",
                         customer_phone=f"07889900{b_idx:02d}",
-                        notes=f"Realistic seeded service engagement #{b_idx+1}",
+                        notes=f"3-month production history service engagement #{b_idx+1}",
                         actor=admin,
                     )
                     start_service_booking(booking_id=booking.pk, actor=admin)
-                    complete_service_booking(booking_id=booking.pk, actor=admin, actual_quantity=Decimal("150.00"), notes="Successfully processed.")
-                    record_booking_payment(booking_id=booking.pk, payment_reference=f"PAY-SRV-{hub.code}-{b_idx+1}", actor=admin)
+                    complete_service_booking(booking_id=booking.pk, actor=admin, actual_quantity=Decimal("150.00"), notes="Successfully completed.")
+                    record_booking_payment(booking_id=booking.pk, payment_reference=f"PAY-SRV-{hub.code}-{days_ago}-{b_idx+1}", actor=admin)
 
                     comm = accrue_service_commission(booking)
                     if comm:
@@ -162,4 +164,4 @@ class Command(BaseCommand):
                 except Exception as e:
                     pass
 
-        self.stdout.write(self.style.SUCCESS("Successfully seeded rich service catalogue, resources, providers, and service bookings!"))
+        self.stdout.write(self.style.SUCCESS("Successfully seeded 3-month production history of services!"))

@@ -22,6 +22,8 @@ from apps.payroll.models import SalaryRecord, WorkerProfile
 from apps.products.models import Product
 from apps.sales.models import Sale, SaleItem
 from apps.sales.services import complete_sale
+from apps.services.models import ServiceProvider, ServiceBooking, HubResource, ServiceType
+from apps.commissions.models import ServiceCommission
 
 
 class Command(BaseCommand):
@@ -54,6 +56,11 @@ class Command(BaseCommand):
 
         SaleItem.objects.all().delete()
         SalesAgentCommission.objects.all().delete()
+        ServiceCommission.objects.all().delete()
+        ServiceBooking.objects.all().delete()
+        ServiceProvider.objects.all().delete()
+        HubResource.objects.all().delete()
+        ServiceType.objects.all().delete()
         SalaryRecord.objects.all().delete()
         CashFlow.objects.all().delete()
         IncomeStatementItem.objects.all().delete()
@@ -373,7 +380,7 @@ class Command(BaseCommand):
 
                 chosen_products = random.sample(products, random.randint(1, 2))
                 items = [{"product": p.pk, "quantity": random.randint(1, 3)} for p in chosen_products]
-                days_ago = random.randint(1, 12)
+                days_ago = random.randint(1, 90)
                 sale_time = timezone.now() - timedelta(days=days_ago)
 
                 business = random.choice([None] + list(Business.objects.filter(hub=hub)))
