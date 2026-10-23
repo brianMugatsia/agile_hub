@@ -249,7 +249,7 @@ class CommissionActionView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def post(self, request, pk):
         kwargs = {"commission_id": pk, "actor": request.user}
         if self.reason_required:
-            kwargs["reason"] = request.POST.get("reason", "")
+            kwargs["notes"] = request.POST.get("reason", "")
         try:
             self.service(**kwargs)
         except ValidationError as error:

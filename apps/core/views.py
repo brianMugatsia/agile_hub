@@ -38,8 +38,10 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
 
     def get_date_range(self):
         today = timezone.localdate()
-        month_start = today.replace(day=1)
-        month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        default_end = today
+        default_start = today - timedelta(days=29)
+        month_start = default_start
+        month_end = default_end
         start_value = self.request.GET.get("start_date", "")
         end_value = self.request.GET.get("end_date", "")
         errors = []
@@ -60,7 +62,7 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
         end_date = parse_date(end_value, "end")
 
         if not start_value and not end_value:
-            start_date, end_date = month_start, month_end
+            start_date, end_date = default_start, default_end
         elif start_date and not end_value:
             end_date = start_date
         elif end_date and not start_value:

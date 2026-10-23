@@ -173,19 +173,17 @@ class Command(BaseCommand):
                 hub=hub, user=seller_user, defaults={"title": "Member Seller" if is_member_seller else "Sales Agent", "is_active": True}
             )
 
-            if not is_member_seller:
-                sales_agents.append(seller_user)
-            else:
-                profile, _ = MemberProfile.objects.get_or_create(
-                    user=seller_user,
-                    defaults={
-                        "phone_number": f"07334455{i:02d}",
-                        "address": f"{hub.name} Area",
-                        "hub": hub,
-                        "notes": f"Active member seller #{i}",
-                    },
-                )
-                member_profiles.append(profile)
+            sales_agents.append(seller_user)
+            profile, _ = MemberProfile.objects.get_or_create(
+                user=seller_user,
+                defaults={
+                    "phone_number": f"07334455{i:02d}",
+                    "address": f"{hub.name} Area",
+                    "hub": hub,
+                    "notes": f"Member sales agent #{i}" if not is_member_seller else f"Active member seller #{i}",
+                },
+            )
+            member_profiles.append(profile)
 
         products_data = [
             ("Certified Maize Seeds (10kg)", "Seeds", Decimal("1200.00"), Decimal("1800.00"), 20),
@@ -380,7 +378,7 @@ class Command(BaseCommand):
 
                 chosen_products = random.sample(products, random.randint(1, 2))
                 items = [{"product": p.pk, "quantity": random.randint(1, 3)} for p in chosen_products]
-                days_ago = random.randint(1, 90)
+                days_ago = random.randint(1, 30)
                 sale_time = timezone.now() - timedelta(days=days_ago)
 
                 business = random.choice([None] + list(Business.objects.filter(hub=hub)))

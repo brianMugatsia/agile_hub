@@ -4,6 +4,7 @@ from django.db.models import Q, Sum
 from django.urls import reverse
 from django.views.generic import DetailView
 
+from apps.accounts.models import User
 from apps.accounts.roles import Role
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView
 from apps.core.mixins import ActiveHubInitialMixin, PageMixin
@@ -16,7 +17,7 @@ from .models import MemberProfile, Business
 
 def _provider_stats():
     return {
-        "active_sales_agents_count": MemberProfile.objects.filter(user__role=Role.SALES_AGENT, user__is_active=True).count(),
+        "active_sales_agents_count": User.objects.filter(role=Role.SALES_AGENT, is_active=True).count() + MemberProfile.objects.filter(user__role=Role.MEMBER).count(),
         "dormant_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.DORMANT).count(),
         "active_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.ACTIVE).count(),
         "suspended_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.SUSPENDED).count(),
@@ -67,7 +68,7 @@ class MemberSalesAgentsListView(ScopedModelListView):
     filter_hub = False
 
     def get_queryset(self):
-        return super().get_queryset().filter(user__role=Role.SALES_AGENT)
+        return super().get_queryset().filter(Q(user__role=Role.SALES_AGENT) | Q(user__role=Role.MEMBER)).distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

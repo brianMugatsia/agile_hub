@@ -72,20 +72,21 @@ def test_dashboard_defaults_to_current_month_and_filters_sales_by_dates(client, 
     agent = make_user(role=Role.SALES_AGENT)
     hub = Hub.objects.create(code="DASH-DATE", name="Dashboard dates")
     today = timezone.localdate()
-    previous_month = today.replace(day=1) - timedelta(days=1)
-    current_month_end = (today.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    default_end = today
+    default_start = today - timedelta(days=29)
+    old_date = default_start - timedelta(days=5)
     current_sale = make_completed_sale(
-        hub=hub, agent=agent, completed_on=today.replace(day=1), total=Decimal("20.00")
+        hub=hub, agent=agent, completed_on=today, total=Decimal("20.00")
     )
     make_completed_sale(
-        hub=hub, agent=agent, completed_on=previous_month, total=Decimal("10.00")
+        hub=hub, agent=agent, completed_on=old_date, total=Decimal("10.00")
     )
     client.force_login(admin)
 
     default_response = client.get(reverse("core:dashboard"))
     assert default_response.status_code == 200
-    assert default_response.context["date_start"] == today.replace(day=1)
-    assert default_response.context["date_end"] == current_month_end
+    assert default_response.context["date_start"] == default_start
+    assert default_response.context["date_end"] == default_end
     assert b'name="start_date"' in default_response.content
     assert b'name="end_date"' in default_response.content
     assert b'class="dash-range"' in default_response.content
@@ -96,11 +97,11 @@ def test_dashboard_defaults_to_current_month_and_filters_sales_by_dates(client, 
 
     filtered_response = client.get(
         reverse("core:dashboard"),
-        {"start_date": previous_month.isoformat(), "end_date": previous_month.isoformat()},
+        {"start_date": old_date.isoformat(), "end_date": old_date.isoformat()},
     )
     assert ("Total Sales value", Decimal("10.00")) in filtered_response.context["dashboard_stats"]
     assert [sale.completed_at.date() for sale in filtered_response.context["recent_sales"]] == [
-        previous_month
+        old_date
     ]
 
 
@@ -123,7 +124,7 @@ def test_dashboard_reports_invalid_date_ranges_and_falls_back_to_default(
     assert response.status_code == 200
     assert response.context["date_errors"]
     assert message in response.content.decode().lower()
-    assert response.context["date_start"] == timezone.localdate().replace(day=1)
+    assert response.context["date_start"] == timezone.localdate() - timedelta(days=29)
 
 
 def test_dashboard_date_filter_preserves_hub_scope(client, make_user):

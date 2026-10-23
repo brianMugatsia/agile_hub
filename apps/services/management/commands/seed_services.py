@@ -101,31 +101,54 @@ class Command(BaseCommand):
 
         providers = []
         members = list(MemberProfile.objects.all())
-        for i in range(1, 4):
+        # Active internal member service providers
+        for i in range(1, 3):
             member = members[i-1] if i <= len(members) else None
             prov = register_service_provider(
                 provider_type=ProviderType.INTERNAL,
-                name=f"Internal Partner {i} ({member.user.display_name if member else 'Member'})",
+                name=f"Active Member Provider {i} ({member.user.display_name if member else 'Member'})",
                 member=member,
                 phone_number=f"07123456{i:02d}",
-                email=f"provider{i}@agilehub.local",
+                email=f"activeprovider{i}@agilehub.local",
                 address="Hub Partner Zone",
                 service_category=ServiceCategory.HARVESTING,
                 actor=admin,
             )
+            prov.status = ServiceProviderStatus.ACTIVE
+            prov.save(update_fields=["status"])
             providers.append(prov)
 
-        for j in range(1, 3):
+        # Dormant member service provider
+        for i in range(1, 2):
+            member = members[2] if len(members) > 2 else (members[0] if members else None)
+            prov = register_service_provider(
+                provider_type=ProviderType.INTERNAL,
+                name=f"Dormant Member Provider ({member.user.display_name if member else 'Member'})",
+                member=member,
+                phone_number=f"0712345701",
+                email=f"dormantprovider@agilehub.local",
+                address="Dormant Partner Zone",
+                service_category=ServiceCategory.STORAGE,
+                actor=admin,
+            )
+            prov.status = ServiceProviderStatus.DORMANT
+            prov.save(update_fields=["status"])
+            providers.append(prov)
+
+        # Suspended provider
+        for i in range(1, 2):
             prov = register_service_provider(
                 provider_type=ProviderType.EXTERNAL,
-                name=f"External Specialist Contractor {j}",
+                name=f"Suspended Contractor",
                 member=None,
-                phone_number=f"07234567{j:02d}",
-                email=f"external{j}@contractor.local",
-                address="Nairobi Regional Logistics",
+                phone_number=f"0712345801",
+                email=f"suspendedprovider@agilehub.local",
+                address="Suspended Zone",
                 service_category=ServiceCategory.TRANSPORT,
                 actor=admin,
             )
+            prov.status = ServiceProviderStatus.SUSPENDED
+            prov.save(update_fields=["status"])
             providers.append(prov)
 
         for hub in hubs:

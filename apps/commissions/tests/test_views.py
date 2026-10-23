@@ -238,3 +238,43 @@ def test_commission_rate_form_accepts_percent_input_and_rejects_over_100():
 
     invalid_form = CommissionSettingForm(data={"rate": "100.01", "effective_from": "2026-10-01"})
     assert not invalid_form.is_valid()
+
+
+def test_commission_reject_and_reverse_actions(client, make_user):
+    admin = make_user(role=Role.SUPER_ADMIN)
+    agent = make_user(role=Role.SALES_AGENT)
+    hub = Hub.objects.create(code="COM-ACT", name="Commission Action Hub")
+    sale = Sale.objects.create(hub=hub, agent=agent, status=Sale.Status.COMPLETED, total="100.00")
+    commission = SalesAgentCommission.objects.create(
+        sale=sale,
+        agent=agent,
+        rate="0.1000",
+        base_amount="100.00",
+        amount="10.00",
+        status=SalesAgentCommission.Status.PENDING,
+    )
+    client.force_login(admin)
+
+    reject_response = client.post(
+        reverse("commissions:reject", kwargs={"pk": commission.pk}),
+        {"reason": "Invalid transaction details"},
+    )
+    assert reject_response.status_code == 302
+    commission.refresh_from_db()
+    assert commission.status == SalesAgentCommission.Status.REJECTED
+
+    commission2 = SalesAgentCommission.objects.create(
+        sale=Sale.objects.create(hub=hub, agent=agent, status=Sale.Status.COMPLETED, total="100.00"),
+        agent=agent,
+        rate="0.1000",
+        base_amount="100.00",
+        amount="10.00",
+        status=SalesAgentCommission.Status.APPROVED,
+    )
+    reverse_response = client.post(
+        reverse("commissions:reverse", kwargs={"pk": commission2.pk}),
+        {"reason": "Duplicate entry"},
+    )
+    assert reverse_response.status_code == 302
+    commission2.refresh_from_db()
+    assert commission2.status == SalesAgentCommission.Status.REVERSED

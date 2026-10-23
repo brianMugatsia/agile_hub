@@ -79,7 +79,7 @@ class InventoryReconciliationView(LoginRequiredMixin, PermissionRequiredMixin, T
         if end_value and end_date is None:
             errors.append("Enter a valid end date.")
         if not start_value and not end_value:
-            start_date = today - timedelta(days=29)
+            start_date = today - timedelta(days=89)
             end_date = today
         elif start_date and not end_date:
             end_date = today

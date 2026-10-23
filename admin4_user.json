@@ -1,0 +1,29 @@
+[
+{
+  "model": "accounts.user",
+  "pk": "9441c39c-6f83-4051-bb4f-0b59521f20ef",
+  "fields": {
+    "password": "argon2$argon2id$v=19$m=102400,t=2,p=8$SUlManNQQjloUnZsMWoybVBiYnhldQ$9yELzYBhBNLHOtnyexdrNiLk86CsZdLguAFJHYNtq5o",
+    "last_login": "2026-10-22T10:20:07.108Z",
+    "is_superuser": false,
+    "username": "admin4",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-10-22T10:20:06.531Z",
+    "email": "admin4@example.com",
+    "phone_number": "",
+    "role": "ADMIN",
+    "hub": null,
+    "profile_photo": "",
+    "updated_at": "2026-10-22T10:20:06.860Z",
+    "groups": [
+      [
+        "ADMIN"
+      ]
+    ],
+    "user_permissions": []
+  }
+}
+]
