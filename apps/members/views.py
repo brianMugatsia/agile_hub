@@ -4,17 +4,29 @@ from django.db.models import Q, Sum
 from django.urls import reverse
 from django.views.generic import DetailView
 
+from apps.accounts.roles import Role
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView
 from apps.core.mixins import ActiveHubInitialMixin, PageMixin
 from apps.core.scoping import scope_queryset
+from apps.services.models import ServiceProvider, ServiceProviderStatus
 
 from .forms import MemberProfileForm, MemberCreateForm, BusinessForm
 from .models import MemberProfile, Business
 
 
+def _provider_stats():
+    return {
+        "active_sales_agents_count": MemberProfile.objects.filter(user__role=Role.SALES_AGENT, user__is_active=True).count(),
+        "dormant_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.DORMANT).count(),
+        "active_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.ACTIVE).count(),
+        "suspended_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.SUSPENDED).count(),
+    }
+
+
 class MemberListView(ScopedModelListView):
     model = MemberProfile
     page_title = "Members"
+    template_name = "members/member_list.html"
     columns = (
         {"label": "Name", "field": "user__display_name"},
         {"label": "Email", "field": "user__email"},
@@ -30,6 +42,64 @@ class MemberListView(ScopedModelListView):
     row_edit_url_name = "members:edit"
     row_edit_permission = "members.change_memberprofile"
     filter_hub = False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(_provider_stats())
+        context["active_tab"] = "all_members"
+        return context
+
+
+class MemberSalesAgentsListView(ScopedModelListView):
+    model = MemberProfile
+    page_title = "Members Who Are Sales Agents"
+    template_name = "members/member_list.html"
+    columns = (
+        {"label": "Name", "field": "user__display_name"},
+        {"label": "Email", "field": "user__email"},
+        {"label": "Phone", "field": "phone_number"},
+        {"label": "Hub", "field": "hub__name"},
+    )
+    search_fields = ("user__first_name", "user__last_name", "user__email", "phone_number")
+    create_url_name = "members:create"
+    create_label = "Add member"
+    create_permission = "members.add_memberprofile"
+    filter_hub = False
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user__role=Role.SALES_AGENT)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(_provider_stats())
+        context["active_tab"] = "sales_agents"
+        return context
+
+
+class MemberServiceProvidersListView(ScopedModelListView):
+    model = MemberProfile
+    page_title = "Members Who Are Service Providers"
+    template_name = "members/member_list.html"
+    columns = (
+        {"label": "Name", "field": "user__display_name"},
+        {"label": "Email", "field": "user__email"},
+        {"label": "Phone", "field": "phone_number"},
+        {"label": "Hub", "field": "hub__name"},
+    )
+    search_fields = ("user__first_name", "user__last_name", "user__email", "phone_number")
+    create_url_name = "members:create"
+    create_label = "Add member"
+    create_permission = "members.add_memberprofile"
+    filter_hub = False
+
+    def get_queryset(self):
+        return super().get_queryset().filter(service_providers__isnull=False).distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(_provider_stats())
+        context["active_tab"] = "service_providers"
+        return context
 
 
 class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
@@ -128,21 +198,18 @@ class ContributionListView(ScopedModelListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Members available on the system (scoped to user/hub)
+
         scoped_members = scope_queryset(MemberProfile.objects.all(), self.request.user)
         total_members_count = scoped_members.count()
 
         equal_unit_amount = Decimal("10000.00")
         total_expected_amount = total_members_count * equal_unit_amount
 
-        # Contributions scoped to user
         scoped_businesses = scope_queryset(Business.objects.all(), self.request.user)
         paid_businesses = scoped_businesses.filter(is_paid=True)
 
         total_collected_amount = paid_businesses.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
-        # Members paid vs unpaid working together with total members available
         paid_member_ids = paid_businesses.values_list("member_id", flat=True).distinct()
         members_paid_count = scoped_members.filter(pk__in=paid_member_ids).count()
         members_unpaid_count = max(0, total_members_count - members_paid_count)

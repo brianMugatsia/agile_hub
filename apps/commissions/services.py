@@ -7,10 +7,11 @@ from django.utils import timezone
 
 from apps.audit.services import record_event
 from apps.finance.models import CashFlow
+from apps.finance.services.calculations import get_active_financial_setting
 from apps.hubs.permissions import user_can_access_hub
 from apps.notifications.services import create_notification
 
-from .models import CommissionSetting, SalesAgentCommission
+from .models import CommissionSetting, SalesAgentCommission, ServiceCommission, CommissionPayment
 
 CENT = Decimal("0.01")
 
@@ -57,7 +58,7 @@ def _require(actor, permission):
 
 
 def _require_commission_scope(actor, commission):
-    if not user_can_access_hub(actor, commission.sale.hub):
+    if commission.sale and not user_can_access_hub(actor, commission.sale.hub):
         raise PermissionDenied
 
 
@@ -73,12 +74,13 @@ def approve_commission(*, commission_id, actor):
     commission.save(update_fields=["status", "approved_by"])
     record_event(action="commission.approved", summary=f"Commission approved for {commission.agent}",
                  actor=actor, target=commission, changes={"amount": str(commission.amount)})
-    create_notification(
-        recipient=commission.agent,
-        title="Commission approved",
-        message=f"Your commission of {commission.amount} is approved.",
-        target_url=f"/commissions/{commission.pk}/",
-    )
+    if commission.agent:
+        create_notification(
+            recipient=commission.agent,
+            title="Commission approved",
+            message=f"Your commission of {commission.amount} is approved.",
+            target_url=f"/commissions/{commission.pk}/",
+        )
     return commission
 
 
@@ -95,12 +97,13 @@ def reject_commission(*, commission_id, actor, notes=""):
     commission.save(update_fields=["status", "notes", "approved_by"])
     record_event(action="commission.rejected", summary=f"Commission rejected for {commission.agent}",
                  actor=actor, target=commission, changes={"notes": notes.strip()})
-    create_notification(
-        recipient=commission.agent,
-        title="Commission rejected",
-        message=f"Your commission of {commission.amount} was rejected.",
-        target_url=f"/commissions/{commission.pk}/",
-    )
+    if commission.agent:
+        create_notification(
+            recipient=commission.agent,
+            title="Commission rejected",
+            message=f"Your commission of {commission.amount} was rejected.",
+            target_url=f"/commissions/{commission.pk}/",
+        )
     return commission
 
 
@@ -115,24 +118,26 @@ def pay_commission(*, commission_id, actor):
     commission.paid_by = actor
     commission.paid_at = timezone.now()
     commission.save(update_fields=["status", "paid_by", "paid_at"])
+    hub = commission.sale.hub if commission.sale else None
     CashFlow.objects.create(
         direction=CashFlow.Direction.OUTFLOW,
         category="Commissions",
         amount=commission.amount,
         transaction_date=timezone.localdate(),
-        hub=commission.sale.hub,
+        hub=hub,
         reference=f"commission:{commission.pk}",
         description=f"Commission paid to {commission.agent}",
         created_by=actor,
     )
     record_event(action="commission.paid", summary=f"Commission paid to {commission.agent}",
                  actor=actor, target=commission, changes={"amount": str(commission.amount)})
-    create_notification(
-        recipient=commission.agent,
-        title="Commission paid",
-        message=f"Your commission of {commission.amount} has been paid.",
-        target_url=f"/commissions/{commission.pk}/",
-    )
+    if commission.agent:
+        create_notification(
+            recipient=commission.agent,
+            title="Commission paid",
+            message=f"Your commission of {commission.amount} has been paid.",
+            target_url=f"/commissions/{commission.pk}/",
+        )
     return commission
 
 
@@ -148,4 +153,145 @@ def reverse_commission(*, commission_id, actor, notes=""):
     commission.save(update_fields=["status", "notes"])
     record_event(action="commission.reversed", summary=f"Commission reversed for {commission.agent}",
                  actor=actor, target=commission, changes={"notes": notes.strip()})
+    return commission
+
+
+@transaction.atomic
+def accrue_service_commission(booking):
+    if not booking.service_provider:
+        return None
+    setting = get_active_financial_setting(booking.start_date.date() if booking.start_date else None)
+    provider_type = booking.service_provider.provider_type
+    if provider_type == "INTERNAL":
+        rate = setting.internal_commission_rate
+    else:
+        rate = setting.external_commission_rate
+
+    base_amount = booking.total_amount
+    amount = (base_amount * rate).quantize(CENT, rounding=ROUND_HALF_UP)
+
+    commission, created = ServiceCommission.objects.get_or_create(
+        provider=booking.service_provider,
+        booking=booking,
+        defaults={
+            "provider_type": provider_type,
+            "service_type": booking.service_type,
+            "rate": rate,
+            "calculation_basis": setting.commission_calculation_basis,
+            "base_amount": base_amount,
+            "amount": amount,
+            "status": ServiceCommission.Status.PENDING,
+        },
+    )
+    if created:
+        record_event(
+            action="service_commission.accrued",
+            summary=f"Service commission accrued for booking {booking}",
+            target=commission,
+            changes={"amount": str(commission.amount), "rate": str(commission.rate)},
+        )
+    return commission
+
+
+@transaction.atomic
+def approve_service_commission(*, commission_id, actor):
+    if actor and not actor.has_perm("commissions.approve_servicecommission"):
+        raise PermissionDenied("You do not have permission to approve service commissions.")
+    commission = ServiceCommission.objects.select_for_update().get(pk=commission_id)
+    if commission.status != ServiceCommission.Status.PENDING:
+        raise ValidationError("Only pending commissions can be approved.")
+    commission.status = ServiceCommission.Status.APPROVED
+    commission.approved_by = actor
+    commission.save(update_fields=["status", "approved_by", "updated_at"])
+    record_event(
+        action="service_commission.approved",
+        summary=f"Service commission approved for {commission.provider}",
+        actor=actor,
+        target=commission,
+        changes={"amount": str(commission.amount)},
+    )
+    return commission
+
+
+@transaction.atomic
+def reject_service_commission(*, commission_id, actor, notes=""):
+    if actor and not actor.has_perm("commissions.reject_servicecommission"):
+        raise PermissionDenied("You do not have permission to reject service commissions.")
+    commission = ServiceCommission.objects.select_for_update().get(pk=commission_id)
+    if commission.status != ServiceCommission.Status.PENDING:
+        raise ValidationError("Only pending commissions can be rejected.")
+    commission.status = ServiceCommission.Status.REJECTED
+    commission.notes = notes.strip()
+    commission.approved_by = actor
+    commission.save(update_fields=["status", "notes", "approved_by", "updated_at"])
+    record_event(
+        action="service_commission.rejected",
+        summary=f"Service commission rejected for {commission.provider}",
+        actor=actor,
+        target=commission,
+        changes={"notes": notes.strip()},
+    )
+    return commission
+
+
+@transaction.atomic
+def pay_service_commission(*, commission_id, actor, payment_reference=""):
+    if actor and not actor.has_perm("commissions.pay_servicecommission"):
+        raise PermissionDenied("You do not have permission to pay service commissions.")
+    commission = ServiceCommission.objects.select_for_update().get(pk=commission_id)
+    if commission.status != ServiceCommission.Status.APPROVED:
+        raise ValidationError("Only approved commissions can be paid.")
+
+    commission.status = ServiceCommission.Status.PAID
+    commission.paid_by = actor
+    commission.paid_at = timezone.now()
+    commission.save(update_fields=["status", "paid_by", "paid_at", "updated_at"])
+
+    payment = CommissionPayment.objects.create(
+        amount=commission.amount,
+        payment_date=timezone.localdate(),
+        payment_reference=payment_reference.strip(),
+        paid_by=actor,
+    )
+    payment.commissions.add(commission)
+
+    hub = commission.booking.hub if commission.booking else None
+    CashFlow.objects.create(
+        direction=CashFlow.Direction.OUTFLOW,
+        category="Service Provider Commissions",
+        amount=commission.amount,
+        transaction_date=timezone.localdate(),
+        hub=hub,
+        reference=f"service_commission:{commission.pk}",
+        description=f"Commission paid to service provider {commission.provider}",
+        created_by=actor,
+    )
+
+    record_event(
+        action="service_commission.paid",
+        summary=f"Service commission paid to {commission.provider}",
+        actor=actor,
+        target=commission,
+        changes={"amount": str(commission.amount)},
+    )
+    return commission
+
+
+@transaction.atomic
+def reverse_service_commission(*, commission_id, actor, notes=""):
+    if actor and not actor.has_perm("commissions.reverse_servicecommission"):
+        raise PermissionDenied("You do not have permission to reverse service commissions.")
+    commission = ServiceCommission.objects.select_for_update().get(pk=commission_id)
+    if commission.status in (ServiceCommission.Status.REVERSED, ServiceCommission.Status.REJECTED):
+        raise ValidationError("This commission cannot be reversed.")
+    commission.status = ServiceCommission.Status.REVERSED
+    commission.notes = "\n".join(part for part in (commission.notes, notes.strip()) if part)
+    commission.save(update_fields=["status", "notes", "updated_at"])
+    record_event(
+        action="service_commission.reversed",
+        summary=f"Service commission reversed for {commission.provider}",
+        actor=actor,
+        target=commission,
+        changes={"notes": notes.strip()},
+    )
     return commission

@@ -1,14 +1,14 @@
 from django import forms
 from decimal import Decimal
 
-from .models import CashFlow, Expense
+from .models import CashFlow, Expense, FinancialSetting
 
 
 class CashFlowForm(forms.ModelForm):
     class Meta:
         model = CashFlow
         fields = [
-            "direction", "category", "amount", "transaction_date", "hub",   
+            "direction", "category", "amount", "transaction_date", "hub",
             "business", "reference", "description",
         ]
         widgets = {"transaction_date": forms.DateInput(attrs={"type": "date"})}
@@ -75,3 +75,22 @@ class ProjectionForm(forms.Form):
         initial=Decimal("0"), label="Monthly expense growth (%)",
     )
     periods = forms.IntegerField(min_value=1, max_value=60, initial=12, label="Months to project")
+
+
+class FinancialSettingForm(forms.ModelForm):
+    class Meta:
+        model = FinancialSetting
+        fields = [
+            "default_commission_rate",
+            "internal_commission_rate",
+            "external_commission_rate",
+            "default_sales_expense_rate",
+            "sales_expense_calculation_basis",
+            "commission_calculation_basis",
+            "provider_dormancy_days",
+            "effective_from",
+            "is_active",
+        ]
+        widgets = {
+            "effective_from": forms.DateInput(attrs={"type": "date"}),
+        }

@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -255,3 +255,77 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.get_category_display()} — {self.title}: {self.amount}"
+
+
+class FinancialSetting(models.Model):
+    default_commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0.20"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
+    )
+    internal_commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0.20"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
+    )
+    external_commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0.20"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
+    )
+    default_sales_expense_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0.05"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
+    )
+    sales_expense_calculation_basis = models.CharField(max_length=64, default="NET_REVENUE")
+    commission_calculation_basis = models.CharField(max_length=64, default="PROFIT_BEFORE_COMMISSION")
+    provider_dormancy_days = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal("90.00"),
+        validators=[MinValueValidator(Decimal("1.00"))]
+    )
+    effective_from = models.DateField(db_index=True)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-effective_from", "-created_at"]
+        permissions = [
+            ("configure_financialsetting", "Can change financial settings and rates"),
+        ]
+
+    def __str__(self):
+        return f"Financial Settings from {self.effective_from}"
+
+
+class FinancialRateAudit(models.Model):
+    setting_name = models.CharField(max_length=120, db_index=True)
+    previous_value = models.CharField(max_length=255, blank=True)
+    new_value = models.CharField(max_length=255, blank=True)
+    category_or_service = models.CharField(max_length=120, blank=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="financial_rate_audits"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Rate change: {self.setting_name} from {self.previous_value} to {self.new_value}"

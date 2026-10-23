@@ -5,7 +5,7 @@ from apps.hubs.models import Hub
 from apps.hubs.permissions import hubs_for_user
 from apps.members.models import Business, MemberProfile
 
-from .models import HubResource, ServiceBooking, ServiceType
+from .models import HubResource, ServiceBooking, ServiceProvider, ServiceType
 
 
 class ServiceTypeForm(forms.ModelForm):
@@ -64,6 +64,7 @@ class ServiceBookingForm(forms.ModelForm):
             "hub",
             "service_type",
             "resource",
+            "service_provider",
             "member",
             "business",
             "customer_name",
@@ -93,8 +94,41 @@ class ServiceBookingForm(forms.ModelForm):
 
             self.fields["member"].queryset = MemberProfile.objects.select_related("user").all()
             self.fields["business"].queryset = Business.objects.filter(status=Business.Status.ACTIVE)
+            self.fields["service_provider"].queryset = ServiceProvider.objects.filter(status=ServiceProvider.status.field.choices[0][0] if hasattr(ServiceProvider, 'status') else 'ACTIVE')
 
 
 class BookingActionForm(forms.Form):
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}))
     payment_reference = forms.CharField(required=False, max_length=80)
+
+
+class ServiceProviderForm(forms.ModelForm):
+    class Meta:
+        model = ServiceProvider
+        fields = [
+            "provider_type",
+            "member",
+            "name",
+            "phone_number",
+            "email",
+            "address",
+            "service_category",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["member"].queryset = MemberProfile.objects.select_related("user").all()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        provider_type = cleaned_data.get("provider_type")
+        member = cleaned_data.get("member")
+        if provider_type == "INTERNAL" and not member:
+            raise forms.ValidationError({"member": "Internal service providers must be associated with an existing member record."})
+        if provider_type == "EXTERNAL" and member:
+            raise forms.ValidationError({"member": "External service providers must not be associated with a member record."})
+        return cleaned_data
+
+
+class ServiceProviderActionForm(forms.Form):
+    reason = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}))

@@ -9,17 +9,19 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, FormView
 
 from apps.accounts.roles import Role
+from apps.audit.services import record_event
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView, hubs_for_user
 from apps.core.exports import ScopedModelExportView
+from apps.core.mixins import PageMixin
 from apps.core.scoping import scope_queryset
 from apps.hubs.permissions import selected_hub
 from apps.sales.models import Sale, SaleItem
 from apps.members.models import Business
 
-from .forms import BreakEvenForm, CashFlowForm, ExpenseForm, ProjectionForm
+from .forms import BreakEvenForm, CashFlowForm, ExpenseForm, ProjectionForm, FinancialSettingForm
 from .models import (
     Asset,
     CashFlow,
@@ -29,6 +31,8 @@ from .models import (
     IncomeStatementItem,
     Liability,
     StartupCost,
+    FinancialSetting,
+    FinancialRateAudit,
 )
 from .services.breakeven import calculate_break_even
 from .services.projections import build_projection
@@ -57,7 +61,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             end = parse_date(end_value)
         except ValueError:
             end = None
-        if start_value and (not start or start.isoformat() != start_value): 
+        if start_value and (not start or start.isoformat() != start_value):
             return HttpResponseBadRequest("Use YYYY-MM-DD for the start date.")
         if end_value and (not end or end.isoformat() != end_value):
             return HttpResponseBadRequest("Use YYYY-MM-DD for the end date.")
@@ -86,14 +90,14 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             completed_at__date__lte=period_end,
         )
         role = self.request.user.role
-        available_hubs, selected, hub_error = selected_hub(self.request)    
+        available_hubs, selected, hub_error = selected_hub(self.request)
         hub_ids = available_hubs.values_list("pk", flat=True)
         is_platform_admin = role in (Role.SUPER_ADMIN, Role.ADMIN)
         hub_scoped_roles = (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER)
         if role in hub_scoped_roles:
             sales = sales.filter(hub_id__in=hub_ids)
         elif role == Role.MEMBER:
-            sales = sales.filter(business__member__user=self.request.user)  
+            sales = sales.filter(business__member__user=self.request.user)
         elif not is_platform_admin:
             sales = sales.none()
         if selected:
@@ -109,7 +113,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         if role in hub_scoped_roles:
             businesses = businesses.filter(hub_id__in=hub_ids)
         elif role == Role.MEMBER:
-            businesses = businesses.filter(member__user=self.request.user)  
+            businesses = businesses.filter(member__user=self.request.user)
         elif not is_platform_admin:
             businesses = businesses.none()
         if selected:
@@ -124,7 +128,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             None,
             expression=ExpressionWrapper(
                 F("quantity") * F("unit_cost"),
-                output_field=DecimalField(max_digits=14, decimal_places=2), 
+                output_field=DecimalField(max_digits=14, decimal_places=2),
             ),
         )
         commissions = _sum(
@@ -207,7 +211,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             "amount",
         ) + other_expenses_total
 
-        operating_expenses = commissions + payroll + manual_expenses        
+        operating_expenses = commissions + payroll + manual_expenses
         total_expenses = cost_of_goods + operating_expenses
         context.update(
             page_title=self.page_title,
@@ -226,7 +230,7 @@ class FinancialOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templat
             manual_expenses=manual_expenses,
             operating_expenses=operating_expenses,
             total_expenses=total_expenses,
-            net_profit=revenue - cost_of_goods - operating_expenses,        
+            net_profit=revenue - cost_of_goods - operating_expenses,
         )
         return context
 
@@ -260,11 +264,11 @@ class CashFlowCreateView(ProtectedCreateView):
         available_hubs = hubs_for_user(self.request.user)
         form.fields["hub"].queryset = available_hubs
         if self.request.user.role == "MEMBER":
-            form.fields["business"].queryset = Business.objects.filter(     
+            form.fields["business"].queryset = Business.objects.filter(
                 member__user=self.request.user
             )
         else:
-            form.fields["business"].queryset = Business.objects.filter(     
+            form.fields["business"].queryset = Business.objects.filter(
                 Q(hub__in=available_hubs) | Q(hub__isnull=True)
             ).select_related("member__user")
         return form
@@ -479,8 +483,8 @@ class FinancialRatiosView(LoginRequiredMixin, PermissionRequiredMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        available_hubs, selected, hub_error = selected_hub(self.request)    
-        assets = scope_queryset(Asset.objects.all(), self.request.user)     
+        available_hubs, selected, hub_error = selected_hub(self.request)
+        assets = scope_queryset(Asset.objects.all(), self.request.user)
         liabilities = scope_queryset(Liability.objects.all(), self.request.user)
         equity = scope_queryset(EquityRecord.objects.all(), self.request.user)
         if selected:
@@ -506,4 +510,63 @@ class FinancialRatiosView(LoginRequiredMixin, PermissionRequiredMixin, TemplateV
                 total_equity=total_equity,
             ),
         )
+        return context
+
+
+class FinancialSettingsView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, FormView):
+    template_name = "finance/settings.html"
+    form_class = FinancialSettingForm
+    permission_required = "finance.configure_financialsetting"
+    page_title = "Financial & Commission Settings"
+
+    def get_initial(self):
+        latest = FinancialSetting.objects.filter(is_active=True).order_by("-effective_from").first()
+        if latest:
+            return {
+                "default_commission_rate": latest.default_commission_rate,
+                "internal_commission_rate": latest.internal_commission_rate,
+                "external_commission_rate": latest.external_commission_rate,
+                "default_sales_expense_rate": latest.default_sales_expense_rate,
+                "sales_expense_calculation_basis": latest.sales_expense_calculation_basis,
+                "commission_calculation_basis": latest.commission_calculation_basis,
+                "provider_dormancy_days": latest.provider_dormancy_days,
+                "effective_from": timezone.localdate(),
+                "is_active": True,
+            }
+        return {"effective_from": timezone.localdate(), "is_active": True}
+
+    def form_valid(self, form):
+        current = FinancialSetting.objects.filter(is_active=True).order_by("-effective_from").first()
+        new_setting = form.save(commit=False)
+        new_setting.created_by = self.request.user
+        new_setting.save()
+
+        if current:
+            fields_to_check = [
+                ("default_commission_rate", current.default_commission_rate, new_setting.default_commission_rate),
+                ("internal_commission_rate", current.internal_commission_rate, new_setting.internal_commission_rate),
+                ("external_commission_rate", current.external_commission_rate, new_setting.external_commission_rate),
+                ("default_sales_expense_rate", current.default_sales_expense_rate, new_setting.default_sales_expense_rate),
+                ("provider_dormancy_days", current.provider_dormancy_days, new_setting.provider_dormancy_days),
+            ]
+            for fname, old_val, new_val in fields_to_check:
+                if old_val != new_val:
+                    FinancialRateAudit.objects.create(
+                        setting_name=fname,
+                        previous_value=str(old_val),
+                        new_value=str(new_val),
+                        changed_by=self.request.user,
+                    )
+        record_event(
+            action="financial_settings.updated",
+            summary=f"Financial settings updated by {self.request.user}",
+            actor=self.request.user,
+            target=new_setting,
+        )
+        messages.success(self.request, "Financial and commission settings successfully updated.")
+        return redirect("finance:settings")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["audit_history"] = FinancialRateAudit.objects.order_by("-created_at")[:20]
         return context

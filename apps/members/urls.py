@@ -10,6 +10,8 @@ from .views import (
     MemberCreateView,
     MemberDetailView,
     MemberListView,
+    MemberSalesAgentsListView,
+    MemberServiceProvidersListView,
     MemberUpdateView,
     ContributionCreateView,
     ContributionListView,
@@ -20,6 +22,8 @@ app_name = "members"
 
 urlpatterns = [
     path("", MemberListView.as_view(), name="list"),
+    path("sales-agents/", MemberSalesAgentsListView.as_view(), name="sales_agents"),
+    path("service-providers/", MemberServiceProvidersListView.as_view(), name="service_providers"),
     path("create/", MemberCreateView.as_view(), name="create"),
     path("import/", MemberImportView.as_view(), name="import"),
     path("import/template/", MemberImportTemplateView.as_view(), name="import_template"),

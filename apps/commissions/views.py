@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -15,13 +16,17 @@ from apps.commissions.services import (
     pay_commission,
     reject_commission,
     reverse_commission,
+    approve_service_commission,
+    reject_service_commission,
+    pay_service_commission,
+    reverse_service_commission,
 )
 from apps.core.generic import ScopedModelListView
 from apps.core.exports import ScopedModelExportView
 from apps.core.scoping import scope_queryset
 
 from .forms import CommissionSettingForm
-from .models import CommissionSetting, SalesAgentCommission
+from .models import CommissionSetting, SalesAgentCommission, ServiceCommission
 
 
 class CommissionListView(ScopedModelListView):
@@ -58,9 +63,13 @@ class CommissionListView(ScopedModelListView):
         context["can_view_commission_settings"] = self.request.user.has_perm(
             "commissions.view_commissionsetting"
         )
-        context["can_approve_commissions"] = self.request.user.has_perm(
+        context["can_approve_commissions"] = self.request.user.has_perm(    
             "commissions.approve_salesagentcommission"
         )
+        base_qs = self.get_queryset()
+        context["total_pending_commission"] = base_qs.filter(status=SalesAgentCommission.Status.PENDING).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        context["total_approved_commission"] = base_qs.filter(status=SalesAgentCommission.Status.APPROVED).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        context["total_paid_commission"] = base_qs.filter(status=SalesAgentCommission.Status.PAID).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         return context
 
 
@@ -273,4 +282,85 @@ class ReverseCommissionView(CommissionActionView):
     service = staticmethod(reverse_commission)
     permission_required = "commissions.reverse_salesagentcommission"
     success_message = "Commission reversed."
+    reason_required = True
+
+
+# Service Commissions
+class ServiceCommissionListView(ScopedModelListView):
+    model = ServiceCommission
+    template_name = "commissions/commission_list.html"
+    page_title = "Service Commissions"
+    columns = (
+        {"label": "Created", "field": "created_at"},
+        {"label": "Provider", "field": "provider__name"},
+        {"label": "Type", "field": "provider_type"},
+        {"label": "Rate", "field": "rate", "format": "percent"},
+        {"label": "Amount", "field": "amount"},
+        {"label": "Status", "field": "status"},
+    )
+    search_fields = ("provider__name", "provider__phone_number", "booking__customer_name")
+    date_filter_field = "created_at"
+    filter_fields = (("status", ServiceCommission.Status.choices),)
+
+
+class ServiceCommissionDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
+    model = ServiceCommission
+    template_name = "commissions/commission_detail.html"
+    context_object_name = "commission"
+    permission_required = "commissions.view_servicecommission"
+    page_title = "Service Commission Details"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_approve"] = self.request.user.has_perm("commissions.approve_servicecommission")
+        context["can_reject"] = self.request.user.has_perm("commissions.reject_servicecommission")
+        context["can_pay"] = self.request.user.has_perm("commissions.pay_servicecommission")
+        context["can_reverse"] = self.request.user.has_perm("commissions.reverse_servicecommission")
+        return context
+
+
+class ServiceCommissionActionView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    service = None
+    permission_required = ""
+    success_message = "Service commission updated."
+    reason_required = False
+
+    def post(self, request, pk):
+        kwargs = {"commission_id": pk, "actor": request.user}
+        if self.reason_required:
+            kwargs["notes"] = request.POST.get("reason", "")
+        try:
+            self.service(**kwargs)
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))
+        except Exception as error:
+            messages.error(request, str(error))
+        else:
+            messages.success(request, self.success_message)
+        return redirect("commissions:service_list")
+
+
+class ApproveServiceCommissionView(ServiceCommissionActionView):
+    service = staticmethod(approve_service_commission)
+    permission_required = "commissions.approve_servicecommission"
+    success_message = "Service commission approved."
+
+
+class RejectServiceCommissionView(ServiceCommissionActionView):
+    service = staticmethod(reject_service_commission)
+    permission_required = "commissions.reject_servicecommission"
+    success_message = "Service commission rejected."
+    reason_required = True
+
+
+class PayServiceCommissionView(ServiceCommissionActionView):
+    service = staticmethod(pay_service_commission)
+    permission_required = "commissions.pay_servicecommission"
+    success_message = "Service commission marked as paid."
+
+
+class ReverseServiceCommissionView(ServiceCommissionActionView):
+    service = staticmethod(reverse_service_commission)
+    permission_required = "commissions.reverse_servicecommission"
+    success_message = "Service commission reversed."
     reason_required = True

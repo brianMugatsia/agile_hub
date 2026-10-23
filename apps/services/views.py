@@ -13,13 +13,23 @@ from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedMo
 from apps.core.mixins import PageMixin
 from apps.hubs.permissions import selected_hub
 
-from .forms import BookingActionForm, HubResourceForm, ServiceBookingForm, ServiceTypeForm
-from .models import HubResource, ServiceBooking, ServiceType
+from .forms import (
+    BookingActionForm,
+    HubResourceForm,
+    ServiceBookingForm,
+    ServiceTypeForm,
+    ServiceProviderForm,
+    ServiceProviderActionForm,
+)
+from .models import HubResource, ServiceBooking, ServiceType, ServiceProvider
 from .services import (
     cancel_service_booking,
     complete_service_booking,
     record_booking_payment,
     start_service_booking,
+    register_service_provider,
+    suspend_service_provider,
+    reactivate_service_provider,
 )
 
 
@@ -235,3 +245,87 @@ class ServiceTypeDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMix
     template_name = "services/service_type_detail.html"
     permission_required = "services.view_servicetype"
     page_title = "Service Details"
+
+
+# ---------------------------------------------------------------------------
+# Service Providers (Internal & External)
+# ---------------------------------------------------------------------------
+class ServiceProviderListView(ScopedModelListView):
+    model = ServiceProvider
+    page_title = "Service Providers"
+    template_name = "services/provider_list.html"
+    columns = (
+        {"label": "Name", "field": "name"},
+        {"label": "Type", "field": "provider_type"},
+        {"label": "Member", "field": "member__user__display_name"},
+        {"label": "Phone", "field": "phone_number"},
+        {"label": "Category", "field": "service_category"},
+        {"label": "Status", "field": "status"},
+    )
+    search_fields = ("name", "phone_number", "email", "member__user__first_name", "member__user__last_name")
+    create_url_name = "services:provider_create"
+    create_permission = "services.add_serviceprovider"
+    row_edit_url_name = "services:provider_edit"
+    row_edit_permission = "services.change_serviceprovider"
+    filter_fields = (
+        ("provider_type", ServiceProvider.provider_type.field.choices if hasattr(ServiceProvider.provider_type.field, 'choices') else ()),
+        ("status", ServiceProvider.status.field.choices if hasattr(ServiceProvider.status.field, 'choices') else ()),
+    )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.members.views import _provider_stats
+        context.update(_provider_stats())
+        return context
+
+
+class ServiceProviderCreateView(ProtectedCreateView):
+    model = ServiceProvider
+    form_class = ServiceProviderForm
+    page_title = "Register Service Provider"
+    success_url_name = "services:provider_list"
+
+
+class ServiceProviderUpdateView(ProtectedUpdateView):
+    model = ServiceProvider
+    form_class = ServiceProviderForm
+    page_title = "Edit Service Provider"
+    success_url_name = "services:provider_list"
+
+
+class ServiceProviderDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
+    model = ServiceProvider
+    template_name = "services/provider_detail.html"
+    permission_required = "services.view_serviceprovider"
+    page_title = "Service Provider Details"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["action_form"] = ServiceProviderActionForm()
+        context["bookings"] = self.object.bookings.order_by("-start_date")[:20]
+        context["commissions"] = self.object.commissions.order_by("-created_at")[:20]
+        return context
+
+
+class ServiceProviderActionView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        provider = get_object_or_404(ServiceProvider, pk=pk)
+        action = request.POST.get("action")
+        form = ServiceProviderActionForm(request.POST)
+        reason = form.cleaned_data.get("reason", "") if form.is_valid() else ""
+
+        try:
+            if action == "suspend":
+                suspend_service_provider(provider_id=provider.pk, reason=reason, actor=request.user)
+                messages.warning(request, f"Service provider '{provider}' has been suspended.")
+            elif action == "reactivate":
+                reactivate_service_provider(provider_id=provider.pk, actor=request.user)
+                messages.success(request, f"Service provider '{provider}' has been reactivated.")
+            else:
+                messages.error(request, f"Unknown action '{action}'.")
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:
+            messages.error(request, f"Action failed: {exc}")
+
+        return redirect("services:provider_detail", pk=provider.pk)

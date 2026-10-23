@@ -97,22 +97,22 @@ def test_viewer_gets_403_on_user_list(client, make_user, roles):
 def test_admin_list_hides_super_admins(client, make_user, roles):
     client.force_login(make_user(role=Role.ADMIN))
     make_user(role=Role.SUPER_ADMIN, username="boss")
-    make_user(role=Role.WORKER, username="worker1")
+    make_user(role=Role.FINANCE_OFFICER, username="fin1")
 
     response = client.get(reverse("accounts:user_list"))
     usernames = [u.username for u in response.context["users"]]
-    assert "worker1" in usernames
+    assert "fin1" in usernames
     assert "boss" not in usernames
 
 
-def test_admin_user_list_excludes_sales_agents(client, make_user, roles):
+def test_admin_user_list_excludes_sales_agents(client, make_user, roles):   
     client.force_login(make_user(role=Role.ADMIN))
     make_user(role=Role.SALES_AGENT, username="agent1")
-    make_user(role=Role.WORKER, username="worker1")
+    make_user(role=Role.FINANCE_OFFICER, username="fin1")
 
     response = client.get(reverse("accounts:user_list"))
     usernames = [u.username for u in response.context["users"]]
-    assert "worker1" in usernames
+    assert "fin1" in usernames
     assert "agent1" not in usernames
     assert Role.SALES_AGENT not in [v for v, l in response.context["role_choices"]]
 
@@ -189,10 +189,10 @@ def test_admin_cannot_grant_super_admin_through_the_page(client, make_user, role
 def test_admin_user_list_excludes_members(client, make_user, roles):
     client.force_login(make_user(role=Role.ADMIN))
     make_user(role=Role.MEMBER, username="member1")
-    make_user(role=Role.WORKER, username="worker1")
+    make_user(role=Role.FINANCE_OFFICER, username="fin1")
 
     response = client.get(reverse("accounts:user_list"))
     usernames = [u.username for u in response.context["users"]]
-    assert "worker1" in usernames
+    assert "fin1" in usernames
     assert "member1" not in usernames
     assert Role.MEMBER not in [v for v, l in response.context["role_choices"]]

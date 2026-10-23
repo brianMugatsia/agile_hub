@@ -23,4 +23,11 @@ urlpatterns = [
     path("catalog/new/", views.ServiceTypeCreateView.as_view(), name="service_type_create"),
     path("catalog/<int:pk>/", views.ServiceTypeDetailView.as_view(), name="service_type_detail"),
     path("catalog/<int:pk>/edit/", views.ServiceTypeUpdateView.as_view(), name="service_type_edit"),
+
+    # Service Providers (Internal & External)
+    path("providers/", views.ServiceProviderListView.as_view(), name="provider_list"),
+    path("providers/new/", views.ServiceProviderCreateView.as_view(), name="provider_create"),
+    path("providers/<uuid:pk>/", views.ServiceProviderDetailView.as_view(), name="provider_detail"),
+    path("providers/<uuid:pk>/edit/", views.ServiceProviderUpdateView.as_view(), name="provider_edit"),
+    path("providers/<uuid:pk>/action/", views.ServiceProviderActionView.as_view(), name="provider_action"),
 ]

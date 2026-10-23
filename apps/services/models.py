@@ -27,6 +27,18 @@ class ServicePricingUnit(models.TextChoices):
     FIXED = "FIXED", "Fixed Charge"
 
 
+class ProviderType(models.TextChoices):
+    INTERNAL = "INTERNAL", "Internal"
+    EXTERNAL = "EXTERNAL", "External"
+
+
+class ServiceProviderStatus(models.TextChoices):
+    ACTIVE = "ACTIVE", "Active"
+    DORMANT = "DORMANT", "Dormant"
+    SUSPENDED = "SUSPENDED", "Suspended"
+    INACTIVE = "INACTIVE", "Inactive"
+
+
 class ServiceType(models.Model):
     """Catalog of services offered by hubs (e.g. Banana Ripening, Combine Harvester Hire)."""
 
@@ -57,6 +69,66 @@ class ServiceType(models.Model):
 
     def get_absolute_url(self):
         return reverse("services:service_type_detail", kwargs={"pk": self.pk})
+
+
+class ServiceProvider(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    provider_type = models.CharField(
+        max_length=16, choices=ProviderType.choices, default=ProviderType.INTERNAL, db_index=True
+    )
+    member = models.ForeignKey(
+        "members.MemberProfile",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="service_providers"
+    )
+    name = models.CharField(max_length=160)
+    phone_number = models.CharField(max_length=24, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    service_category = models.CharField(
+        max_length=24, choices=ServiceCategory.choices, blank=True, db_index=True
+    )
+    status = models.CharField(
+        max_length=16, choices=ServiceProviderStatus.choices, default=ServiceProviderStatus.ACTIVE, db_index=True
+    )
+    suspension_reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        permissions = [
+            ("suspend_serviceprovider", "Can suspend a service provider"),
+            ("reactivate_serviceprovider", "Can reactivate a service provider"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(provider_type="INTERNAL", member__isnull=False) |
+                    models.Q(provider_type="EXTERNAL")
+                ),
+                name="service_provider_internal_member_required"
+            )
+        ]
+        indexes = [
+            models.Index(fields=["provider_type", "status"]),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.provider_type == ProviderType.INTERNAL and not self.member_id:
+            raise ValidationError({"member": "Internal service providers must be associated with an existing member record."})
+        if self.provider_type == ProviderType.EXTERNAL and self.member_id:
+            raise ValidationError({"member": "External service providers must not be associated with a member record."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_provider_type_display()} - {self.get_status_display()})"
 
 
 class HubResource(models.Model):
@@ -126,6 +198,9 @@ class ServiceBooking(models.Model):
     hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, related_name="service_bookings")
     resource = models.ForeignKey(HubResource, on_delete=models.PROTECT, related_name="bookings")
     service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, related_name="bookings")
+    service_provider = models.ForeignKey(
+        ServiceProvider, on_delete=models.PROTECT, null=True, blank=True, related_name="bookings"
+    )
     member = models.ForeignKey(
         "members.MemberProfile", on_delete=models.SET_NULL, null=True, blank=True, related_name="service_bookings"
     )

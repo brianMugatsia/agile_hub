@@ -7,9 +7,10 @@ from django.utils import timezone
 
 from apps.audit.services import record_event
 from apps.finance.models import CashFlow
+from apps.finance.services.calculations import get_active_financial_setting
 from apps.hubs.permissions import user_can_access_hub
 
-from .models import HubResource, ServiceBooking, ServiceType
+from .models import HubResource, ServiceBooking, ServiceProvider, ServiceProviderStatus, ServiceType, ProviderType
 
 CENT = Decimal("0.01")
 
@@ -24,6 +25,7 @@ def create_service_booking(
     end_date,
     quantity,
     unit_rate=None,
+    service_provider=None,
     member=None,
     business=None,
     customer_name="",
@@ -53,8 +55,6 @@ def create_service_booking(
     if resource.status == HubResource.Status.RETIRED:
         raise ValidationError({"resource": "Selected resource is retired."})
 
-    # Check for scheduling overlap for non-divisible machinery
-    # Ripening chambers can share space if capacity permits, but harvesters/tractors cannot overlap
     if service_type.category in (
         service_type.category.HARVESTING,
         service_type.category.TRANSPORT,
@@ -79,6 +79,7 @@ def create_service_booking(
         hub=hub,
         resource=resource,
         service_type=service_type,
+        service_provider=service_provider,
         member=member,
         business=business,
         customer_name=customer_name.strip(),
@@ -158,7 +159,6 @@ def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, no
     booking.save(update_fields=["status", "quantity", "total_amount", "notes", "updated_at"])
 
     resource = booking.resource
-    # If no other active booking on this resource, set status back to AVAILABLE
     other_active = (
         ServiceBooking.objects.filter(
             resource=resource, status=ServiceBooking.Status.IN_PROGRESS
@@ -233,7 +233,6 @@ def record_booking_payment(*, booking_id, payment_reference="", actor=None):
     booking.payment_reference = payment_reference.strip()
     booking.save(update_fields=["payment_status", "payment_reference", "updated_at"])
 
-    # Record CashFlow entry for financial visibility
     CashFlow.objects.create(
         direction=CashFlow.Direction.INFLOW,
         category="Hub Services",
@@ -253,3 +252,99 @@ def record_booking_payment(*, booking_id, payment_reference="", actor=None):
         changes={"amount": str(booking.total_amount), "reference": booking.payment_reference},
     )
     return booking
+
+
+@transaction.atomic
+def register_service_provider(
+    *,
+    provider_type,
+    name,
+    member=None,
+    phone_number="",
+    email="",
+    address="",
+    service_category="",
+    actor=None,
+):
+    if provider_type == ProviderType.INTERNAL and not member:
+        raise ValidationError({"member": "Internal service providers must be linked to an existing member."})
+    if provider_type == ProviderType.EXTERNAL and member:
+        raise ValidationError({"member": "External service providers must not be linked to a member."})
+
+    provider = ServiceProvider.objects.create(
+        provider_type=provider_type,
+        member=member,
+        name=name.strip(),
+        phone_number=phone_number.strip(),
+        email=email.strip().lower(),
+        address=address.strip(),
+        service_category=service_category,
+        status=ServiceProviderStatus.ACTIVE,
+    )
+    record_event(
+        action="service_provider.registered",
+        summary=f"Registered service provider: {provider}",
+        actor=actor,
+        target=provider,
+        changes={"type": provider_type, "name": provider.name},
+    )
+    return provider
+
+
+@transaction.atomic
+def suspend_service_provider(*, provider_id, reason="", actor=None):
+    if actor and not getattr(actor, "is_authenticated", False):
+        raise PermissionDenied("Authentication required.")
+    if actor and not actor.has_perm("services.suspend_serviceprovider"):
+        raise PermissionDenied("You do not have permission to suspend service providers.")
+    provider = ServiceProvider.objects.select_for_update().get(pk=provider_id)
+    if provider.status == ServiceProviderStatus.SUSPENDED:
+        raise ValidationError("Provider is already suspended.")
+    provider.status = ServiceProviderStatus.SUSPENDED
+    provider.suspension_reason = reason.strip()
+    provider.save(update_fields=["status", "suspension_reason", "updated_at"])
+    record_event(
+        action="service_provider.suspended",
+        summary=f"Service provider suspended: {provider}",
+        actor=actor,
+        target=provider,
+        changes={"reason": reason.strip()},
+    )
+    return provider
+
+
+@transaction.atomic
+def reactivate_service_provider(*, provider_id, actor=None):
+    if actor and not getattr(actor, "is_authenticated", False):
+        raise PermissionDenied("Authentication required.")
+    if actor and not actor.has_perm("services.reactivate_serviceprovider"):
+        raise PermissionDenied("You do not have permission to reactivate service providers.")
+    provider = ServiceProvider.objects.select_for_update().get(pk=provider_id)
+    if provider.status == ServiceProviderStatus.ACTIVE:
+        raise ValidationError("Provider is already active.")
+    provider.status = ServiceProviderStatus.ACTIVE
+    provider.suspension_reason = ""
+    provider.save(update_fields=["status", "suspension_reason", "updated_at"])
+    record_event(
+        action="service_provider.reactivated",
+        summary=f"Service provider reactivated: {provider}",
+        actor=actor,
+        target=provider,
+    )
+    return provider
+
+
+def check_dormant_providers():
+    setting = get_active_financial_setting()
+    dormancy_days = int(setting.provider_dormancy_days)
+    threshold_date = timezone.now() - timezone.timedelta(days=dormancy_days)
+
+    active_providers = ServiceProvider.objects.filter(status=ServiceProviderStatus.ACTIVE)
+    dormant_count = 0
+    for provider in active_providers:
+        latest_booking = provider.bookings.filter(status=ServiceBooking.Status.COMPLETED).order_by("-end_date").first()
+        if not latest_booking or latest_booking.end_date < threshold_date:
+            provider.status = ServiceProviderStatus.DORMANT
+            provider.save(update_fields=["status", "updated_at"])
+            dormant_count += 1
+    return dormant_count
