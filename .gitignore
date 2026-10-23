@@ -38,3 +38,5 @@ backups/*
 .idea/
 .DS_Store
 Thumbs.db
+hub_data.json
+server_users.json
