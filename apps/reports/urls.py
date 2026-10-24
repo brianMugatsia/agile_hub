@@ -4,6 +4,7 @@ from .views import (
     ApprovalInboxView,
     ApproveInboxCommissionView,
     ApproveInboxSalaryView,
+    ForecastingReportView,
     GrossMarginsReportView,
     InventoryReconciliationView,
     ReportIndexView,
@@ -22,6 +23,11 @@ urlpatterns = [
         "gross-margins/",
         GrossMarginsReportView.as_view(),
         name="gross_margins",
+    ),
+    path(
+        "forecasting/",
+        ForecastingReportView.as_view(),
+        name="forecasting",
     ),
     path("approvals/", ApprovalInboxView.as_view(), name="approvals"),
     path(

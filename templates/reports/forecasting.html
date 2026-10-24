@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load money_tags ui_tags %}
+
+{% block content %}
+  {% if selected_hub %}
+    <div class="alert alert--info mb-4" role="status">
+      <strong>Active Hub Scoping:</strong> Showing predictive forecasting filtered for <strong>{{ selected_hub.name }}</strong>.
+    </div>
+  {% endif %}
+
+  <div class="grid grid--2 mb-6">
+    <div class="card">
+      <div class="card__body">
+        <h2 class="card__title text-lg font-semibold mb-2">Sales Demand Forecasting</h2>
+        <p class="text-muted text-sm mb-4">Projected produce and product demand based on moving averages and historical sales trends.</p>
+        
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Product / SKU</th>
+                <th>Historical Qty</th>
+                <th>Revenue</th>
+                <th>Projected Demand</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in sales_forecasts %}
+                <tr>
+                  <td>
+                    <strong>{{ item.product_name }}</strong>
+                    {% if item.sku %}<br><small class="text-muted">{{ item.sku }}</small>{% endif %}
+                  </td>
+                  <td>{{ item.historical_quantity }}</td>
+                  <td>{% include "components/money.html" with amount=item.historical_revenue %}</td>
+                  <td><span class="badge badge--success">{{ item.projected_demand }} units</span></td>
+                  <td>{{ item.confidence_score }}%</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">No completed sales data available for forecasting.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__body">
+        <h2 class="card__title text-lg font-semibold mb-2">Inventory Yield & Reorder Alerts</h2>
+        <p class="text-muted text-sm mb-4">Stock depletion rates, days of stock remaining, and automated reorder recommendations.</p>
+        
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Hub / Product</th>
+                <th>Stock</th>
+                <th>Burn Rate</th>
+                <th>Days Left</th>
+                <th>Reorder Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in yield_forecasts %}
+                <tr>
+                  <td>
+                    <strong>{{ item.product_name }}</strong>
+                    <br><small class="text-muted">{{ item.hub_name }}</small>
+                  </td>
+                  <td>{{ item.current_stock }}</td>
+                  <td>{{ item.daily_burn_rate }}/day</td>
+                  <td>
+                    {% if item.needs_reorder %}
+                      <span class="badge badge--danger" title="Stock critical!">{{ item.days_remaining }} days</span>
+                    {% else %}
+                      <span class="badge badge--neutral">{{ item.days_remaining }} days</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if item.recommended_order_qty > 0 %}
+                      <strong>+{{ item.recommended_order_qty }}</strong>
+                    {% else %}
+                      <span class="text-muted">Optimal</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">No inventory balance records found.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

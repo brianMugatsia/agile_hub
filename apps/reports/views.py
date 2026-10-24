@@ -41,7 +41,24 @@ class ReportIndexView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView)
             ("Audit trail", "audit:list"),
             ("Sales / stock reconciliation", "reports:inventory_reconciliation"),
             ("Gross margins", "reports:gross_margins"),
+            ("Predictive analytics & forecasting", "reports:forecasting"),
         ]
+        return context
+
+
+class ForecastingReportView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "reports/forecasting.html"
+    permission_required = "accounts.export_reports"
+    page_title = "Predictive Analytics & Yield Forecasting"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = self.page_title
+        available_hubs, chosen_hub, hub_error = selected_hub(self.request)
+        context["selected_hub"] = chosen_hub
+        from .services import get_sales_demand_forecast, get_inventory_yield_forecast
+        context["sales_forecasts"] = get_sales_demand_forecast(hub=chosen_hub)
+        context["yield_forecasts"] = get_inventory_yield_forecast(hub=chosen_hub)
         return context
 
 

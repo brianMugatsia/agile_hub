@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#123568">
   <title>{% block title %}{{ page_title|default:"Agile Hub" }}{% endblock %} · Agile Hub</title>
   <link rel="stylesheet" href="{% static 'css/main.css' %}?v=3">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
   {% block extra_css %}{% endblock %}
 </head>
 <body data-currency="{{ CURRENCY_CODE|default:'KES' }}">
@@ -46,6 +47,15 @@
   </div>
   {% include "partials/messages_toast.html" %}
   <script type="module" src="{% static 'js/main.js' %}"></script>
+  <script src="{% static 'js/offline-sync.js' %}"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('{% static "sw.js" %}'.replace('/static/', '/sw.js'))
+          .catch((err) => console.error('ServiceWorker registration failed:', err));
+      });
+    }
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

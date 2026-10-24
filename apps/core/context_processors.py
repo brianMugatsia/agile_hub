@@ -47,6 +47,7 @@ NAV_ITEMS = (
     NavItem("Reports", "reports:index", "bar-chart", (SA, AD, HM, FO, VW), "Finance & Insight"),
     NavItem("Gross Margins", "reports:gross_margins", "bar-chart", (SA, AD, HM, FO, VW), "Finance & Insight"),
     NavItem("Sales / stock reconciliation", "reports:inventory_reconciliation", "check-circle", (SA, AD, HM, FO, VW), "Finance & Insight"),
+    NavItem("Predictive analytics & forecasting", "reports:forecasting", "trending-up", (SA, AD, HM, FO, VW), "Finance & Insight"),
     NavItem("Users", "accounts:user_list", "users", (SA, AD, HM), "Administration"),
     NavItem("Audit Logs", "audit:list", "shield", (SA,), "Administration"),
     NavItem("Settings", "core:settings", "settings", (SA, AD, HM), "Administration"),
