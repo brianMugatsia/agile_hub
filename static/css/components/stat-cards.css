@@ -1,6 +1,146 @@
-.stat-card { min-height: 7.5rem; }
-.stat-card__label { display: block; color: var(--color-muted); font-size: .875rem; font-weight: 600; }
-.stat-card__value { display: block; margin-top: .55rem; font-size: clamp(1.45rem, 2.5vw, 2rem); line-height: 1.15; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.stat-card__delta { display: inline-flex; align-items: center; gap: .25rem; margin-top: .5rem; color: var(--color-muted); font-size: .8rem; }
-.stat-card__delta--positive { color: var(--green-600); }
-.stat-card__delta--negative { color: var(--red-700); }
+.animated-stat-grid,
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(var(--n, auto-fit), minmax(min(100%, 220px), 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .animated-stat-grid,
+  .dashboard-stats {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+.stat-card {
+  position: relative;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius, 14px);
+  padding: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  overflow: hidden;
+  animation: statCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--r, 0) * 0.06s);
+  min-height: 7.2rem;
+}
+
+.animated-stat-card {
+  position: relative;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius, 14px);
+  padding: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  overflow: hidden;
+  animation: statCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--r, 0) * 0.06s);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-card:hover,
+.animated-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.08), 0 6px 10px -4px rgba(0, 0, 0, 0.03);
+  border-color: color-mix(in srgb, var(--color-primary, #3b82f6) 45%, var(--color-border, #e2e8f0));
+}
+
+.stat-card::after,
+.animated-stat-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary, #3b82f6), #10b981);
+  transform: scaleX(0.25);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover::after,
+.animated-stat-card:hover::after {
+  transform: scaleX(1);
+}
+
+.stat-card__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0 !important;
+}
+
+.stat-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 12px;
+  flex: none;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover .stat-card__icon,
+.animated-stat-card:hover .stat-card__icon {
+  transform: rotate(-6deg) scale(1.1);
+}
+
+.stat-card__content {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.stat-card__label,
+.animated-stat-card > span:first-child {
+  display: block;
+  color: var(--color-muted, #64748b);
+  font-size: .8rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.stat-card__value,
+.animated-stat-card > strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+  font-weight: 760;
+  line-height: 1.15;
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text, #0f172a);
+  overflow-wrap: anywhere;
+}
+
+.stat-card__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  margin-top: .4rem;
+  color: var(--color-muted);
+  font-size: .78rem;
+  font-weight: 500;
+}
+
+.stat-card__delta--positive { color: var(--green-600, #16a34a); }
+.stat-card__delta--negative { color: var(--red-700, #b91c1c); }
+
+@keyframes statCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

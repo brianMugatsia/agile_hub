@@ -222,7 +222,10 @@ class CommissionSettingsView(LoginRequiredMixin, PermissionRequiredMixin, PageMi
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["settings"] = CommissionSetting.objects.all()
+        settings_qs = CommissionSetting.objects.select_related("created_by").all()
+        context["settings"] = settings_qs
+        context["active_setting"] = settings_qs.filter(is_active=True).first()
+        context["total_settings_count"] = settings_qs.count()
         if not self.request.user.has_perm("commissions.add_commissionsetting"):
             context.pop("form", None)
         return context

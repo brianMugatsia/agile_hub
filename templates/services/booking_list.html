@@ -1,0 +1,72 @@
+{% extends "components/record_list.html" %}
+{% load ui_tags money_tags %}
+
+{% block content %}
+<div class="dash" style="margin-bottom: 1.5rem;">
+  <section class="dash-hero com-hero--solo" aria-label="Service bookings overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Operations & Services</span>
+      <h2 class="dash-hero__title">Service <span class="dash-gradient">Bookings.</span></h2>
+      <p class="dash-hero__note">Manage ripening batches, machinery rentals, and hub facility schedules. Monitor booking lifecycles, active operations, and payment statuses.</p>
+    </div>
+  </section>
+
+  <!-- STAT CARDS -->
+  <section class="grid grid--3 dashboard-stats" aria-label="Booking statistics" style="margin-top: 1.25rem;">
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 0;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #2563eb; background: rgb(37 99 235 / 12%);">
+            {% icon "calendar" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">Live</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Total Bookings</span>
+        <strong class="stat-card__value" data-count>{{ total_bookings_count|default:0 }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 1;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #3b82f6; background: rgb(59 130 246 / 12%);">
+            {% icon "clock" %}
+          </span>
+          <span class="badge" style="font-size: 0.75rem; background: rgb(59 130 246 / 12%); color: #3b82f6;">Active</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">In Progress</span>
+        <strong class="stat-card__value" data-count>{{ active_bookings_count|default:0 }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 2;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #10b981; background: rgb(16 185 129 / 12%);">
+            {% icon "check-circle" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">Done</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Completed</span>
+        <strong class="stat-card__value" data-count>{{ completed_bookings_count|default:0 }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 3;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #8b5cf6; background: rgb(139 92 246 / 12%);">
+            {% icon "dollar-sign" %}
+          </span>
+          <span class="badge" style="font-size: 0.75rem; background: rgb(139 92 246 / 12%); color: #8b5cf6;">Revenue</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Total Revenue</span>
+        <strong class="stat-card__value">{{ total_bookings_revenue|kes }}</strong>
+      </div>
+    </article>
+  </section>
+</div>
+
+{{ block.super }}
+{% endblock %}

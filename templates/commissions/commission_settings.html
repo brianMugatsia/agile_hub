@@ -26,6 +26,51 @@
     </div>
   </section>
 
+  <!-- QUICK METRICS -->
+  <div class="animated-stat-grid" style="--n: 3; margin-bottom: 1.5rem;">
+    <div class="card stat-card" data-spot>
+      <div class="card__body stat-card__body">
+        <div class="stat-card__icon" style="color: var(--color-primary); background: var(--color-primary-soft);">
+          {% icon "percent" %}
+        </div>
+        <div class="stat-card__content">
+          <span class="stat-card__label">Active Rate</span>
+          <strong class="stat-card__value">
+            {% if active_setting %}
+              {{ active_setting.rate|percentage|floatformat:2 }}%
+            {% else %}
+              20.00% <span style="font-size: 0.75rem; font-weight: 500; color: var(--color-muted);">(Default)</span>
+            {% endif %}
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card stat-card" data-spot>
+      <div class="card__body stat-card__body">
+        <div class="stat-card__icon" style="color: #10b981; background: rgb(16 185 129 / 12%);">
+          {% icon "clock" %}
+        </div>
+        <div class="stat-card__content">
+          <span class="stat-card__label">Rate Schedules</span>
+          <strong class="stat-card__value">{{ total_settings_count }} Configured</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card stat-card" data-spot>
+      <div class="card__body stat-card__body">
+        <div class="stat-card__icon" style="color: #6366f1; background: rgb(99 102 241 / 12%);">
+          {% icon "shield" %}
+        </div>
+        <div class="stat-card__content">
+          <span class="stat-card__label">Policy Enforcement</span>
+          <strong class="stat-card__value">Effective-Dated</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="com-settings-grid{% if not form %} com-settings-grid--single{% endif %}">
 
     {% if form %}
@@ -37,10 +82,19 @@
           </div>
           <form method="post" data-validate data-loading class="com-form">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn--primary" type="submit">
-              {% icon "check" %} Save rate setting
-            </button>
+            {% if form.non_field_errors %}
+              <div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="stack" style="gap: 1rem;">
+              {% for field in form %}
+                {% include "components/form_field.html" %}
+              {% endfor %}
+            </div>
+            <div style="margin-top: 1.25rem;">
+              <button class="btn btn--primary" type="submit">
+                {% icon "check" %} Save rate setting
+              </button>
+            </div>
           </form>
         </div>
       </article>
@@ -50,33 +104,34 @@
       <div class="card__body">
         <div class="dashboard-section__heading">
           <h2 class="card__title">{% icon "clock" %} Commission rate history</h2>
-          <p class="card__subtitle">Active and past commission rate configurations.</p>
+          <p class="card__subtitle">Active and past commission rate configurations ordered by effective date.</p>
         </div>
         {% if settings %}
           <ol class="com-rates">
             {% for setting in settings %}
               <li class="com-rate{% if setting.is_active %} is-active{% endif %}" style="--r: {{ forloop.counter0 }}">
-                <span class="com-rate__dot" aria-hidden="true"></span>
+                <span class="com-rate__dot" aria-hidden="true"></span>  
                 <div class="com-rate__body">
-                  <div class="com-rate__header">
-                    <strong class="com-rate__value">{{ setting.rate|percentage|floatformat:2 }}%</strong>
+                  <div class="com-rate__header" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
+                    <strong class="com-rate__value" style="font-size: 1.15rem; font-weight: 750;">{{ setting.rate|percentage|floatformat:2 }}%</strong>
                     {% if setting.is_active %}
-                      <span class="com-badge" data-status="paid">{% icon "check-circle" %} Active</span>
+                      <span class="com-badge" data-status="paid">{% icon "check-circle" %} Active Rate</span>
                     {% else %}
                       <span class="com-badge" data-status="pending">Archived</span>
                     {% endif %}
                   </div>
-                  <span class="com-rate__date">Effective from {{ setting.effective_from }}</span>
+                  <span class="com-rate__date">Effective from <strong>{{ setting.effective_from }}</strong></span>
                   {% if setting.created_by %}
-                    <span class="com-rate__author">Configured by {{ setting.created_by.get_full_name|default:setting.created_by.username }}</span>
+                    <span class="com-rate__author" style="font-size: .75rem; color: var(--color-muted);">Configured by {{ setting.created_by.get_full_name|default:setting.created_by.username }}</span>
                   {% endif %}
                 </div>
               </li>
             {% endfor %}
           </ol>
         {% else %}
-          <div class="empty-state">
-            <p class="text-muted">No commission rates have been recorded yet.</p>
+          <div class="empty-state" style="padding: 2.5rem 1rem; text-align: center;">
+            <div class="empty-state__icon" style="margin-bottom: .75rem; color: var(--color-muted);">{% icon "alert-circle" %}</div>
+            <p class="text-muted">No commission rates have been recorded yet. The system fallback rate of 20.00% is currently active.</p>
           </div>
         {% endif %}
       </div>

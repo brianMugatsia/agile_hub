@@ -1,0 +1,72 @@
+{% extends "components/record_list.html" %}
+{% load ui_tags %}
+
+{% block content %}
+<div class="dash" style="margin-bottom: 1.5rem;">
+  <section class="dash-hero com-hero--solo" aria-label="Equipment and facilities overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Facility Management</span>
+      <h2 class="dash-hero__title">Equipment & <span class="dash-gradient">Facilities.</span></h2>
+      <p class="dash-hero__note">Manage ripening chambers, harvesters, tractors, and hub resources. Track availability, capacity specs, and active operator assignments.</p>
+    </div>
+  </section>
+
+  <!-- STAT CARDS -->
+  <section class="grid grid--3 dashboard-stats" aria-label="Equipment statistics" style="margin-top: 1.25rem;">
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 0;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #2563eb; background: rgb(37 99 235 / 12%);">
+            {% icon "cpu" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">Live</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Total Equipment</span>
+        <strong class="stat-card__value" data-count>{{ total_resources_count|default:0 }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 1;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #10b981; background: rgb(16 185 129 / 12%);">
+            {% icon "check-circle" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">Ready</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Available</span>
+        <strong class="stat-card__value" data-count>{{ available_resources_count|default:0 }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 2;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #3b82f6; background: rgb(59 130 246 / 12%);">
+            {% icon "play" %}
+          </span>
+          <span class="badge" style="font-size: 0.75rem; background: rgb(59 130 246 / 12%); color: #3b82f6;">Active</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">In Use</span>
+        <strong class="stat-card__value" data-count>{{ in_use_resources_count|default:0 }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 3;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #f59e0b; background: rgb(245 158 11 / 12%);">
+            {% icon "alert-triangle" %}
+          </span>
+          <span class="badge" style="font-size: 0.75rem; background: rgb(245 158 11 / 12%); color: #f59e0b;">Repair</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Maintenance</span>
+        <strong class="stat-card__value" data-count>{{ maintenance_resources_count|default:0 }}</strong>
+      </div>
+    </article>
+  </section>
+</div>
+
+{{ block.super }}
+{% endblock %}

@@ -3,13 +3,14 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView
 
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView
+from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin
 from apps.hubs.permissions import selected_hub
 
@@ -39,6 +40,8 @@ from .services import (
 class ServiceBookingListView(ScopedModelListView):
     model = ServiceBooking
     page_title = "Service Bookings"
+    template_name = "services/booking_list.html"
+    export_url_name = "services:booking_export"
     columns = (
         {"label": "Service", "field": "service_type__name"},
         {"label": "Equipment / Chamber", "field": "resource__name"},
@@ -63,6 +66,15 @@ class ServiceBookingListView(ScopedModelListView):
     row_edit_permission = "services.change_servicebooking"
     filter_hub = True
     hub_filter_paths = ("hub",)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        base_qs = self.get_queryset()
+        context["total_bookings_count"] = base_qs.count()
+        context["active_bookings_count"] = base_qs.filter(status=ServiceBooking.Status.IN_PROGRESS).count()
+        context["completed_bookings_count"] = base_qs.filter(status=ServiceBooking.Status.COMPLETED).count()
+        context["total_bookings_revenue"] = base_qs.aggregate(total=Sum("total_amount"))["total"] or Decimal("0.00")
+        return context
 
 
 class ServiceBookingCreateView(ProtectedCreateView):
@@ -151,6 +163,8 @@ class ServiceBookingActionView(LoginRequiredMixin, View):
 class HubResourceListView(ScopedModelListView):
     model = HubResource
     page_title = "Hub Equipment & Facilities"
+    template_name = "services/resource_list.html"
+    export_url_name = "services:resource_export"
     columns = (
         {"label": "Code", "field": "code"},
         {"label": "Name", "field": "name"},
@@ -167,6 +181,15 @@ class HubResourceListView(ScopedModelListView):
     row_edit_permission = "services.change_hubresource"
     filter_hub = True
     hub_filter_paths = ("hub",)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        base_qs = self.get_queryset()
+        context["total_resources_count"] = base_qs.count()
+        context["available_resources_count"] = base_qs.filter(status=HubResource.Status.AVAILABLE).count()
+        context["in_use_resources_count"] = base_qs.filter(status=HubResource.Status.IN_USE).count()
+        context["maintenance_resources_count"] = base_qs.filter(status=HubResource.Status.MAINTENANCE).count()
+        return context
 
 
 class HubResourceCreateView(ProtectedCreateView):
@@ -211,6 +234,8 @@ class HubResourceDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMix
 class ServiceTypeListView(ScopedModelListView):
     model = ServiceType
     page_title = "Service Catalog"
+    template_name = "services/service_type_list.html"
+    export_url_name = "services:service_type_export"
     columns = (
         {"label": "Code", "field": "code"},
         {"label": "Name", "field": "name"},
@@ -224,6 +249,13 @@ class ServiceTypeListView(ScopedModelListView):
     create_permission = "services.add_servicetype"
     row_edit_url_name = "services:service_type_edit"
     row_edit_permission = "services.change_servicetype"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        base_qs = self.get_queryset()
+        context["total_services_count"] = base_qs.count()
+        context["active_services_count"] = base_qs.filter(is_active=True).count()
+        return context
 
 
 class ServiceTypeCreateView(ProtectedCreateView):
@@ -254,6 +286,7 @@ class ServiceProviderListView(ScopedModelListView):
     model = ServiceProvider
     page_title = "Service Providers"
     template_name = "services/provider_list.html"
+    export_url_name = "services:provider_export"
     columns = (
         {"label": "Name", "field": "name"},
         {"label": "Type", "field": "provider_type"},
@@ -329,3 +362,19 @@ class ServiceProviderActionView(LoginRequiredMixin, View):
             messages.error(request, f"Action failed: {exc}")
 
         return redirect("services:provider_detail", pk=provider.pk)
+
+
+class BookingExportView(ScopedModelExportView):
+    list_view_class = ServiceBookingListView
+
+
+class ResourceExportView(ScopedModelExportView):
+    list_view_class = HubResourceListView
+
+
+class ServiceTypeExportView(ScopedModelExportView):
+    list_view_class = ServiceTypeListView
+
+
+class ProviderExportView(ScopedModelExportView):
+    list_view_class = ServiceProviderListView
