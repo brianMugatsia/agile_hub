@@ -78,7 +78,7 @@ def _finance(*actions, models=FINANCE_MODELS):
     return [code for model in models for code in perms(model, *actions)]
 
 
-SERVICES_MODELS = ("servicetype", "hubresource", "servicebooking")
+SERVICES_MODELS = ("servicetype", "hubresource", "servicebooking", "serviceprovider")
 
 
 def _services(*actions, models=SERVICES_MODELS):

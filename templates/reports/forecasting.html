@@ -2,44 +2,79 @@
 {% load money_tags ui_tags %}
 
 {% block content %}
+<div class="dash" style="margin-bottom: 2rem;">
+  <!-- Modern Hero & Explanation Banner -->
+  <section class="dash-hero com-hero--solo" aria-label="Forecasting overview" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); border-radius: 1rem; padding: 2rem; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a" style="background: rgba(59, 130, 246, 0.2);"></span>
+      <span class="dash-hero__orb dash-hero__orb--b" style="background: rgba(16, 185, 129, 0.2);"></span>
+    </div>
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow" style="color: #6ee7b7;"><span class="dash-hero__dot" style="background: #10b981;"></span>AI & Data-Driven Insights</span>
+      <h2 class="dash-hero__title" style="color: #fff;">Predictive Analytics & <span class="dash-gradient" style="background: linear-gradient(135deg, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Yield Forecasting.</span></h2>
+      <p class="dash-hero__note" style="color: #94a3b8; max-width: 800px; margin-top: 0.5rem;">
+        Anticipate customer demand and optimize inventory levels across your hubs before stockouts occur.
+      </p>
+
+      <!-- Explanation Box with Example -->
+      <div style="margin-top: 1.25rem; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.75rem; padding: 1rem 1.25rem; font-size: 0.875rem; line-height: 1.5; color: #e2e8f0;">
+        <strong style="color: #f8fafc; display: block; margin-bottom: 0.25rem;">How it works & Practical Example:</strong>
+        • <strong>Sales Demand:</strong> Analyzes historical completed sales and applies moving averages/trend growth (+10%) to project next-period demand.<br>
+        • <strong>Yield & Reorder:</strong> Calculates daily stock consumption (burn rate). <em>Example:</em> If 30 units are consumed over 30 days (1/day burn rate) and you have 10 units left, you have <strong>10 days remaining</strong>, triggering an automatic reorder recommendation to maintain a healthy 30-day buffer.
+      </div>
+    </div>
+  </section>
+
   {% if selected_hub %}
-    <div class="alert alert--info mb-4" role="status">
+    <div class="alert alert--info mb-4" role="status" style="border-radius: 0.5rem;">
       <strong>Active Hub Scoping:</strong> Showing predictive forecasting filtered for <strong>{{ selected_hub.name }}</strong>.
     </div>
   {% endif %}
 
-  <div class="grid grid--2 mb-6">
-    <div class="card">
-      <div class="card__body">
-        <h2 class="card__title text-lg font-semibold mb-2">Sales Demand Forecasting</h2>
-        <p class="text-muted text-sm mb-4">Projected produce and product demand based on moving averages and historical sales trends.</p>
+  <!-- Stacked Full-Width Layout to Prevent Column Hiding -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Sales Demand Forecasting Card -->
+    <div class="card" style="border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); width: 100%;">
+      <div class="card__body" style="padding: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; background: #dbeafe; color: #1d4ed8;">
+            {% icon "bar-chart" %}
+          </span>
+          <div>
+            <h2 class="card__title text-lg font-semibold" style="margin: 0; color: #0f172a;">Sales Demand Forecasting</h2>
+            <span class="text-muted text-sm">Projected product demand & sales trends</span>
+          </div>
+        </div>
         
-        <div class="table-responsive">
-          <table class="table">
+        <div class="table-responsive" style="margin-top: 1rem; width: 100%; overflow-x: auto;">
+          <table class="table" style="width: 100%; min-width: 600px;">
             <thead>
-              <tr>
-                <th>Product / SKU</th>
-                <th>Historical Qty</th>
-                <th>Revenue</th>
-                <th>Projected Demand</th>
-                <th>Confidence</th>
+              <tr style="border-bottom: 2px solid #f1f5f9;">
+                <th style="padding: 0.75rem 1rem; text-align: left;">Product / SKU</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">History</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Revenue</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Projected Demand</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Confidence</th>
               </tr>
             </thead>
             <tbody>
               {% for item in sales_forecasts %}
-                <tr>
-                  <td>
-                    <strong>{{ item.product_name }}</strong>
-                    {% if item.sku %}<br><small class="text-muted">{{ item.sku }}</small>{% endif %}
+                <tr style="border-bottom: 1px solid #f8fafc;">
+                  <td style="padding: 0.75rem 1rem;">
+                    <strong style="color: #1e293b;">{{ item.product_name }}</strong>
+                    {% if item.sku %}<br><small class="text-muted font-mono" style="font-size: 0.75rem;">{{ item.sku }}</small>{% endif %}
                   </td>
-                  <td>{{ item.historical_quantity }}</td>
-                  <td>{% include "components/money.html" with amount=item.historical_revenue %}</td>
-                  <td><span class="badge badge--success">{{ item.projected_demand }} units</span></td>
-                  <td>{{ item.confidence_score }}%</td>
+                  <td style="padding: 0.75rem 1rem;">{{ item.historical_quantity }} units</td>
+                  <td style="padding: 0.75rem 1rem;">{% include "components/money.html" with amount=item.historical_revenue %}</td>
+                  <td style="padding: 0.75rem 1rem;"><span class="badge badge--success" style="font-weight: 600;">{{ item.projected_demand }} units</span></td>
+                  <td style="padding: 0.75rem 1rem;">{{ item.confidence_score }}%</td>
                 </tr>
               {% empty %}
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-4">No completed sales data available for forecasting.</td>
+                  <td colspan="5" class="text-center text-muted py-6" style="padding: 3rem 1rem;">
+                    <div style="font-size: 1rem; color: #64748b;">No completed sales data available for forecasting yet.</div>
+                    <small class="text-muted">Complete sales transactions to generate AI demand projections.</small>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -48,49 +83,60 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card__body">
-        <h2 class="card__title text-lg font-semibold mb-2">Inventory Yield & Reorder Alerts</h2>
-        <p class="text-muted text-sm mb-4">Stock depletion rates, days of stock remaining, and automated reorder recommendations.</p>
+    <!-- Inventory Yield & Reorder Alerts Card -->
+    <div class="card" style="border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); width: 100%;">
+      <div class="card__body" style="padding: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; background: #d1fae5; color: #047857;">
+            {% icon "layers" %}
+          </span>
+          <div>
+            <h2 class="card__title text-lg font-semibold" style="margin: 0; color: #0f172a;">Inventory Yield & Reorder Alerts</h2>
+            <span class="text-muted text-sm">Stock depletion rates & automated restocking</span>
+          </div>
+        </div>
         
-        <div class="table-responsive">
-          <table class="table">
+        <div class="table-responsive" style="margin-top: 1rem; width: 100%; overflow-x: auto;">
+          <table class="table" style="width: 100%; min-width: 600px;">
             <thead>
-              <tr>
-                <th>Hub / Product</th>
-                <th>Stock</th>
-                <th>Burn Rate</th>
-                <th>Days Left</th>
-                <th>Reorder Qty</th>
+              <tr style="border-bottom: 2px solid #f1f5f9;">
+                <th style="padding: 0.75rem 1rem; text-align: left;">Hub / Product</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Stock</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Burn Rate</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Days Left</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Reorder Qty</th>
               </tr>
             </thead>
             <tbody>
               {% for item in yield_forecasts %}
-                <tr>
-                  <td>
-                    <strong>{{ item.product_name }}</strong>
-                    <br><small class="text-muted">{{ item.hub_name }}</small>
+                <tr style="border-bottom: 1px solid #f8fafc;">
+                  <td style="padding: 0.75rem 1rem;">
+                    <strong style="color: #1e293b;">{{ item.product_name }}</strong>
+                    <br><small class="text-muted" style="font-size: 0.75rem;">{{ item.hub_name }}</small>
                   </td>
-                  <td>{{ item.current_stock }}</td>
-                  <td>{{ item.daily_burn_rate }}/day</td>
-                  <td>
+                  <td style="padding: 0.75rem 1rem;">{{ item.current_stock }}</td>
+                  <td style="padding: 0.75rem 1rem;">{{ item.daily_burn_rate }}/day</td>
+                  <td style="padding: 0.75rem 1rem;">
                     {% if item.needs_reorder %}
-                      <span class="badge badge--danger" title="Stock critical!">{{ item.days_remaining }} days</span>
+                      <span class="badge badge--danger" title="Critical stock level!" style="font-weight: 600;">⚠️ {{ item.days_remaining }} days</span>
                     {% else %}
-                      <span class="badge badge--neutral">{{ item.days_remaining }} days</span>
+                      <span class="badge badge--neutral" style="font-weight: 500;">{{ item.days_remaining }} days</span>
                     {% endif %}
                   </td>
-                  <td>
+                  <td style="padding: 0.75rem 1rem;">
                     {% if item.recommended_order_qty > 0 %}
-                      <strong>+{{ item.recommended_order_qty }}</strong>
+                      <strong style="color: #dc2626;">+{{ item.recommended_order_qty }} units</strong>
                     {% else %}
-                      <span class="text-muted">Optimal</span>
+                      <span class="text-muted" style="color: #10b981; font-weight: 500;">Optimal</span>
                     {% endif %}
                   </td>
                 </tr>
               {% empty %}
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-4">No inventory balance records found.</td>
+                  <td colspan="5" class="text-center text-muted py-6" style="padding: 3rem 1rem;">
+                    <div style="font-size: 1rem; color: #64748b;">No inventory balance records found.</div>
+                    <small class="text-muted">Record stock receipts and inventory movements to enable yield forecasting.</small>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -99,4 +145,5 @@
       </div>
     </div>
   </div>
+</div>
 {% endblock %}

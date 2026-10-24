@@ -29,6 +29,8 @@ urlpatterns = [
 
     # Service Providers (Internal & External)
     path("providers/", views.ServiceProviderListView.as_view(), name="provider_list"),
+    path("providers/internal/", views.InternalServiceProviderListView.as_view(), name="internal_provider_list"),
+    path("providers/external/", views.ExternalServiceProviderListView.as_view(), name="external_provider_list"),
     path("providers/new/", views.ServiceProviderCreateView.as_view(), name="provider_create"),
     path("providers/export/<str:format>/", views.ProviderExportView.as_view(), name="provider_export"),
     path("providers/<uuid:pk>/", views.ServiceProviderDetailView.as_view(), name="provider_detail"),

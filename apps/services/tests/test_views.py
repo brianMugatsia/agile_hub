@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.roles import Role
 from apps.hubs.models import Hub, HubMembership
-from apps.services.models import HubResource, ServiceBooking, ServiceCategory, ServicePricingUnit, ServiceType
+from apps.services.models import HubResource, ServiceBooking, ServiceCategory, ServicePricingUnit, ServiceType, ServiceProvider, ProviderType, ServiceProviderStatus
 
 pytestmark = pytest.mark.django_db
 
@@ -44,7 +44,26 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
     response = client.get(reverse("services:resource_list"))
     assert response.status_code == 200
 
-    # 3. Create booking through POST
+    # 3. Access provider lists (Internal, External, All, Status filtered)
+    response = client.get(reverse("services:provider_list"))
+    assert response.status_code == 200
+
+    response = client.get(reverse("services:internal_provider_list"))
+    assert response.status_code == 200
+
+    response = client.get(reverse("services:external_provider_list"))
+    assert response.status_code == 200
+
+    response = client.get(reverse("services:provider_list") + "?status=ACTIVE")
+    assert response.status_code == 200
+
+    response = client.get(reverse("members:service_providers"))
+    assert response.status_code == 200
+
+    response = client.get(reverse("members:sales_agents"))
+    assert response.status_code == 200
+
+    # 4. Create booking through POST
     start_date = timezone.now() + timedelta(days=1)
     end_date = start_date + timedelta(days=2)
     response = client.post(
@@ -66,12 +85,12 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
     booking = ServiceBooking.objects.get(customer_name="Farmer John")
     assert booking.total_amount == Decimal("9600.00")
 
-    # 4. Detail view
+    # 5. Detail view
     response = client.get(reverse("services:booking_detail", kwargs={"pk": booking.pk}))
     assert response.status_code == 200
     assert b"Chamber Alpha" in response.content
 
-    # 5. Start action
+    # 6. Start action
     response = client.post(
         reverse("services:booking_action", kwargs={"pk": booking.pk}),
         data={"action": "start"},
@@ -80,7 +99,7 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
     booking.refresh_from_db()
     assert booking.status == ServiceBooking.Status.IN_PROGRESS
 
-    # 6. Complete action
+    # 7. Complete action
     response = client.post(
         reverse("services:booking_action", kwargs={"pk": booking.pk}),
         data={"action": "complete", "actual_quantity": "850.00"},
@@ -90,7 +109,7 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
     assert booking.status == ServiceBooking.Status.COMPLETED
     assert booking.total_amount == Decimal("10200.00")
 
-    # 7. Pay action
+    # 8. Pay action
     response = client.post(
         reverse("services:booking_action", kwargs={"pk": booking.pk}),
         data={"action": "pay", "payment_reference": "MPESA-TEST-123"},

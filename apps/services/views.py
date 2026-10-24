@@ -22,7 +22,7 @@ from .forms import (
     ServiceProviderForm,
     ServiceProviderActionForm,
 )
-from .models import HubResource, ServiceBooking, ServiceType, ServiceProvider
+from .models import HubResource, ServiceBooking, ServiceType, ServiceProvider, ProviderType
 from .services import (
     cancel_service_booking,
     complete_service_booking,
@@ -309,6 +309,31 @@ class ServiceProviderListView(ScopedModelListView):
         context = super().get_context_data(**kwargs)
         from apps.members.views import _provider_stats
         context.update(_provider_stats())
+        context["active_provider_tab"] = context.get("active_provider_tab", "all")
+        return context
+
+
+class InternalServiceProviderListView(ServiceProviderListView):
+    page_title = "Internal Service Providers (Members)"
+
+    def get_queryset(self):
+        return super().get_queryset().filter(provider_type=ProviderType.INTERNAL)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_provider_tab"] = "internal"
+        return context
+
+
+class ExternalServiceProviderListView(ServiceProviderListView):
+    page_title = "External Service Providers (Non-Members)"
+
+    def get_queryset(self):
+        return super().get_queryset().filter(provider_type=ProviderType.EXTERNAL)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_provider_tab"] = "external"
         return context
 
 
