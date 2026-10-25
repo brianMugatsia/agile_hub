@@ -198,7 +198,25 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             sale__completed_at__gte=start_at,
             sale__completed_at__lt=end_at,
         )
-        commission_earned_amount = commissions_earned_qs.aggregate(total=Sum("amount"))["total"] or 0
+        agent_commission_earned_amount = commissions_earned_qs.filter(sale__agent__isnull=False).aggregate(total=Sum("amount"))["total"] or 0
+        member_commission_earned_amount = commissions_earned_qs.filter(sale__member__isnull=False).aggregate(total=Sum("amount"))["total"] or 0
+
+        from apps.commissions.models import ServiceCommission
+        service_commissions_earned_qs = ServiceCommission.objects.filter(
+            status__in=[ServiceCommission.Status.APPROVED, ServiceCommission.Status.PAID]
+        )
+        if not is_platform_admin:
+            service_commissions_earned_qs = service_commissions_earned_qs.filter(booking__hub__in=hubs)
+        if active_hub:
+            service_commissions_earned_qs = service_commissions_earned_qs.filter(booking__hub=active_hub)
+        elif hub_error:
+            service_commissions_earned_qs = service_commissions_earned_qs.none()
+
+        service_commissions_earned_qs = service_commissions_earned_qs.filter(
+            booking__start_date__gte=start_at,
+            booking__start_date__lt=end_at,
+        )
+        service_commission_earned_amount = service_commissions_earned_qs.aggregate(total=Sum("amount"))["total"] or 0
 
         total_sales_value = sales.aggregate(total=Sum("total"))["total"] or 0
 
@@ -231,7 +249,9 @@ class DashboardView(LoginRequiredMixin, PageMixin, TemplateView):
             ("Total membership", total_members),
             ("Total Membership Contribution", total_contribution_amount),
             ("Total Sales value", total_sales_value),
-            ("Commission Earned by Members", commission_earned_amount),
+            ("Commission Earned by Sales Agents", agent_commission_earned_amount),
+            ("Commission Earned by Members (Sales Agents)", member_commission_earned_amount),
+            ("Commission Earned by Service Providers", service_commission_earned_amount),
         ]
 
         if user.role in (Role.SUPER_ADMIN, Role.ADMIN, Role.HUB_MANAGER, Role.FINANCE_OFFICER):

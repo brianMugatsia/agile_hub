@@ -195,6 +195,77 @@ def test_dashboard_approval_badges_show_totals_not_preview_lengths(client, make_
     assert b'<span class="dash-count">9</span>' in response.content
 
 
+def test_dashboard_commission_earned_cards(client, make_user):
+    admin = make_user(role=Role.ADMIN)
+    agent = make_user(role=Role.SALES_AGENT)
+    hub = Hub.objects.create(code="DASH-COMM", name="Commission Hub")
+    HubMembership.objects.create(hub=hub, user=admin)
+    HubMembership.objects.create(hub=hub, user=agent)
+
+    sale = make_completed_sale(hub=hub, agent=agent, completed_on=timezone.localdate(), total=Decimal("100.00"))
+    SalesAgentCommission.objects.create(
+        sale=sale,
+        agent=agent,
+        rate=Decimal("0.1000"),
+        base_amount=Decimal("100.00"),
+        amount=Decimal("10.00"),
+        status=SalesAgentCommission.Status.APPROVED,
+    )
+
+    from apps.members.models import MemberProfile
+    member_user = make_user(role=Role.MEMBER)
+    member = MemberProfile.objects.create(hub=hub, user=member_user, phone_number="0711223344")
+    sale_member = Sale.objects.create(
+        hub=hub,
+        member=member,
+        agent=None,
+        status=Sale.Status.COMPLETED,
+        completed_at=timezone.make_aware(datetime.combine(timezone.localdate(), time(12))),
+        total=Decimal("200.00"),
+    )
+    SalesAgentCommission.objects.create(
+        sale=sale_member,
+        agent=member_user,
+        rate=Decimal("0.1000"),
+        base_amount=Decimal("200.00"),
+        amount=Decimal("20.00"),
+        status=SalesAgentCommission.Status.APPROVED,
+    )
+
+    from apps.services.models import ServiceProvider, HubResource, ServiceType, ServiceBooking
+    from apps.commissions.models import ServiceCommission
+    provider = ServiceProvider.objects.create(name="Service Pro", provider_type="EXTERNAL")
+    service_type = ServiceType.objects.create(code="SRV-01", name="Service 1")
+    resource = HubResource.objects.create(hub=hub, service_type=service_type, name="Resource 1", code="RES-1")
+    booking = ServiceBooking.objects.create(
+        hub=hub,
+        resource=resource,
+        service_type=service_type,
+        service_provider=provider,
+        start_date=timezone.make_aware(datetime.combine(timezone.localdate(), time(10))),
+        end_date=timezone.make_aware(datetime.combine(timezone.localdate(), time(12))),
+        quantity=Decimal("4.00"),
+        unit_rate=Decimal("50.00"),
+        total_amount=Decimal("200.00"),
+        status=ServiceBooking.Status.COMPLETED,
+    )
+    ServiceCommission.objects.create(
+        provider=provider,
+        booking=booking,
+        rate=Decimal("0.1500"),
+        base_amount=Decimal("200.00"),
+        amount=Decimal("30.00"),
+        status=ServiceCommission.Status.APPROVED,
+    )
+
+    client.force_login(admin)
+    response = client.get(reverse("core:dashboard"))
+    assert response.status_code == 200
+    assert ("Commission Earned by Sales Agents", Decimal("10.00")) in response.context["dashboard_stats"]
+    assert ("Commission Earned by Members (Sales Agents)", Decimal("20.00")) in response.context["dashboard_stats"]
+    assert ("Commission Earned by Service Providers", Decimal("30.00")) in response.context["dashboard_stats"]
+
+
 def test_health_check_endpoint(client):
     response = client.get("/healthz/")
     assert response.status_code == 200
