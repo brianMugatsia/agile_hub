@@ -59,6 +59,11 @@
   background-repeat: no-repeat;
   background-position: right .7rem center;
 }
+select[multiple] {
+  appearance: auto;
+  background-image: none;
+  padding-right: .75rem;
+}
 .file-input { padding: .45rem; }
 .file-input::file-selector-button {
   margin-right: .75rem;

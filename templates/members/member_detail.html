@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static ui_tags %}
 
 {% block content %}
 <div class="dash">
@@ -12,22 +12,23 @@
     <symbol id="ben-i-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16a3 3 0 0 1 6 0"/><path d="M14 10h4"/><path d="M14 14h3"/></symbol>
     <symbol id="ben-i-store" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 21V12"/><path d="M19 21V12"/><path d="M5 21h14"/></symbol>
     <symbol id="ben-i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="ben-i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
   </svg>
 
   <!-- HERO -->
-  <section class="dash-hero" data-reveal="up" aria-label="Member profile">
+  <section class="dash-hero" data-reveal="up" aria-label="Member and customer profile">
     <div class="dash-hero__bg" aria-hidden="true">
       <span class="dash-hero__orb dash-hero__orb--a"></span>
       <span class="dash-hero__orb dash-hero__orb--b"></span>
     </div>
 
     <div class="dash-hero__text">
-      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Member profile</span>
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{{ member.get_customer_type_display }} profile</span>
       <div class="ben-id">
-        <span class="ben-id__avatar" aria-hidden="true">{{ member.user.display_name|default:"?"|slice:":1"|upper }}</span>
+        <span class="ben-id__avatar" aria-hidden="true">{{ member.display_name|default:"?"|slice:":1"|upper }}</span>
         <div class="ben-id__text">
-          <h2 class="dash-hero__title">{{ member.user.display_name }}</h2>
-          <p class="dash-hero__note">{{ member.user.email }}</p>
+          <h2 class="dash-hero__title">{{ member.display_name }}</h2>
+          <p class="dash-hero__note">{{ member.user.email|default:"No email account (Lead)" }}</p>
         </div>
       </div>
     </div>
@@ -45,17 +46,26 @@
   <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
     <div class="card__body">
       <div class="dashboard-section__heading">
-        <h2 class="card__title">Member details</h2>
-        {% if can_edit_member %}<a class="btn btn--secondary btn--sm" href="{% url 'members:edit' member.pk %}">Edit member</a>{% endif %}
+        <h2 class="card__title">Profile & Details</h2>
+        <div class="flex gap-2">
+          {% if member.is_lead and can_edit_member %}
+            <form action="{% url 'members:customer_upgrade' member.pk %}" method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--primary btn--sm">Upgrade to Farmer</button>
+            </form>
+          {% endif %}
+          {% if can_edit_member %}<a class="btn btn--secondary btn--sm" href="{% url 'members:edit' member.pk %}">Edit member</a>{% endif %}
+          <a class="btn btn--secondary btn--sm" href="{% url 'members:customers_list' %}">Back to customers</a>
+        </div>
       </div>
       <dl class="hub-facts">
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
-          <dt>Member</dt><dd>{{ member.user.display_name }}</dd>
+          <dt>Name / Title</dt><dd>{{ member.display_name }}</dd>
         </div>
         <div class="hub-fact">
-          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-mail"/></svg></span>
-          <dt>Email</dt><dd>{{ member.user.email }}</dd>
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
+          <dt>Category</dt><dd><span class="badge badge--info">{{ member.get_customer_type_display }}</span></dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-phone"/></svg></span>
@@ -63,17 +73,138 @@
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-id"/></svg></span>
-          <dt>National ID</dt><dd>{{ member.national_id|default:"—" }}</dd>
-        </div>
-        <div class="hub-fact">
-          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-store"/></svg></span>
-          <dt>Hub</dt><dd>{{ member.hub|default:"—" }}</dd>
+          <dt>National ID / ID</dt><dd>{{ member.national_id|default:"—" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-pin"/></svg></span>
-          <dt>Address</dt><dd>{{ member.address|default:"—" }}</dd>
+          <dt>Location</dt><dd>{{ member.location|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
+          <dt>Crops Grown</dt><dd>{{ member.crops|default:"Maize, Beans, Coffee (General)" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
+          <dt>Loop Feedback</dt><dd>{{ member.loop_feedback|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
+          <dt>Hub</dt><dd>{{ member.hub|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
+          <dt>Offered Services</dt>
+          <dd>
+            {% if assigned_services %}
+              {% for s in assigned_services %}<span class="badge badge--success">{{ s.name }}</span> {% endfor %}
+            {% else %}
+              —
+            {% endif %}
+          </dd>
         </div>
       </dl>
+    </div>
+  </section>
+
+  <!-- REPORTS & SUMMARY -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+    <div class="card__body">
+      <div class="dashboard-section__heading">
+        <h2 class="card__title">Activity & Financial Reports</h2>
+      </div>
+      <div class="grid grid--3 gap-4 mb-4">
+        <div class="stat-card">
+          <span class="stat-card__label">Total Service Commissions</span>
+          <strong class="stat-card__value">{{ reports_summary.total_commissions }}</strong>
+          <span class="stat-card__note">{{ reports_summary.commissions_count }} commission record(s)</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Total Contributions</span>
+          <strong class="stat-card__value">{{ reports_summary.total_contributions }}</strong>
+          <span class="stat-card__note">{{ contributions|length }} contribution(s)</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Total Service Bookings</span>
+          <strong class="stat-card__value">{{ reports_summary.total_bookings_amount }}</strong>
+          <span class="stat-card__note">{{ reports_summary.bookings_count }} booking(s)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMISSIONS PER SERVICE -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+    <div class="card__body">
+      <div class="dashboard-section__heading">
+        <h2 class="card__title">Service Commissions <span class="dash-count">{{ service_commissions|length }}</span></h2>
+      </div>
+      {% if service_commissions %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Rate</th>
+                <th>Base Amount</th>
+                <th>Commission Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in service_commissions %}
+                <tr>
+                  <td>{{ c.service_type.name|default:"General Service" }}</td>
+                  <td>{{ c.rate|percentage|floatformat:2 }}%</td>
+                  <td>{{ c.base_amount }}</td>
+                  <td><strong>{{ c.amount }}</strong></td>
+                  <td><span class="badge {% if c.status == 'PAID' %}badge--success{% else %}badge--warning{% endif %}">{{ c.get_status_display }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted">No service commissions recorded for this profile yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- SERVICE BOOKINGS & PAYMENT STATUS -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+    <div class="card__body">
+      <div class="dashboard-section__heading">
+        <h2 class="card__title">Service Bookings & Payment Status <span class="dash-count">{{ service_bookings|length }}</span></h2>
+      </div>
+      {% if service_bookings %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Resource</th>
+                <th>Start Date</th>
+                <th>Total Amount</th>
+                <th>Booking Status</th>
+                <th>Payment Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in service_bookings %}
+                <tr>
+                  <td><a href="{{ b.get_absolute_url }}">{{ b.service_type.name }}</a></td>
+                  <td>{{ b.resource.name|default:"—" }}</td>
+                  <td>{{ b.start_date|date:"Y-m-d H:i" }}</td>
+                  <td>{{ b.total_amount }}</td>
+                  <td><span class="badge badge--info">{{ b.get_status_display }}</span></td>
+                  <td><span class="badge {% if b.payment_status == 'PAID' %}badge--success{% else %}badge--warning{% endif %}">{{ b.get_payment_status_display }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted">No service bookings recorded for this profile.</p>
+      {% endif %}
     </div>
   </section>
 

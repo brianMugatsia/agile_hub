@@ -26,7 +26,6 @@ def test_admin_can_edit_supplier_and_view_inactive_suppliers(client, make_user, 
     response = client.post(
         edit_url,
         {
-            "code": supplier.code,
             "name": "Updated supplier",
             "contact_name": "Sam",
             "email": "sam@example.com",

@@ -32,7 +32,22 @@ class StockMovementForm(forms.Form):
 class SupplierForm(ModelForm):
     class Meta:
         model = Supplier
-        fields = ("code", "name", "contact_name", "email", "phone", "address", "is_active")
+        fields = ("name", "contact_name", "email", "phone", "address", "is_active")
+        labels = {
+            "name": "Supplier Name",
+            "contact_name": "Contact Person Name",
+            "email": "Email Address",
+            "phone": "Phone Number",
+            "address": "Physical Address / Location",
+            "is_active": "Active Supplier",
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "e.g. Agro-Inputs Wholesale Ltd"}),
+            "contact_name": forms.TextInput(attrs={"placeholder": "e.g. Jane Doe"}),
+            "email": forms.EmailInput(attrs={"placeholder": "supplier@example.com"}),
+            "phone": forms.TextInput(attrs={"placeholder": "e.g. +254 700 000 000"}),
+            "address": forms.TextInput(attrs={"placeholder": "e.g. Main Street, Nairobi"}),
+        }
 
 
 class ReorderOrderForm(forms.Form):

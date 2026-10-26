@@ -1,22 +1,37 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block content %}
-  <!-- TODO: Adjust gross margins layout once the shared template is received from client. -->
-  <section class="card mb-6">
-    <div class="card__body">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="card__title">Gross Margins Report</h2>
-          <p class="text-muted">Analyze revenue, cost of goods sold, and gross margins by product and date range.</p>
-        </div>
-        <div class="flex gap-2">
-          <a class="btn btn--secondary btn--sm" href="?{{ request.GET.urlencode }}&format=csv">{% icon "download" %} Export CSV</a>
-          <a class="btn btn--secondary btn--sm" href="?{{ request.GET.urlencode }}&format=xlsx">{% icon "download" %} Export Excel</a>
-        </div>
-      </div>
+{% block page_actions %}
+  <div class="com-export__buttons">
+    <a class="btn btn--secondary btn--sm" href="?{{ request.GET.urlencode }}&format=csv">{% icon "download" %} Export CSV</a>
+    <a class="btn btn--secondary btn--sm" href="?{{ request.GET.urlencode }}&format=xlsx">{% icon "download" %} Export Excel</a>
+  </div>
+{% endblock %}
 
-      <form method="get" class="filter-bar">
+{% block content %}
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Gross margins overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Reports & Financial Analysis</span>
+      <h2 class="dash-hero__title">Gross <span class="dash-gradient">Margins.</span></h2>
+      <p class="dash-hero__note">Analyze revenue, cost of goods sold, and gross margins by product and date range.</p>
+    </div>
+  </section>
+
+  <!-- FILTERS & SUMMARY -->
+  <section class="card dash-panel mb-6">
+    <div class="card__header">
+      <h3 class="card__title">Filter Gross Margins</h3>
+    </div>
+    <div class="card__body">
+      <form method="get" class="filter-bar" style="margin-bottom: 0;">
         <label class="field filter-bar__field">
           <span class="field__label">Hub</span>
           <select class="select" name="hub">
@@ -47,7 +62,12 @@
           <input class="input" type="date" name="end" value="{{ end_date|date:'Y-m-d' }}">
         </label>
 
-        <button class="btn btn--primary" type="submit">{% icon "search" %} Filter</button>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <button class="btn btn--primary" type="submit">{% icon "search" %} Filter</button>
+          {% if request.GET %}
+            <a class="btn btn--ghost" href="{% url 'reports:gross_margins' %}">Reset</a>
+          {% endif %}
+        </div>
       </form>
 
       {% for err in errors %}
@@ -56,52 +76,69 @@
     </div>
   </section>
 
-  <section class="card">
-    <div class="card__body">
+  {% if totals %}
+    <section class="finance-summary mb-6">
+      {% include "components/stat_card.html" with label="Total Revenue" value=totals.revenue currency=CURRENCY_CODE %}
+      {% include "components/stat_card.html" with label="Total Cost (COGS)" value=totals.cost currency=CURRENCY_CODE %}
+      {% include "components/stat_card.html" with label="Gross Margin" value=totals.margin_amount currency=CURRENCY_CODE %}
+      {% include "components/stat_card.html" with label="Overall Margin %" value=totals.margin_pct|stringformat:"s" suffix="%" %}
+    </section>
+  {% endif %}
+
+  <!-- TABLE -->
+  <section class="card dash-panel">
+    <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card__title">Margin Breakdown by Product</h3>
+      <div class="flex gap-2">
+        <a class="btn btn--secondary btn--sm" href="?{{ request.GET.urlencode }}&format=csv">{% icon "download" %} CSV</a>
+        <a class="btn btn--secondary btn--sm" href="?{{ request.GET.urlencode }}&format=xlsx">{% icon "download" %} Excel</a>
+      </div>
+    </div>
+    <div class="card__body" style="padding: 0;">
       <div class="table-wrap">
-        <table class="table">
+        <table class="table finance-table">
           <thead>
             <tr>
               <th scope="col">Product SKU</th>
               <th scope="col">Product Name</th>
-              <th scope="col">Quantity Sold</th>
-              <th scope="col">Revenue</th>
-              <th scope="col">Cost</th>
-              <th scope="col">Gross Margin</th>
-              <th scope="col">Margin %</th>
+              <th scope="col" style="text-align: right;">Quantity Sold</th>
+              <th scope="col" style="text-align: right;">Revenue</th>
+              <th scope="col" style="text-align: right;">Cost</th>
+              <th scope="col" style="text-align: right;">Gross Margin</th>
+              <th scope="col" style="text-align: right;">Margin %</th>
             </tr>
           </thead>
           <tbody>
             {% for r in rows %}
               <tr>
-                <td>{{ r.product_sku|default:"—" }}</td>
-                <td>{{ r.product_name }}</td>
-                <td>{{ r.quantity }}</td>
-                <td>{{ CURRENCY_CODE }} {{ r.revenue|floatformat:2 }}</td>
-                <td>{{ CURRENCY_CODE }} {{ r.cost|floatformat:2 }}</td>
-                <td>{{ CURRENCY_CODE }} {{ r.margin_amount|floatformat:2 }}</td>
-                <td>{{ r.margin_pct }}%</td>
+                <td style="font-family: monospace; color: var(--color-muted);">{{ r.product_sku|default:"—" }}</td>
+                <td style="font-weight: 600;">{{ r.product_name }}</td>
+                <td style="text-align: right;">{{ r.quantity }}</td>
+                <td style="text-align: right;">{{ CURRENCY_CODE }} {{ r.revenue|floatformat:2 }}</td>
+                <td style="text-align: right;">{{ CURRENCY_CODE }} {{ r.cost|floatformat:2 }}</td>
+                <td style="text-align: right; font-weight: 600; color: var(--color-success, #10b981);">{{ CURRENCY_CODE }} {{ r.margin_amount|floatformat:2 }}</td>
+                <td style="text-align: right;">
+                  <span class="badge badge--success">{{ r.margin_pct }}%</span>
+                </td>
               </tr>
             {% empty %}
               <tr>
                 <td colspan="7">
-                  <div class="text-center py-8 text-muted">
-                    No sales data found for the selected filters.
-                  </div>
+                  {% include "partials/empty_state.html" with title="No sales data found" message="No sales data found for the selected filters or date range." %}
                 </td>
               </tr>
             {% endfor %}
           </tbody>
           {% if rows %}
             <tfoot>
-              <tr class="font-bold bg-muted">
+              <tr style="font-weight: bold; background-color: var(--color-bg-muted, rgba(0,0,0,0.02));">
                 <td>TOTALS</td>
                 <td></td>
-                <td>{{ totals.quantity }}</td>
-                <td>{{ CURRENCY_CODE }} {{ totals.revenue|floatformat:2 }}</td>
-                <td>{{ CURRENCY_CODE }} {{ totals.cost|floatformat:2 }}</td>
-                <td>{{ CURRENCY_CODE }} {{ totals.margin_amount|floatformat:2 }}</td>
-                <td>{{ totals.margin_pct }}%</td>
+                <td style="text-align: right;">{{ totals.quantity }}</td>
+                <td style="text-align: right;">{{ CURRENCY_CODE }} {{ totals.revenue|floatformat:2 }}</td>
+                <td style="text-align: right;">{{ CURRENCY_CODE }} {{ totals.cost|floatformat:2 }}</td>
+                <td style="text-align: right;">{{ CURRENCY_CODE }} {{ totals.margin_amount|floatformat:2 }}</td>
+                <td style="text-align: right;"><span class="badge badge--primary">{{ totals.margin_pct }}%</span></td>
               </tr>
             </tfoot>
           {% endif %}
@@ -109,4 +146,6 @@
       </div>
     </div>
   </section>
+
+</div>
 {% endblock %}

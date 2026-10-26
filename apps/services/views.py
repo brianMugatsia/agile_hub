@@ -289,11 +289,9 @@ class ServiceProviderListView(ScopedModelListView):
     export_url_name = "services:provider_export"
     columns = (
         {"label": "Name", "field": "name"},
-        {"label": "Type", "field": "provider_type"},
-        {"label": "Member", "field": "member__user__display_name"},
+        {"label": "Service Provide", "field": "service_category"},
         {"label": "Phone", "field": "phone_number"},
-        {"label": "Category", "field": "service_category"},
-        {"label": "Status", "field": "status"},
+        {"label": "Payment Status", "field": "payment_status_display"},
     )
     search_fields = ("name", "phone_number", "email", "member__user__first_name", "member__user__last_name")
     create_url_name = "services:provider_create"

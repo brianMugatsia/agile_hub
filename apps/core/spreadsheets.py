@@ -651,7 +651,7 @@ class MemberImportView(SpreadsheetImportView):
     required_headers = ("username", "first_name", "last_name")
     template_headers = (
         "username", "email", "first_name", "last_name", "phone_number",
-        "national_id", "address", "notes",
+        "national_id", "location", "notes",
     )
 
     def validate_rows(self, rows, user):
@@ -708,7 +708,7 @@ class MemberImportView(SpreadsheetImportView):
                 "phone_number": str(data.get("phone_number", "")).strip(),
                 "national_id": str(data.get("national_id", "")).strip(),
                 "hub_id": str(default_hub.pk) if default_hub else "",
-                "address": str(data.get("address", "")).strip(),
+                "location": str(data.get("location", "")).strip(),
                 "notes": str(data.get("notes", "")).strip(),
             })
 
@@ -724,7 +724,7 @@ class MemberImportView(SpreadsheetImportView):
             phone_number = row["phone_number"]
             national_id = row["national_id"]
             hub_id = row["hub_id"]
-            address = row["address"]
+            location = row["location"]
             notes = row["notes"]
 
             member_user, created = User.objects.get_or_create(
@@ -752,7 +752,7 @@ class MemberImportView(SpreadsheetImportView):
                     "hub": hub,
                     "phone_number": phone_number,
                     "national_id": national_id,
-                    "address": address,
+                    "location": location,
                     "notes": notes,
                 }
             )

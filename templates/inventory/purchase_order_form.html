@@ -1,25 +1,64 @@
 {% extends "base.html" %}
-{% load ui_tags %}
+{% load static ui_tags %}
 
 {% block content %}
-  <section class="card card--wide">
-    <div class="card__body stack">
-      <p>Creates an order for each active product at or below its reorder level, targeting twice the reorder level.</p>
+<div class="dash" style="max-width: 800px; margin: 0 auto;">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Create purchase order header">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Inventory & Procurement</span>
+      <h2 class="dash-hero__title">Create Reorder <span class="dash-gradient">Purchase Order.</span></h2>
+      <p class="dash-hero__note">Automatically scan active products at or below their reorder level for the selected hub and generate a replenishment purchase order.</p>
+    </div>
+  </section>
+
+  <section class="card dash-panel">
+    <div class="card__header">
+      <h3 class="card__title">Order Configuration</h3>
+    </div>
+    <div class="card__body">
       {% if not form.fields.supplier.queryset.exists %}
-        <p class="alert alert--danger">Add an active supplier before creating an order.</p>
-        {% if perms.inventory.add_supplier %}<a class="btn btn--secondary" href="{% url 'inventory:supplier_create' %}">Add supplier</a>{% endif %}
+        <div class="alert alert--danger" role="alert" style="margin-bottom: 1rem;">
+          No active suppliers found. Please add an active supplier before creating an order.
+        </div>
+        {% if perms.inventory.add_supplier %}
+          <a class="btn btn--primary" href="{% url 'inventory:supplier_create' %}">Add supplier now</a>
+        {% endif %}
       {% else %}
-        <form method="post" class="stack">
+        <form method="post" class="stack" style="display: flex; flex-direction: column; gap: 1.25rem;">
           {% csrf_token %}
-          {% for field in form %}
-            {% include "components/form_field.html" with field=field %}
-          {% endfor %}
-          <div class="cluster">
+
+          {% if form.non_field_errors %}
+            <div class="alert alert--danger" role="alert">
+              {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for field in form %}
+              <div class="form-field{% if field.errors %} form-field--invalid{% endif %}" style="display: flex; flex-direction: column; gap: .35rem;">
+                {{ field.label_tag }}
+                {{ field|add_class:"input" }}
+                {% if field.help_text %}<p class="form-field__help" style="color: var(--text-muted); font-size: 0.85rem;">{{ field.help_text }}</p>{% endif %}
+                {% for error in field.errors %}<span class="form-field__error" role="alert" style="color: var(--color-danger, #dc2626); font-size: 0.85rem;">{{ error }}</span>{% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="cluster" style="display: flex; gap: 1rem; margin-top: 1rem;">
             <button class="btn btn--primary" type="submit">Create from low-stock items</button>
-            <a class="btn btn--ghost" href="{% url 'inventory:purchase_orders' %}">Cancel</a>
+            <a class="btn btn--ghost" href="{% url 'inventory:purchase_orders' %}">Cancel & return</a>
           </div>
         </form>
       {% endif %}
     </div>
   </section>
+
+</div>
 {% endblock %}

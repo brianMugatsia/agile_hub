@@ -8,6 +8,7 @@ from .views import (
     PurchaseOrderReceiveView,
     StockMovementCreateView,
     SupplierCreateView,
+    SupplierDeleteView,
     SupplierListView,
     SupplierUpdateView,
 )
@@ -22,6 +23,7 @@ urlpatterns = [
     path("suppliers/", SupplierListView.as_view(), name="suppliers"),
     path("suppliers/create/", SupplierCreateView.as_view(), name="supplier_create"),
     path("suppliers/<int:pk>/edit/", SupplierUpdateView.as_view(), name="supplier_edit"),
+    path("suppliers/<int:pk>/delete/", SupplierDeleteView.as_view(), name="supplier_delete"),
     path("import/", InventoryImportView.as_view(), name="import"),
     path("import/template.xlsx", InventoryImportTemplateView.as_view(), name="import_template"),
     path("export/<str:file_format>/", InventoryExportView.as_view(), name="export"),

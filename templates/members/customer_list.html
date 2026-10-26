@@ -1,0 +1,53 @@
+{% extends "components/record_list.html" %}
+{% load ui_tags %}
+
+{% block content %}
+  <!-- STAT CARDS -->
+  <div class="animated-stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <a href="{% url 'members:customers_list' %}" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #eff6ff); border: 1px solid #bfdbfe; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #1e40af; text-transform: uppercase;">Total Clients & Customers</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #1e3a8a; display: block; margin-top: 0.25rem;">{{ total_customers_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #2563eb;">All registered leads, farmers & organizations</span>
+    </a>
+    <a href="{% url 'members:customers_list' %}?category=lead" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #fefce8); border: 1px solid #fef08a; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #854d0e; text-transform: uppercase;">Leads (Pending Upgrade)</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #713f12; display: block; margin-top: 0.25rem;">{{ leads_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #a16207;">Customers who have not upgraded to farmers</span>
+    </a>
+    <a href="{% url 'members:customers_list' %}?category=farmer" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #f0fdf4); border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #166534; text-transform: uppercase;">Farmers</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #14532d; display: block; margin-top: 0.25rem;">{{ farmers_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #15803d;">Active farming members</span>
+    </a>
+    <a href="{% url 'members:customers_list' %}?category=organization" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #fdf4ff); border: 1px solid #f5d0fe; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #86198f; text-transform: uppercase;">Organizations</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #701a75; display: block; margin-top: 0.25rem;">{{ organizations_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #a21caf;">Organization and corporate accounts</span>
+    </a>
+  </div>
+
+  <style>
+    .animated-stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+  </style>
+
+  <!-- CATEGORY FILTER TABS -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; flex-wrap: wrap;">
+    <a href="{% url 'members:customers_list' %}" class="shift-btn {% if not current_category %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if not current_category %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if not current_category %}#ffffff{% else %}#64748b{% endif %};">
+      All Customers & Leads
+    </a>
+    <a href="{% url 'members:customers_list' %}?category=lead" class="shift-btn {% if current_category == 'lead' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if current_category == 'lead' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if current_category == 'lead' %}#ffffff{% else %}#64748b{% endif %};">
+      Leads (Not Upgraded)
+    </a>
+    <a href="{% url 'members:customers_list' %}?category=farmer" class="shift-btn {% if current_category == 'farmer' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if current_category == 'farmer' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if current_category == 'farmer' %}#ffffff{% else %}#64748b{% endif %};">
+      Farmers
+    </a>
+    <a href="{% url 'members:customers_list' %}?category=organization" class="shift-btn {% if current_category == 'organization' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if current_category == 'organization' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if current_category == 'organization' %}#ffffff{% else %}#64748b{% endif %};">
+      Organizations
+    </a>
+  </div>
+
+  {{ block.super }}
+{% endblock %}

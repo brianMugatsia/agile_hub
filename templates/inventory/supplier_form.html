@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash" style="max-width: 800px; margin: 0 auto;">
+  <section class="card dash-panel">
+    <div class="card__header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <h3 class="card__title">{{ page_title }}</h3>
+      {% if object and perms.inventory.delete_supplier %}
+        <form method="post" action="{% url 'inventory:supplier_delete' object.pk %}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete supplier {{ object.name }}?');">
+          {% csrf_token %}
+          <button class="btn btn--danger btn--sm" type="submit">Delete supplier</button>
+        </form>
+      {% endif %}
+    </div>
+    <div class="card__body">
+      <form method="post" data-validate data-loading novalidate class="stack" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert--danger" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          {% for field in form %}
+            <div class="form-field{% if field.errors %} form-field--invalid{% endif %}" style="display: flex; flex-direction: column; gap: .35rem;">
+              {{ field.label_tag }}
+              {{ field|add_class:"input" }}
+              {% if field.help_text %}<p class="form-field__help" style="color: var(--text-muted); font-size: 0.85rem;">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}<span class="form-field__error" role="alert" style="color: var(--color-danger, #dc2626); font-size: 0.85rem;">{{ error }}</span>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="cluster" style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button class="btn btn--primary" type="submit">{{ submit_label|default:"Save supplier" }}</button>
+          <a class="btn btn--ghost" href="{% url 'inventory:suppliers' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

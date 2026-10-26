@@ -29,6 +29,7 @@ NAV_ITEMS = (
     NavItem("Dashboard", "core:dashboard", "grid", EVERYONE, "Overview"),
     NavItem("Notifications", "notifications:list", "inbox", EVERYONE, "Overview"),
     NavItem("Hubs", "hubs:list", "map-pin", (SA,), "Operations"),
+    NavItem("Clients & Customers", "members:customers_list", "users", (SA, AD, HM, BN), "Operations"),
     NavItem("Members", "members:list", "heart", (SA, AD, HM, BN), "Operations"),
     NavItem("Member Contributions", "members:contributions", "briefcase", (SA, AD, HM, FO, BN, VW), "Operations"),
     NavItem("Products", "products:list", "package", (SA, AD, HM, FO, AG, VW), "Operations"),

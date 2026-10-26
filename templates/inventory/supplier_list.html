@@ -1,33 +1,96 @@
 {% extends "base.html" %}
+{% load static ui_tags %}
 
 {% block page_actions %}
   {% if perms.inventory.add_supplier %}
-    <a class="btn btn--primary" href="{% url 'inventory:supplier_create' %}">Add supplier</a>
+    <div class="com-export__buttons">
+      <a class="btn btn--primary" href="{% url 'inventory:supplier_create' %}">
+        {% icon "plus" %} Add supplier
+      </a>
+      <a class="btn btn--secondary" href="{% url 'inventory:purchase_orders' %}">
+        {% icon "shopping-cart" %} Purchase orders
+      </a>
+    </div>
   {% endif %}
 {% endblock %}
 
 {% block content %}
-  <section class="card">
-    <div class="card__body">
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Suppliers overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Inventory & Procurement</span>
+      <h2 class="dash-hero__title">Supplier <span class="dash-gradient">Directory.</span></h2>
+      <p class="dash-hero__note">Manage vendors, contact details, active status, and procurement relationships for stock reorders.</p>
+    </div>
+  </section>
+
+  <!-- SUPPLIERS TABLE -->
+  <section class="card dash-panel">
+    <div class="card__header">
+      <h3 class="card__title">All Suppliers</h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
       <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th scope="col">Supplier</th><th scope="col">Contact</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Status</th>{% if can_edit_suppliers %}<th scope="col">Actions</th>{% endif %}</tr></thead>
+        <table class="table finance-table">
+          <thead>
+            <tr>
+              <th scope="col">Supplier Name</th>
+              <th scope="col">Contact Person</th>
+              <th scope="col">Email</th>
+              <th scope="col">Phone</th>
+              <th scope="col">Status</th>
+              {% if can_manage_suppliers %}<th scope="col" style="text-align: right;">Actions</th>{% endif %}
+            </tr>
+          </thead>
           <tbody>
             {% for supplier in suppliers %}
               <tr>
-                <td>{{ supplier.name }} <span class="text-muted">({{ supplier.code }})</span></td>
+                <td style="font-weight: 600;">{{ supplier.name }}</td>
                 <td>{{ supplier.contact_name|default:"—" }}</td>
                 <td>{{ supplier.email|default:"—" }}</td>
                 <td>{{ supplier.phone|default:"—" }}</td>
-                <td>{% if supplier.is_active %}Active{% else %}Inactive{% endif %}</td>
-                {% if can_edit_suppliers %}<td><a class="btn btn--secondary btn--sm" href="{% url 'inventory:supplier_edit' supplier.pk %}">Edit</a></td>{% endif %}
+                <td>
+                  {% if supplier.is_active %}
+                    <span class="badge badge--success">Active</span>
+                  {% else %}
+                    <span class="badge badge--neutral">Inactive</span>
+                  {% endif %}
+                </td>
+                {% if can_manage_suppliers %}
+                  <td style="text-align: right;">
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                      {% if perms.inventory.change_supplier %}
+                        <a class="btn btn--secondary btn--sm" href="{% url 'inventory:supplier_edit' supplier.pk %}">Edit</a>
+                      {% endif %}
+                      {% if perms.inventory.delete_supplier %}
+                        <form method="post" action="{% url 'inventory:supplier_delete' supplier.pk %}" style="display:inline; margin:0;" onsubmit="return confirm('Are you sure you want to delete supplier {{ supplier.name }}?');">
+                          {% csrf_token %}
+                          <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </td>
+                {% endif %}
               </tr>
             {% empty %}
-              <tr><td colspan="{% if can_edit_suppliers %}6{% else %}5{% endif %}">No suppliers have been added.</td></tr>
+              <tr>
+                <td colspan="{% if can_manage_suppliers %}6{% else %}5{% endif %}">
+                  {% include "partials/empty_state.html" with title="No suppliers found" message="Add suppliers to create reorder purchase orders and manage stock replenishment." %}
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
   </section>
+
+</div>
 {% endblock %}

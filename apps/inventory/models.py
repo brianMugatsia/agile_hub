@@ -1,4 +1,5 @@
 from decimal import Decimal
+import uuid
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -57,7 +58,7 @@ class InventoryTransaction(models.Model):
 
 
 class Supplier(models.Model):
-    code = models.CharField(max_length=40, unique=True)
+    code = models.CharField(max_length=40, unique=True, blank=True)
     name = models.CharField(max_length=180)
     contact_name = models.CharField(max_length=120, blank=True)
     email = models.EmailField(blank=True)
@@ -69,8 +70,17 @@ class Supplier(models.Model):
     class Meta:
         ordering = ["name"]
 
+    def save(self, *args, **kwargs):
+        if not self.code:
+            base_code = "".join(w[0] for w in self.name.split()).upper() or "SUP"
+            candidate = f"{base_code}-{uuid.uuid4().hex[:4].upper()}"
+            while Supplier.objects.filter(code=candidate).exists():
+                candidate = f"{base_code}-{uuid.uuid4().hex[:4].upper()}"
+            self.code = candidate
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.code} — {self.name}"
+        return f"{self.name} ({self.code})" if self.code else self.name
 
 
 class PurchaseOrder(models.Model):

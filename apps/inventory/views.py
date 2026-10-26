@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import FormView, ListView
@@ -81,7 +82,11 @@ class SupplierListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, L
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_edit_suppliers"] = self.request.user.has_perm("inventory.change_supplier")
+        user = self.request.user
+        context["can_manage_suppliers"] = (
+            user.has_perm("inventory.change_supplier")
+            or user.has_perm("inventory.delete_supplier")
+        )
         return context
 
 
@@ -91,6 +96,8 @@ class SupplierCreateView(ProtectedCreateView):
     permission_required = "inventory.add_supplier"
     page_title = "Add supplier"
     success_url_name = "inventory:suppliers"
+    template_name = "inventory/supplier_form.html"
+    submit_label = "Add supplier"
 
 
 class SupplierUpdateView(ProtectedUpdateView):
@@ -100,6 +107,22 @@ class SupplierUpdateView(ProtectedUpdateView):
     page_title = "Edit supplier"
     success_url_name = "inventory:suppliers"
     cancel_url_name = "inventory:suppliers"
+    template_name = "inventory/supplier_form.html"
+    submit_label = "Save changes"
+
+
+class SupplierDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = "inventory.delete_supplier"
+
+    def post(self, request, pk):
+        supplier = get_object_or_404(Supplier, pk=pk)
+        try:
+            supplier.delete()
+        except ProtectedError:
+            messages.error(request, "Cannot delete this supplier because purchase orders are linked to it.")
+        else:
+            messages.success(request, "Supplier deleted.")
+        return redirect("inventory:suppliers")
 
 
 class PurchaseOrderListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, ListView):

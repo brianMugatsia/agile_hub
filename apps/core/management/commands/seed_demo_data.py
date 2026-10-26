@@ -178,7 +178,7 @@ class Command(BaseCommand):
                 user=seller_user,
                 defaults={
                     "phone_number": f"07334455{i:02d}",
-                    "address": f"{hub.name} Area",
+                    "location": f"{hub.name} Area",
                     "hub": hub,
                     "notes": f"Member sales agent #{i}" if not is_member_seller else f"Active member seller #{i}",
                 },
@@ -293,7 +293,7 @@ class Command(BaseCommand):
                     user=m_user,
                     defaults={
                         "phone_number": f"07445566{m:02d}",
-                        "address": f"{hub.region} Agricultural Zone",
+                        "location": f"{hub.region} Agricultural Zone",
                         "hub": hub,
                         "notes": f"Member business outlet in {hub.name}",
                     },

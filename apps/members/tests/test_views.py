@@ -4,6 +4,7 @@ from django.urls import reverse
 from apps.accounts.roles import Role
 from apps.members.models import MemberProfile, Business
 from apps.hubs.models import Hub, HubMembership
+from apps.services.models import ServiceType, ServiceCategory
 
 pytestmark = pytest.mark.django_db
 
@@ -35,14 +36,14 @@ def test_admin_can_add_and_edit_members_and_businesses(client, make_user, roles)
             "last_name": "Njeri Updated",
             "phone_number": "0722000000",
             "national_id": "",
-            "address": "Nairobi",
+            "location": "Nairobi",
             "notes": "",
         },
     )
     assert member_update.status_code == 302
     member.refresh_from_db()
     assert member.phone_number == "0722000000"
-    assert member.address == "Nairobi"
+    assert member.location == "Nairobi"
     assert member.user.first_name == "Amina Updated"
     assert member.user.last_name == "Njeri Updated"
 
@@ -76,7 +77,7 @@ def test_admin_can_edit_profile_with_inactive_member_user(client, make_user, rol
             "last_name": "User",
             "phone_number": "0712345678",
             "national_id": "",
-            "address": "",
+            "location": "",
             "notes": "",
         },
     )
@@ -116,7 +117,7 @@ def test_member_can_edit_only_their_own_profile_and_businesses(
             "last_name": "User",
             "phone_number": "0700000000",
             "national_id": "",
-            "address": "",
+            "location": "",
             "notes": "",
         },
     )
@@ -305,15 +306,19 @@ def test_download_member_and_business_import_templates(client, make_user, roles)
     assert res_biz["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-def test_admin_can_add_member_without_hub_dropdown(client, make_user, roles):
+def test_admin_can_add_member_with_location_and_services(client, make_user, roles):
     admin = make_user(role=Role.ADMIN)
     hub = Hub.objects.create(code="NEW-HUB", name="New Hub")
     admin.hub = hub
     admin.save()
+    service1 = ServiceType.objects.create(code="SRV-1", name="Ripening Service", category=ServiceCategory.RIPENING)
+    service2 = ServiceType.objects.create(code="SRV-2", name="Transport Service", category=ServiceCategory.TRANSPORT)
     client.force_login(admin)
 
     response = client.get(reverse("members:create"))
     assert response.status_code == 200
+    assert b"Assigned Services" in response.content
+    assert b"Location" in response.content
 
     create_res = client.post(
         reverse("members:create"),
@@ -323,14 +328,23 @@ def test_admin_can_add_member_without_hub_dropdown(client, make_user, roles):
             "email": "jane@example.com",
             "phone_number": "0799999999",
             "national_id": "12345678",
-            "address": "Test Address",
+            "location": "Test Location",
+            "services": [str(service1.pk), str(service2.pk)],
             "notes": "Test Notes",
         },
     )
     assert create_res.status_code == 302
     profile = MemberProfile.objects.get(user__email="jane@example.com")
     assert profile.phone_number == "0799999999"
+    assert profile.location == "Test Location"
     assert profile.hub == hub
+    assert set(profile.services.all()) == {service1, service2}
+
+    detail_res = client.get(reverse("members:detail", args=[profile.pk]))
+    assert detail_res.status_code == 200
+    assert b"Test Location" in detail_res.content
+    assert b"Ripening Service" in detail_res.content
+    assert b"Transport Service" in detail_res.content
 
 
 def test_contribution_list_has_search_bar_without_shard_or_hub_filters(client, make_user, roles):
@@ -345,3 +359,32 @@ def test_contribution_list_has_search_bar_without_shard_or_hub_filters(client, m
     assert b"Total Collected" in response.content
     assert b"Number of Members Paid" in response.content
     assert b"Number of Members Not Paid" in response.content
+
+
+def test_customer_leads_and_categories_and_upgrade(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="CUST-HUB", name="Customer Hub")
+    client.force_login(admin)
+
+    lead = MemberProfile.objects.create(
+        customer_type=MemberProfile.CustomerType.LEAD,
+        name="Prospective Customer",
+        phone_number="0700000000",
+        national_id="999999",
+        location="Farm Valley",
+        crops="Maize, Beans, Coffee",
+        hub=hub,
+    )
+
+    # Test customers list with category=lead
+    res = client.get(reverse("members:customers_list") + "?category=lead")
+    assert res.status_code == 200
+    assert b"Prospective Customer" in res.content
+    assert b"Maize, Beans, Coffee" in res.content
+
+    # Test upgrade lead to farmer
+    upgrade_res = client.post(reverse("members:customer_upgrade", args=[lead.pk]))
+    assert upgrade_res.status_code == 302
+    lead.refresh_from_db()
+    assert lead.customer_type == MemberProfile.CustomerType.FARMER
+

@@ -130,6 +130,14 @@ class ServiceProvider(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_provider_type_display()} - {self.get_status_display()})"
 
+    @property
+    def payment_status_display(self):
+        if hasattr(self, "commissions") and self.commissions.filter(status="PAID").exists():
+            return "Paid"
+        if hasattr(self, "commissions") and self.commissions.exists():
+            return "Partial / Pending"
+        return "No Records"
+
 
 class HubResource(models.Model):
     """Specific physical machine, ripening room, or equipment stationed at a hub."""

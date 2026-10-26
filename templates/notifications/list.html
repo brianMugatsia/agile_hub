@@ -2,27 +2,60 @@
 {% load ui_tags %}
 
 {% block content %}
-  <section class="card">
-    <div class="card__body stack">
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Notifications overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Activity & Alerts</span>
+      <h2 class="dash-hero__title">System <span class="dash-gradient">Notifications.</span></h2>
+      <p class="dash-hero__note">Stay updated with approvals, stock reorders, sales events, and platform activity.</p>
+    </div>
+  </section>
+
+  <!-- NOTIFICATIONS LIST PANEL -->
+  <section class="card dash-panel">
+    <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card__title">Inbox</h3>
+    </div>
+    <div class="card__body stack" style="padding: 1.5rem;">
       {% for item in object_list %}
-        <article class="notification-row{% if not item.read_at %} notification-row--unread{% endif %}">
-          <div class="notification-row__main">
-            <h2 class="notification-row__title">
-              {% if item.target_url %}<a href="{{ item.target_url }}">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
-            </h2>
-            <p>{{ item.message }}</p>
+        <article class="notification-row{% if not item.read_at %} notification-row--unread{% endif %}" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 0; border-bottom: 1px solid var(--color-border, #e5e7eb);">
+          <div class="notification-row__main" style="flex: 1; padding-right: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+              <h2 class="notification-row__title" style="font-size: 1rem; font-weight: 600; margin: 0;">
+                {% if item.target_url %}<a href="{{ item.target_url }}" style="color: inherit; text-decoration: none;">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+              </h2>
+              {% if not item.read_at %}
+                <span class="badge badge--primary" style="font-size: 0.7rem;">New</span>
+              {% else %}
+                <span class="badge badge--neutral" style="font-size: 0.7rem;">Read</span>
+              {% endif %}
+            </div>
+            <p style="margin: 0 0 0.5rem 0; color: var(--color-text-muted, #4b5563);">{{ item.message }}</p>
             <small class="text-muted">{{ item.created_at|date:"M j, Y · H:i" }}</small>
           </div>
           {% if not item.read_at %}
-            <form method="post" action="{% url 'notifications:mark_read' item.pk %}">
-              {% csrf_token %}<button class="btn btn--sm btn--secondary" type="submit">Mark read</button>
+            <form method="post" action="{% url 'notifications:mark_read' item.pk %}" style="margin: 0;">
+              {% csrf_token %}
+              <button class="btn btn--sm btn--secondary" type="submit">Mark read</button>
             </form>
           {% endif %}
         </article>
       {% empty %}
         {% include "partials/empty_state.html" with title="You’re all caught up" message="New approvals and updates will appear here." %}
       {% endfor %}
-      {% include "partials/pagination.html" %}
+      
+      <div style="margin-top: 1rem;">
+        {% include "partials/pagination.html" %}
+      </div>
     </div>
   </section>
+
+</div>
 {% endblock %}

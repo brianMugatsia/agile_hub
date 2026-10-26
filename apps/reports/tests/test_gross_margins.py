@@ -56,7 +56,8 @@ def test_gross_margins_report_view_and_export(client, make_user):
     # HTML view
     response = client.get(reverse("reports:gross_margins"))
     assert response.status_code == 200
-    assert b"Gross Margins Report" in response.content
+    assert b"Gross" in response.content
+    assert b"Margins" in response.content
     assert b"Fertilizer" in response.content
     assert b"200.00" in response.content  # Revenue (2 * 100)
     assert b"120.00" in response.content  # Cost (2 * 60)

@@ -10,6 +10,10 @@ from .views import (
     MemberCreateView,
     MemberDetailView,
     MemberListView,
+    CustomerListView,
+    CustomerCreateView,
+    CustomerUpdateView,
+    CustomerUpgradeView,
     MemberSalesAgentsListView,
     MemberServiceProvidersListView,
     MemberUpdateView,
@@ -21,6 +25,10 @@ from .views import (
 app_name = "members"
 
 urlpatterns = [
+    path("customers/", CustomerListView.as_view(), name="customers_list"),
+    path("customers/create/", CustomerCreateView.as_view(), name="customer_create"),
+    path("customers/<int:pk>/edit/", CustomerUpdateView.as_view(), name="customer_edit"),
+    path("customers/<int:pk>/upgrade/", CustomerUpgradeView.as_view(), name="customer_upgrade"),
     path("", MemberListView.as_view(), name="list"),
     path("sales-agents/", MemberSalesAgentsListView.as_view(), name="sales_agents"),
     path("service-providers/", MemberServiceProvidersListView.as_view(), name="service_providers"),

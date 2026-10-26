@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero" data-reveal="up" aria-label="Customer profile">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{{ customer.get_customer_type_display }} profile</span>
+      <div class="ben-id">
+        <span class="ben-id__avatar" aria-hidden="true">{{ customer.display_name|default:"?"|slice:":1"|upper }}</span>
+        <div class="ben-id__text">
+          <h2 class="dash-hero__title">{{ customer.display_name }}</h2>
+          <p class="dash-hero__note">Customer / Lead Account</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hub-manager">
+      <span class="hub-manager__avatar" aria-hidden="true"><svg class="dash-icon" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg></span>
+      <div class="hub-manager__text">
+        <span class="hub-manager__label">Assigned hub</span>
+        <strong class="hub-manager__name">{{ customer.hub|default:"No hub assigned" }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- DETAILS -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+    <div class="card__body">
+      <div class="dashboard-section__heading">
+        <h2 class="card__title">Customer Profile & Details</h2>
+        <div class="flex gap-2">
+          {% if customer.is_lead and can_edit_customer %}
+            <form action="{% url 'members:customer_upgrade' customer.pk %}" method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--primary btn--sm">Upgrade to Farmer</button>
+            </form>
+          {% endif %}
+          {% if can_edit_customer %}<a class="btn btn--secondary btn--sm" href="{% url 'members:customer_edit' customer.pk %}">Edit customer</a>{% endif %}
+          <a class="btn btn--secondary btn--sm" href="{% url 'members:customers_list' %}">Back to customers</a>
+        </div>
+      </div>
+      <dl class="hub-facts">
+        <div class="hub-fact">
+          <dt>Customer Name</dt><dd>{{ customer.display_name }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Category</dt><dd><span class="badge badge--info">{{ customer.get_customer_type_display }}</span></dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Phone Number</dt><dd>{{ customer.phone_number|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>National ID / ID</dt><dd>{{ customer.national_id|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Location</dt><dd>{{ customer.location|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Crops Grown</dt><dd>{{ customer.crops|default:"Maize, Beans, Coffee" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Loop Feedback</dt><dd>{{ customer.loop_feedback|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Hub</dt><dd>{{ customer.hub|default:"—" }}</dd>
+        </div>
+        <div class="hub-fact">
+          <dt>Offered Services</dt>
+          <dd>
+            {% if assigned_services %}
+              {% for s in assigned_services %}<span class="badge badge--success">{{ s.name }}</span> {% endfor %}
+            {% else %}
+              —
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
+{% endblock %}
