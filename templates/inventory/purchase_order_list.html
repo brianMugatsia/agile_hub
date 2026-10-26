@@ -1,39 +1,104 @@
 {% extends "base.html" %}
+{% load static ui_tags %}
 
 {% block page_actions %}
   {% if can_create_order %}
-    <a class="btn btn--primary" href="{% url 'inventory:purchase_order_create' %}">Create reorder order</a>
-    <a class="btn btn--secondary" href="{% url 'inventory:suppliers' %}">Suppliers</a>
+    <div class="com-export__buttons">
+      <a class="btn btn--primary" href="{% url 'inventory:purchase_order_create' %}">
+        {% icon "plus" %} Create reorder order
+      </a>
+      <a class="btn btn--secondary" href="{% url 'inventory:suppliers' %}">
+        {% icon "users" %} Suppliers
+      </a>
+    </div>
   {% endif %}
 {% endblock %}
 
 {% block content %}
-  <form method="get" class="filter-bar card card__body" aria-label="Filter purchase orders by hub">
-    <label class="field filter-bar__field">
-      <span class="field__label">Hub</span>
-      <select class="select" name="hub">
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Purchase orders overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Inventory & Procurement</span>
+      <h2 class="dash-hero__title">Purchase <span class="dash-gradient">Orders.</span></h2>
+      <p class="dash-hero__note">Manage stock reorder purchase orders, supplier fulfillment, and receive partial or full shipments.</p>
+    </div>
+  </section>
+
+  <!-- FILTER BAR -->
+  <form method="get" class="filter-bar card card__body dash-panel" aria-label="Filter purchase orders by hub" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+    <div class="form-field" style="flex: 1; min-width: 220px;">
+      <label for="hub">Hub scope</label>
+      <select class="select" id="hub" name="hub">
         <option value="">All hubs</option>
         {% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
       </select>
-    </label>
-    <button class="btn btn--secondary" type="submit">Filter</button>
+    </div>
+    <button class="btn btn--secondary" type="submit">Filter orders</button>
   </form>
+
   {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
-  <section class="card">
-    <div class="card__body">
+
+  <!-- ORDERS TABLE -->
+  <section class="card dash-panel">
+    <div class="card__header">
+      <h3 class="card__title">Order List</h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
       <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th scope="col">Order</th><th scope="col">Supplier</th><th scope="col">Items</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
+        <table class="table finance-table">
+          <thead>
+            <tr>
+              <th scope="col">Order</th>
+              <th scope="col">Supplier</th>
+              <th scope="col">Items & Fulfillment</th>
+              <th scope="col">Status</th>
+              <th scope="col">Created</th>
+              <th scope="col" style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
           <tbody>
             {% for order in orders %}
               <tr>
-                <td>#{{ order.pk }}</td><td>{{ order.supplier.name }}</td>
-                <td>{% for line in order.lines.all %}{{ line.product.name }}: {{ line.quantity_received }}/{{ line.quantity_ordered }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
-                <td>{{ order.get_status_display }}</td><td>{{ order.created_at|date:"Y-m-d" }}</td>
-                <td>{% if order.status != "RECEIVED" and perms.inventory.change_purchaseorder %}<a href="{% url 'inventory:purchase_order_receive' order.pk %}">Receive stock</a>{% else %}—{% endif %}</td>
+                <td style="font-weight: 600;">#{{ order.pk }}</td>
+                <td>{{ order.supplier.name }}</td>
+                <td>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    {% for line in order.lines.all %}
+                      <span style="font-size: 0.875rem;"><strong>{{ line.product.name }}</strong>: {{ line.quantity_received }} / {{ line.quantity_ordered }} received</span>
+                    {% endfor %}
+                  </div>
+                </td>
+                <td>
+                  {% if order.status == "RECEIVED" %}
+                    <span class="badge badge--success">Received</span>
+                  {% elif order.status == "PARTIAL" %}
+                    <span class="badge badge--warning">Partial</span>
+                  {% else %}
+                    <span class="badge badge--info">Pending</span>
+                  {% endif %}
+                </td>
+                <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                <td style="text-align: right;">
+                  {% if order.status != "RECEIVED" and perms.inventory.change_purchaseorder %}
+                    <a class="btn btn--primary btn--sm" href="{% url 'inventory:purchase_order_receive' order.pk %}">Receive stock</a>
+                  {% else %}
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">Completed</span>
+                  {% endif %}
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="6">No purchase orders yet.</td></tr>
+              <tr>
+                <td colspan="6">
+                  {% include "partials/empty_state.html" with title="No purchase orders" message="Create a reorder purchase order when stock reaches reorder levels." %}
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -41,4 +106,6 @@
       {% include "partials/pagination.html" %}
     </div>
   </section>
+
+</div>
 {% endblock %}
