@@ -20,6 +20,7 @@ from .models import MemberProfile, Business
 
 def _provider_stats():
     return {
+        "total_providers_count": ServiceProvider.objects.count(),
         "active_sales_agents_count": User.objects.filter(role=Role.SALES_AGENT, is_active=True).count() + MemberProfile.objects.filter(user__role=Role.MEMBER, customer_type=MemberProfile.CustomerType.FARMER).count(),
         "dormant_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.DORMANT).count(),
         "active_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.ACTIVE).count(),
@@ -72,6 +73,7 @@ class CustomerListView(ScopedModelListView):
     create_url_name = "members:customer_create"
     create_label = "Add customer"
     create_permission = "members.add_memberprofile"
+    row_detail_url_name = "members:customer_detail"
     row_edit_url_name = "members:customer_edit"
     row_edit_permission = "members.change_memberprofile"
     filter_hub = False
@@ -134,7 +136,35 @@ class CustomerUpgradeView(LoginRequiredMixin, PermissionRequiredMixin, View):
         )
         profile.customer_type = MemberProfile.CustomerType.FARMER
         profile.save()
-        return redirect("members:customers_list")
+        return redirect("members:customer_detail", pk=pk)
+
+
+class CustomerDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
+    model = MemberProfile
+    template_name = "members/customer_detail.html"
+    context_object_name = "customer"
+    permission_required = "members.view_memberprofile"
+    page_title = "Customer Profile"
+
+    def get_queryset(self):
+        return scope_queryset(
+            MemberProfile.objects.select_related("user", "hub").prefetch_related("services"),
+            self.request.user,
+        )
+
+    def get_breadcrumbs(self):
+        return [
+            ("Clients & Customers", reverse("members:customers_list")),
+            (self.object.display_name, None),
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            assigned_services=self.object.services.all(),
+            can_edit_customer=self.request.user.has_perm("members.change_memberprofile"),
+        )
+        return context
 
 
 class MemberSalesAgentsListView(ScopedModelListView):

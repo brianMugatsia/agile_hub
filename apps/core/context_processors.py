@@ -36,6 +36,7 @@ NAV_ITEMS = (
     NavItem("Inventory", "inventory:list", "layers", (SA, AD, HM, FO), "Operations"),
     NavItem("Purchase orders", "inventory:purchase_orders", "package", (SA, AD, HM), "Operations"),
     NavItem("Service Bookings", "services:booking_list", "calendar", (SA, AD, HM, FO, AG, BN, VW), "Operations"),
+    NavItem("Service Providers", "services:provider_list", "user-check", (SA, AD, HM, FO), "Operations"),
     NavItem("Equipment & Facilities", "services:resource_list", "truck", (SA, AD, HM, FO), "Operations"),
     NavItem("Service Catalog", "services:service_type_list", "list", (SA, AD, HM), "Operations"),
     NavItem("Sales", "sales:list", "shopping-cart", (SA, AD, HM, FO, AG, VW), "Operations"),

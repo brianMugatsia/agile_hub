@@ -28,6 +28,7 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
     create_url_name = ""
     create_label = "Add record"
     create_permission = ""
+    row_detail_url_name = ""
     row_edit_url_name = ""
     row_edit_permission = ""
     row_delete_url_name = ""
@@ -190,6 +191,7 @@ class ScopedModelListView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin
             create_label=self.create_label,
             search_query=self.request.GET.get("q", ""),
             search_fields=self.search_fields,
+            row_detail_url_name=self.row_detail_url_name,
             can_create=bool(
                 self.create_url_name
                 and self.create_permission

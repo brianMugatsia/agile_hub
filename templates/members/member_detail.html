@@ -55,6 +55,8 @@
             </form>
           {% endif %}
           {% if can_edit_member %}<a class="btn btn--secondary btn--sm" href="{% url 'members:edit' member.pk %}">Edit member</a>{% endif %}
+          {% if member.service_providers.first %}<a class="btn btn--secondary btn--sm" href="{{ member.service_providers.first.get_absolute_url }}">View provider profile</a>{% endif %}
+          <a class="btn btn--secondary btn--sm" href="{% url 'members:customer_detail' member.pk %}">View customer profile</a>
           <a class="btn btn--secondary btn--sm" href="{% url 'members:customers_list' %}">Back to customers</a>
         </div>
       </div>
@@ -81,7 +83,7 @@
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
-          <dt>Crops Grown</dt><dd>{{ member.crops|default:"Maize, Beans, Coffee (General)" }}</dd>
+          <dt>Crops Grown</dt><dd>{{ member.crops|default:"—" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
@@ -91,6 +93,17 @@
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
           <dt>Hub</dt><dd>{{ member.hub|default:"—" }}</dd>
         </div>
+        {% if member.service_providers.exists %}
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
+          <dt>Service Provider</dt>
+          <dd>
+            {% for p in member.service_providers.all %}
+              <a href="{{ p.get_absolute_url }}" class="badge badge--info" style="text-decoration:none;">{{ p.name }} ({{ p.get_status_display }})</a>
+            {% endfor %}
+          </dd>
+        </div>
+        {% endif %}
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
           <dt>Offered Services</dt>

@@ -130,6 +130,33 @@ class ServiceProvider(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_provider_type_display()} - {self.get_status_display()})"
 
+    def get_absolute_url(self):
+        return reverse("services:provider_detail", kwargs={"pk": self.pk})
+
+    @property
+    def provider_type_display(self):
+        return self.get_provider_type_display()
+
+    @property
+    def service_category_display(self):
+        return self.get_service_category_display() or "General"
+
+    @property
+    def status_display(self):
+        return self.get_status_display()
+
+    @property
+    def is_active(self):
+        return self.status == ServiceProviderStatus.ACTIVE
+
+    @property
+    def is_suspended(self):
+        return self.status == ServiceProviderStatus.SUSPENDED
+
+    @property
+    def is_dormant(self):
+        return self.status == ServiceProviderStatus.DORMANT
+
     @property
     def payment_status_display(self):
         if hasattr(self, "commissions") and self.commissions.filter(status="PAID").exists():

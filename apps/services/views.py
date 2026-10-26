@@ -287,14 +287,18 @@ class ServiceProviderListView(ScopedModelListView):
     page_title = "Service Providers"
     template_name = "services/provider_list.html"
     export_url_name = "services:provider_export"
+    row_detail_url_name = "services:provider_detail"
     columns = (
         {"label": "Name", "field": "name"},
-        {"label": "Service Provide", "field": "service_category"},
+        {"label": "Provider Type", "field": "provider_type_display"},
+        {"label": "Service Category", "field": "service_category_display"},
         {"label": "Phone", "field": "phone_number"},
+        {"label": "Status", "field": "status_display"},
         {"label": "Payment Status", "field": "payment_status_display"},
     )
-    search_fields = ("name", "phone_number", "email", "member__user__first_name", "member__user__last_name")
+    search_fields = ("name", "phone_number", "email", "member__user__first_name", "member__user__last_name", "member__name")
     create_url_name = "services:provider_create"
+    create_label = "Register provider"
     create_permission = "services.add_serviceprovider"
     row_edit_url_name = "services:provider_edit"
     row_edit_permission = "services.change_serviceprovider"
@@ -302,6 +306,13 @@ class ServiceProviderListView(ScopedModelListView):
         ("provider_type", ServiceProvider.provider_type.field.choices if hasattr(ServiceProvider.provider_type.field, 'choices') else ()),
         ("status", ServiceProvider.status.field.choices if hasattr(ServiceProvider.status.field, 'choices') else ()),
     )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status_filter = self.request.GET.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -340,6 +351,7 @@ class ServiceProviderCreateView(ProtectedCreateView):
     form_class = ServiceProviderForm
     page_title = "Register Service Provider"
     success_url_name = "services:provider_list"
+    cancel_url_name = "services:provider_list"
 
 
 class ServiceProviderUpdateView(ProtectedUpdateView):
@@ -347,19 +359,42 @@ class ServiceProviderUpdateView(ProtectedUpdateView):
     form_class = ServiceProviderForm
     page_title = "Edit Service Provider"
     success_url_name = "services:provider_list"
+    cancel_url_name = "services:provider_list"
 
 
 class ServiceProviderDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
     model = ServiceProvider
     template_name = "services/provider_detail.html"
+    context_object_name = "provider"
     permission_required = "services.view_serviceprovider"
     page_title = "Service Provider Details"
+
+    def get_breadcrumbs(self):
+        return [
+            ("Service Providers", reverse("services:provider_list")),
+            (self.object.name, None),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["action_form"] = ServiceProviderActionForm()
-        context["bookings"] = self.object.bookings.order_by("-start_date")[:20]
-        context["commissions"] = self.object.commissions.order_by("-created_at")[:20]
+        bookings = self.object.bookings.select_related("service_type", "resource", "hub").order_by("-start_date")
+        commissions = self.object.commissions.select_related("booking", "service_type").order_by("-created_at")
+
+        total_commissions = commissions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        paid_commissions = commissions.filter(status="PAID").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        pending_commissions = commissions.filter(status__in=["PENDING", "APPROVED"]).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        context.update(
+            bookings=bookings[:20],
+            commissions=commissions[:20],
+            total_bookings_count=bookings.count(),
+            total_commissions=total_commissions,
+            paid_commissions=paid_commissions,
+            pending_commissions=pending_commissions,
+            can_edit_provider=self.request.user.has_perm("services.change_serviceprovider"),
+            can_manage_status=self.request.user.has_perm("services.change_serviceprovider") or self.request.user.has_perm("services.suspend_serviceprovider"),
+        )
         return context
 
 

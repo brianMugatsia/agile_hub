@@ -12,7 +12,7 @@
         <tr>
           {% for column in columns %}
             {% with value=row|get_attr:column.field %}
-              <td>{% if forloop.first and row.get_absolute_url %}<a href="{{ row.get_absolute_url }}">{% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</a>{% elif column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</td>
+              <td>{% if forloop.first %}{% if row_detail_url_name %}<a href="{% url row_detail_url_name row.pk %}">{% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</a>{% elif row.get_absolute_url %}<a href="{{ row.get_absolute_url }}">{% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</a>{% else %}{% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}{% endif %}{% elif column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}</td>
             {% endwith %}
           {% endfor %}
           {% if can_edit_rows or can_delete_rows %}

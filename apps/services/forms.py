@@ -118,15 +118,29 @@ class ServiceProviderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["member"].queryset = MemberProfile.objects.select_related("user").all()
+        self.fields["member"].required = False
+        self.fields["name"].required = False
 
     def clean(self):
         cleaned_data = super().clean()
         provider_type = cleaned_data.get("provider_type")
         member = cleaned_data.get("member")
-        if provider_type == "INTERNAL" and not member:
-            raise forms.ValidationError({"member": "Internal service providers must be associated with an existing member record."})
-        if provider_type == "EXTERNAL" and member:
-            raise forms.ValidationError({"member": "External service providers must not be associated with a member record."})
+        name = (cleaned_data.get("name") or "").strip()
+
+        if provider_type == "INTERNAL":
+            if not member:
+                raise forms.ValidationError({"member": "Internal service providers must be associated with an existing member record."})
+            if not name:
+                cleaned_data["name"] = member.display_name
+            if not cleaned_data.get("phone_number"):
+                cleaned_data["phone_number"] = member.phone_number
+            if not cleaned_data.get("email") and member.user:
+                cleaned_data["email"] = member.user.email
+        elif provider_type == "EXTERNAL":
+            if member:
+                raise forms.ValidationError({"member": "External service providers must not be associated with a member record."})
+            if not name:
+                raise forms.ValidationError({"name": "Name is required for external service providers."})
         return cleaned_data
 
 

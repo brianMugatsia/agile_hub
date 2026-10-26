@@ -20,6 +20,9 @@
           <div><dt>Equipment / Chamber</dt><dd><a href="{% url 'services:resource_detail' servicebooking.resource.pk %}">{{ servicebooking.resource.name }}</a></dd></div>
           <div><dt>Client</dt><dd>{{ servicebooking.client_display }}</dd></div>
           <div><dt>Contact Phone</dt><dd>{{ servicebooking.customer_phone|default:"—" }}</dd></div>
+          {% if servicebooking.service_provider %}
+            <div><dt>Assigned Provider</dt><dd><a href="{{ servicebooking.service_provider.get_absolute_url }}" style="font-weight: 600; color: #2563eb;">{{ servicebooking.service_provider.name }}</a> ({{ servicebooking.service_provider.get_provider_type_display }})</dd></div>
+          {% endif %}
           <div><dt>Start Date</dt><dd>{{ servicebooking.start_date|date:"j M Y, H:i" }}</dd></div>
           <div><dt>End Date</dt><dd>{{ servicebooking.end_date|date:"j M Y, H:i" }}</dd></div>
           <div><dt>Quantity / Duration</dt><dd>{{ servicebooking.quantity }} {{ servicebooking.service_type.get_pricing_unit_display }}</dd></div>

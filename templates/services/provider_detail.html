@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash">
+
+  <!-- TOP ACTIONS -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+    <div class="flex gap-2">
+      <a class="btn btn--secondary" href="{% url 'services:provider_list' %}">
+        {% icon "arrow-left" %}<span>Back to providers</span>
+      </a>
+      {% if can_edit_provider %}
+        <a class="btn btn--secondary" href="{% url 'services:provider_edit' provider.pk %}">
+          {% icon "edit" %}<span>Edit provider</span>
+        </a>
+      {% endif %}
+      {% if provider.member %}
+        <a class="btn btn--secondary" href="{% url 'members:detail' provider.member.pk %}">
+          {% icon "user" %}<span>View member profile</span>
+        </a>
+      {% endif %}
+    </div>
+
+    <!-- STATUS ACTIONS -->
+    {% if can_manage_status %}
+      <div>
+        {% if provider.is_suspended %}
+          <form method="post" action="{% url 'services:provider_action' provider.pk %}" style="display:inline; margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reactivate">
+            <button type="submit" class="btn btn--primary">
+              {% icon "check-circle" %}<span>Reactivate Provider</span>
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'services:provider_action' provider.pk %}" style="display:inline-flex; gap: 0.5rem; align-items: center; margin:0;" onsubmit="return confirm('Are you sure you want to suspend this provider?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="suspend">
+            <input type="text" name="reason" placeholder="Suspension reason (optional)" class="input input--sm" style="max-width: 240px;">
+            <button type="submit" class="btn btn--danger">
+              {% icon "alert-circle" %}<span>Suspend Provider</span>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- HERO -->
+  <section class="dash-hero" data-reveal="up" aria-label="Service provider profile">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{{ provider.get_provider_type_display }} Provider</span>
+      <div class="ben-id">
+        <span class="ben-id__avatar" aria-hidden="true">{{ provider.name|default:"?"|slice:":1"|upper }}</span>
+        <div class="ben-id__text">
+          <h2 class="dash-hero__title">{{ provider.name }}</h2>
+          <p class="dash-hero__note">
+            <span class="badge {% if provider.is_active %}badge--positive{% elif provider.is_dormant %}badge--warning{% else %}badge--danger{% endif %}">
+              {{ provider.get_status_display }}
+            </span>
+            &nbsp;·&nbsp; Category: <strong>{{ provider.service_category_display }}</strong>
+            {% if provider.member %}&nbsp;·&nbsp; Member: <strong>{{ provider.member.display_name }}</strong>{% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hub-manager">
+      <span class="hub-manager__avatar" aria-hidden="true">{% icon "user-check" %}</span>
+      <div class="hub-manager__text">
+        <span class="hub-manager__label">Provider Type</span>
+        <strong class="hub-manager__name">{{ provider.get_provider_type_display }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- METRIC CARDS -->
+  <section class="grid grid--4 dashboard-stats" aria-label="Provider metrics" style="margin-top: 1.25rem; margin-bottom: 1.5rem;">
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 0;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #2563eb; background: rgb(37 99 235 / 12%);">
+            {% icon "calendar" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">All</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Total Bookings</span>
+        <strong class="stat-card__value" data-count>{{ total_bookings_count|default:"0" }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 1;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #166534; background: rgb(22 101 52 / 12%);">
+            {% icon "dollar-sign" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">Earned</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Total Commissions</span>
+        <strong class="stat-card__value">{{ CURRENCY_CODE }} {{ total_commissions|default:"0.00" }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 2;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #059669; background: rgb(5 150 105 / 12%);">
+            {% icon "check-circle" %}
+          </span>
+          <span class="badge badge--positive" style="font-size: 0.75rem;">Settled</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Paid Commissions</span>
+        <strong class="stat-card__value">{{ CURRENCY_CODE }} {{ paid_commissions|default:"0.00" }}</strong>
+      </div>
+    </article>
+    <article class="card stat-card" data-reveal="up" data-spot style="--i: 3;">
+      <div class="card__body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <span class="stat-card__icon" aria-hidden="true" style="color: #d97706; background: rgb(217 119 6 / 12%);">
+            {% icon "clock" %}
+          </span>
+          <span class="badge badge--warning" style="font-size: 0.75rem;">Pending</span>
+        </div>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Pending Settlement</span>
+        <strong class="stat-card__value">{{ CURRENCY_CODE }} {{ pending_commissions|default:"0.00" }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <!-- DETAILS & RECENT ACTIVITY -->
+  <div class="grid grid--2" style="gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- PROVIDER INFORMATION -->
+    <article class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__header">
+        <h2 class="card__title">Provider Profile & Contract Details</h2>
+      </div>
+      <div class="card__body">
+        <dl class="hub-facts">
+          <div class="hub-fact">
+            <dt>Provider Name</dt><dd><strong>{{ provider.name }}</strong></dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Type</dt><dd><span class="badge badge--info">{{ provider.get_provider_type_display }}</span></dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Service Category</dt><dd>{{ provider.service_category_display }}</dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Status</dt>
+            <dd>
+              <span class="badge {% if provider.is_active %}badge--positive{% elif provider.is_dormant %}badge--warning{% else %}badge--danger{% endif %}">
+                {{ provider.get_status_display }}
+              </span>
+            </dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Phone Number</dt><dd>{{ provider.phone_number|default:"—" }}</dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Email Address</dt><dd>{{ provider.email|default:"—" }}</dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Address</dt><dd>{{ provider.address|default:"—" }}</dd>
+          </div>
+          <div class="hub-fact">
+            <dt>Payment Status</dt><dd><span class="badge badge--neutral">{{ provider.payment_status_display }}</span></dd>
+          </div>
+          {% if provider.member %}
+            <div class="hub-fact">
+              <dt>Linked Member</dt>
+              <dd>
+                <a href="{% url 'members:detail' provider.member.pk %}" style="font-weight: 600; color: #2563eb;">
+                  {{ provider.member.display_name }}
+                </a>
+              </dd>
+            </div>
+          {% endif %}
+          {% if provider.suspension_reason %}
+            <div class="hub-fact" style="grid-column: 1 / -1; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem;">
+              <dt style="color: #991b1b;">Suspension Reason</dt>
+              <dd style="color: #7f1d1d; font-weight: 500;">{{ provider.suspension_reason }}</dd>
+            </div>
+          {% endif %}
+        </dl>
+      </div>
+    </article>
+
+    <!-- RECENT BOOKINGS -->
+    <article class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card__title">Recent Assigned Bookings</h2>
+        <a class="btn btn--secondary btn--sm" href="{% url 'services:booking_list' %}">All Bookings</a>
+      </div>
+      <div class="card__body">
+        {% if bookings %}
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Client</th>
+                  <th>Start Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for b in bookings %}
+                  <tr>
+                    <td><a href="{% url 'services:booking_detail' b.pk %}">{{ b.service_type.name }}</a></td>
+                    <td>{{ b.client_display }}</td>
+                    <td>{{ b.start_date|date:"j M Y" }}</td>
+                    <td>{{ CURRENCY_CODE }} {{ b.total_amount }}</td>
+                    <td><span class="badge badge--{{ b.status|lower }}">{{ b.get_status_display }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          {% include "partials/empty_state.html" with title="No bookings assigned" message="Service bookings assigned to this provider will appear here." %}
+        {% endif %}
+      </div>
+    </article>
+  </div>
+
+  <!-- COMMISSIONS TABLE -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot style="margin-bottom: 2rem;">
+    <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 class="card__title">Service Provider Commissions & Payouts</h2>
+      <span class="badge badge--info">{{ commissions|length }} Recent Records</span>
+    </div>
+    <div class="card__body">
+      {% if commissions %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Booking / Service</th>
+                <th>Calculation Basis</th>
+                <th>Rate</th>
+                <th>Base Amount</th>
+                <th>Commission</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in commissions %}
+                <tr>
+                  <td>
+                    {% if c.booking %}
+                      <a href="{% url 'services:booking_detail' c.booking.pk %}">{{ c.service_type.name|default:"Service Engagement" }}</a>
+                    {% else %}
+                      {{ c.service_type.name|default:"Service Commission" }}
+                    {% endif %}
+                  </td>
+                  <td>{{ c.calculation_basis|default:"Standard Rate" }}</td>
+                  <td>{{ c.rate|percentage|floatformat:1 }}%</td>
+                  <td>{{ CURRENCY_CODE }} {{ c.base_amount }}</td>
+                  <td><strong>{{ CURRENCY_CODE }} {{ c.amount }}</strong></td>
+                  <td>
+                    <span class="badge {% if c.status == 'PAID' %}badge--positive{% elif c.status == 'APPROVED' %}badge--info{% elif c.status == 'PENDING' %}badge--warning{% else %}badge--danger{% endif %}">
+                      {{ c.get_status_display }}
+                    </span>
+                  </td>
+                  <td>{{ c.created_at|date:"j M Y, H:i" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {% include "partials/empty_state.html" with title="No commission records" message="Service commission payouts for this provider will appear here once bookings are tracked." %}
+      {% endif %}
+    </div>
+  </section>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
+{% endblock %}

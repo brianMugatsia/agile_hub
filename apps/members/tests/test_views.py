@@ -388,3 +388,90 @@ def test_customer_leads_and_categories_and_upgrade(client, make_user, roles):
     lead.refresh_from_db()
     assert lead.customer_type == MemberProfile.CustomerType.FARMER
 
+
+
+def test_customer_table_links_to_customer_profile_not_member_profile(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="CUST-HUB2", name="Customer Hub 2")
+    client.force_login(admin)
+
+    # 1. Lead customer
+    lead = MemberProfile.objects.create(
+        customer_type=MemberProfile.CustomerType.LEAD,
+        name="Lead Client",
+        phone_number="0711111111",
+        hub=hub,
+    )
+    # 2. Farmer customer (has user)
+    farmer_user = make_user(username="farmer_joe", email="farmer_joe@example.com", first_name="Joe", last_name="Farmer", role=Role.MEMBER)
+    farmer = MemberProfile.objects.create(
+        user=farmer_user,
+        customer_type=MemberProfile.CustomerType.FARMER,
+        phone_number="0722222222",
+        hub=hub,
+    )
+    # 3. Organization customer
+    org = MemberProfile.objects.create(
+        customer_type=MemberProfile.CustomerType.ORGANIZATION,
+        name="AgriBiz Corp",
+        phone_number="0733333333",
+        hub=hub,
+    )
+
+    response = client.get(reverse("members:customers_list"))
+    assert response.status_code == 200
+
+    # Ensure categories are displayed as Lead, Farmer, Organization
+    assert b"Lead" in response.content
+    assert b"Farmer" in response.content
+    assert b"Organization" in response.content
+
+    # Ensure customer names link to customer profile (/members/customers/<id>/) NOT member profile (/members/<id>/)
+    lead_detail_url = reverse("members:customer_detail", args=[lead.pk]).encode()
+    farmer_detail_url = reverse("members:customer_detail", args=[farmer.pk]).encode()
+    org_detail_url = reverse("members:customer_detail", args=[org.pk]).encode()
+
+    assert lead_detail_url in response.content
+    assert farmer_detail_url in response.content
+    assert org_detail_url in response.content
+
+    # Ensure member profile URL for the farmer is NOT the link on the customer table
+    member_profile_url = f'href="{reverse("members:detail", args=[farmer.pk])}"'.encode()
+    assert member_profile_url not in response.content
+
+
+def test_customer_detail_profile_view(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="CUST-HUB3", name="Customer Hub 3")
+    client.force_login(admin)
+
+    lead = MemberProfile.objects.create(
+        customer_type=MemberProfile.CustomerType.LEAD,
+        name="Alice Walker",
+        phone_number="0744444444",
+        national_id="ID-ALICE-123",
+        location="Highlands",
+        crops="Tea, Coffee",
+        loop_feedback="Interested in soil testing",
+        hub=hub,
+    )
+
+    # View customer profile
+    res = client.get(reverse("members:customer_detail", args=[lead.pk]))
+    assert res.status_code == 200
+    assert b"Alice Walker" in res.content
+    assert b"Lead profile" in res.content
+    assert b"Upgrade to Farmer" in res.content
+    assert b"ID-ALICE-123" in res.content
+    assert b"Tea, Coffee" in res.content
+    assert b"Interested in soil testing" in res.content
+
+    # Upgrade to farmer
+    upgrade_res = client.post(reverse("members:customer_upgrade", args=[lead.pk]))
+    assert upgrade_res.status_code in (301, 302)
+
+    # Now view again as farmer
+    res_after = client.get(reverse("members:customer_detail", args=[lead.pk]))
+    assert res_after.status_code == 200
+    assert b"Farmer profile" in res_after.content
+    assert b"Upgrade to Farmer" not in res_after.content

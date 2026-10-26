@@ -47,18 +47,30 @@ class MemberProfile(models.Model):
 
     @property
     def is_lead(self):
-        return self.customer_type == self.CustomerType.LEAD
+        return (self.customer_type or "").upper() == self.CustomerType.LEAD
 
     @property
     def is_farmer(self):
-        return self.customer_type == self.CustomerType.FARMER
+        return (self.customer_type or "").upper() == self.CustomerType.FARMER or not self.customer_type
 
     @property
     def is_organization(self):
-        return self.customer_type == self.CustomerType.ORGANIZATION
+        return (self.customer_type or "").upper() == self.CustomerType.ORGANIZATION
+
+    @property
+    def customer_type_display(self):
+        val = (self.customer_type or "").upper()
+        if val == self.CustomerType.LEAD:
+            return "Lead"
+        elif val == self.CustomerType.ORGANIZATION:
+            return "Organization"
+        return "Farmer"
+
+    def get_customer_detail_url(self):
+        return reverse("members:customer_detail", args=[self.pk])
 
     def get_absolute_url(self):
-        if self.is_lead or self.customer_type == self.CustomerType.ORGANIZATION:
+        if self.is_lead or self.customer_type == self.CustomerType.ORGANIZATION or not self.user:
             return reverse("members:customer_detail", args=[self.pk])
         return reverse("members:detail", args=[self.pk])
 

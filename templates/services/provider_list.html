@@ -2,84 +2,55 @@
 {% load ui_tags %}
 
 {% block content %}
-<div class="dash" style="margin-bottom: 1.5rem;">
+  <div class="dash" style="margin-bottom: 1.5rem;">
+  
   <section class="dash-hero com-hero--solo" aria-label="Service providers overview">
     <div class="dash-hero__bg" aria-hidden="true">
       <span class="dash-hero__orb dash-hero__orb--a"></span>
       <span class="dash-hero__orb dash-hero__orb--b"></span>
     </div>
     <div class="dash-hero__text">
-      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Network & Providers</span>
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Network &amp; Providers</span>
       <h2 class="dash-hero__title">Service <span class="dash-gradient">Providers.</span></h2>
-      <p class="dash-hero__note">Manage internal members and external contractors acting as service providers. Track active operations, compliance, and assignments.</p>
+      <p class="dash-hero__note">Manage internal members and external contractors acting as service providers. Track active operations, compliance, bookings, and commissions.</p>
     </div>
   </section>
 
-  <!-- CLICKABLE STAT CARDS -->
-  <section class="grid grid--3 dashboard-stats" aria-label="Provider statistics" style="margin-top: 1.25rem;">
-    <a href="{% url 'members:sales_agents' %}" class="card stat-card" data-reveal="up" data-spot style="--i: 0; text-decoration: none; color: inherit;">
-      <div class="card__body">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <span class="stat-card__icon" aria-hidden="true" style="color: #166534; background: rgb(22 101 52 / 12%);">
-            {% icon "users" %}
-          </span>
-          <span class="badge badge--positive" style="font-size: 0.75rem;">Agents</span>
-        </div>
-        <span class="stat-card__label" style="margin-top: 0.75rem;">Active Sales Agents</span>
-        <strong class="stat-card__value" data-count>{{ active_sales_agents_count|default:"0" }}</strong>
-      </div>
+  <!-- Animated Clickable Stat Cards -->
+  <div class="animated-stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1rem)); gap: 1rem; margin-bottom: 1.5rem;">
+    <a href="{% url 'services:provider_list' %}?status=DORMANT" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #fefce8); border: 1px solid #fef08a; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease; position: relative; overflow: hidden; text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #854d0e; text-transform: uppercase; letter-spacing: 0.05em;">Dormant Providers</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #713f12; display: block; margin-top: 0.25rem;">{{ dormant_providers_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #a16207;">Providers with no recent booking activity</span>
     </a>
-    <a href="{% url 'services:provider_list' %}?status=DORMANT" class="card stat-card" data-reveal="up" data-spot style="--i: 1; text-decoration: none; color: inherit;">
-      <div class="card__body">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <span class="stat-card__icon" aria-hidden="true" style="color: #854d0e; background: rgb(133 77 14 / 12%);">
-            {% icon "clock" %}
-          </span>
-          <span class="badge" style="font-size: 0.75rem; background: rgb(133 77 14 / 12%); color: #854d0e;">Dormant</span>
-        </div>
-        <span class="stat-card__label" style="margin-top: 0.75rem;">Dormant Providers</span>
-        <strong class="stat-card__value" data-count>{{ dormant_providers_count|default:"0" }}</strong>
-      </div>
+    <a href="{% url 'services:provider_list' %}?status=ACTIVE" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #eff6ff); border: 1px solid #bfdbfe; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease; position: relative; overflow: hidden; text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #1e40af; text-transform: uppercase; letter-spacing: 0.05em;">Active Providers</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #1e3a8a; display: block; margin-top: 0.25rem;">{{ active_providers_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #2563eb;">Fully operational service providers</span>
     </a>
-    <a href="{% url 'services:provider_list' %}?status=ACTIVE" class="card stat-card" data-reveal="up" data-spot style="--i: 2; text-decoration: none; color: inherit;">
-      <div class="card__body">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <span class="stat-card__icon" aria-hidden="true" style="color: #1e40af; background: rgb(30 64 175 / 12%);">
-            {% icon "check-circle" %}
-          </span>
-          <span class="badge badge--positive" style="font-size: 0.75rem;">Active</span>
-        </div>
-        <span class="stat-card__label" style="margin-top: 0.75rem;">Active Providers</span>
-        <strong class="stat-card__value" data-count>{{ active_providers_count|default:"0" }}</strong>
-      </div>
+    <a href="{% url 'services:provider_list' %}?status=SUSPENDED" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #fef2f2); border: 1px solid #fecaca; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease; position: relative; overflow: hidden; text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #991b1b; text-transform: uppercase; letter-spacing: 0.05em;">Suspended Providers</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #7f1d1d; display: block; margin-top: 0.25rem;">{{ suspended_providers_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #dc2626;">Suspended due to policy/dormancy</span>
     </a>
-    <a href="{% url 'services:provider_list' %}?status=SUSPENDED" class="card stat-card" data-reveal="up" data-spot style="--i: 3; text-decoration: none; color: inherit;">
-      <div class="card__body">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <span class="stat-card__icon" aria-hidden="true" style="color: #991b1b; background: rgb(153 27 27 / 12%);">
-            {% icon "alert-circle" %}
-          </span>
-          <span class="badge" style="font-size: 0.75rem; background: rgb(153 27 27 / 12%); color: #991b1b;">Suspended</span>
-        </div>
-        <span class="stat-card__label" style="margin-top: 0.75rem;">Suspended Providers</span>
-        <strong class="stat-card__value" data-count>{{ suspended_providers_count|default:"0" }}</strong>
-      </div>
-    </a>
-  </section>
-
-  <!-- SHIFT TABS / PAGES -->
-  <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; flex-wrap: wrap;">
-    <a href="{% url 'services:provider_list' %}" class="shift-btn {% if active_provider_tab == 'all' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if active_provider_tab == 'all' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if active_provider_tab == 'all' %}#ffffff{% else %}#64748b{% endif %}; transition: all 0.2s;">
-      All Providers
-    </a>
-    <a href="{% url 'services:internal_provider_list' %}" class="shift-btn {% if active_provider_tab == 'internal' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if active_provider_tab == 'internal' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if active_provider_tab == 'internal' %}#ffffff{% else %}#64748b{% endif %}; transition: all 0.2s;">
-      Internal Providers (Members)
-    </a>
-    <a href="{% url 'services:external_provider_list' %}" class="shift-btn {% if active_provider_tab == 'external' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if active_provider_tab == 'external' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if active_provider_tab == 'external' %}#ffffff{% else %}#64748b{% endif %}; transition: all 0.2s;">
-      External Providers (Non-Members)
+    <a href="{% url 'services:provider_list' %}" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #f0fdf4); border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease; position: relative; overflow: hidden; text-decoration: none; color: inherit; display: block;">
+      <span style="font-size: 0.875rem; font-weight: 600; color: #166534; text-transform: uppercase; letter-spacing: 0.05em;">All Providers</span>
+      <strong style="font-size: 1.875rem; font-weight: 700; color: #14532d; display: block; margin-top: 0.25rem;">{{ total_providers_count|default:"0" }}</strong>
+      <span style="font-size: 0.75rem; color: #15803d;">All service providers in this hub</span>
     </a>
   </div>
-</div>
 
-{{ block.super }}
+  <style>
+    .animated-stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+  </style>
+
+  <!-- Shift Tabs / Pages -->
+  <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; flex-wrap: wrap;">
+    <a href="{% url 'services:provider_list' %}" class="shift-btn {% if active_provider_tab == 'all' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if active_provider_tab == 'all' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if active_provider_tab == 'all' %}#ffffff{% else %}#64748b{% endif %}; transition: all 0.2s;">All Providers</a>
+    <a href="{% url 'services:internal_provider_list' %}" class="shift-btn {% if active_provider_tab == 'internal' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if active_provider_tab == 'internal' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if active_provider_tab == 'internal' %}#ffffff{% else %}#64748b{% endif %}; transition: all 0.2s;">Internal Providers (Members)</a>
+    <a href="{% url 'services:external_provider_list' %}" class="shift-btn {% if active_provider_tab == 'external' %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; background: {% if active_provider_tab == 'external' %}#3b82f6{% else %}#f1f5f9{% endif %}; color: {% if active_provider_tab == 'external' %}#ffffff{% else %}#64748b{% endif %}; transition: all 0.2s;">External Providers (Contractors)</a>
+  </div>
+
+  {{ block.super }}
+  </div>
 {% endblock %}

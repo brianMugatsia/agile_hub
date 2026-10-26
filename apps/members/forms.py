@@ -143,8 +143,19 @@ class CustomerForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and not self.initial.get("name"):
+            self.initial["name"] = self.instance.display_name
         if user:
             self.fields["hub"].queryset = _hub_choices(self.fields["hub"], self.instance, user)
+
+    def save(self, commit=True):
+        profile = super().save(commit=commit)
+        if profile.user and "name" in self.cleaned_data:
+            name_parts = self.cleaned_data["name"].strip().split(" ", 1)
+            profile.user.first_name = name_parts[0]
+            profile.user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+            profile.user.save(update_fields=["first_name", "last_name"])
+        return profile
 
 
 class BusinessForm(forms.ModelForm):

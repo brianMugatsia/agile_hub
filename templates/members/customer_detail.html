@@ -12,12 +12,12 @@
     </div>
 
     <div class="dash-hero__text">
-      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{{ customer.get_customer_type_display }} profile</span>
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{{ customer.customer_type_display }} profile</span>
       <div class="ben-id">
         <span class="ben-id__avatar" aria-hidden="true">{{ customer.display_name|default:"?"|slice:":1"|upper }}</span>
         <div class="ben-id__text">
           <h2 class="dash-hero__title">{{ customer.display_name }}</h2>
-          <p class="dash-hero__note">Customer / Lead Account</p>
+          <p class="dash-hero__note">{{ customer.customer_type_display }} Account</p>
         </div>
       </div>
     </div>
@@ -44,6 +44,7 @@
             </form>
           {% endif %}
           {% if can_edit_customer %}<a class="btn btn--secondary btn--sm" href="{% url 'members:customer_edit' customer.pk %}">Edit customer</a>{% endif %}
+          {% if customer.is_farmer and customer.user %}<a class="btn btn--secondary btn--sm" href="{% url 'members:detail' customer.pk %}">View member profile</a>{% endif %}
           <a class="btn btn--secondary btn--sm" href="{% url 'members:customers_list' %}">Back to customers</a>
         </div>
       </div>
@@ -52,7 +53,7 @@
           <dt>Customer Name</dt><dd>{{ customer.display_name }}</dd>
         </div>
         <div class="hub-fact">
-          <dt>Category</dt><dd><span class="badge badge--info">{{ customer.get_customer_type_display }}</span></dd>
+          <dt>Category</dt><dd><span class="badge badge--info">{{ customer.customer_type_display }}</span></dd>
         </div>
         <div class="hub-fact">
           <dt>Phone Number</dt><dd>{{ customer.phone_number|default:"—" }}</dd>
@@ -64,7 +65,7 @@
           <dt>Location</dt><dd>{{ customer.location|default:"—" }}</dd>
         </div>
         <div class="hub-fact">
-          <dt>Crops Grown</dt><dd>{{ customer.crops|default:"Maize, Beans, Coffee" }}</dd>
+          <dt>Crops Grown</dt><dd>{{ customer.crops|default:"—" }}</dd>
         </div>
         <div class="hub-fact">
           <dt>Loop Feedback</dt><dd>{{ customer.loop_feedback|default:"—" }}</dd>

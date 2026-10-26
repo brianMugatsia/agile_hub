@@ -43,6 +43,10 @@ ICONS = {
     "sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',
     "moon": '<path d="M20.98 13A9 9 0 0 1 11 3.02 9 9 0 1 0 20.98 13z"/>',
     "circle": '<circle cx="12" cy="12" r="10"/>',
+    "clock": '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    "truck": '<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+    "dollar-sign": '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+    "list": '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
 }
 
 ROLE_TONES = {
@@ -81,6 +85,11 @@ def get_attr(value, path):
     """Read a simple or related-object attribute for table columns."""
     for part in path.split("__"):
         value = getattr(value, part, None)
+        if callable(value) and not isinstance(value, type):
+            try:
+                value = value()
+            except TypeError:
+                pass
         if value is None:
             return ""
     return value

@@ -14,6 +14,7 @@ from .views import (
     CustomerCreateView,
     CustomerUpdateView,
     CustomerUpgradeView,
+    CustomerDetailView,
     MemberSalesAgentsListView,
     MemberServiceProvidersListView,
     MemberUpdateView,
@@ -27,6 +28,7 @@ app_name = "members"
 urlpatterns = [
     path("customers/", CustomerListView.as_view(), name="customers_list"),
     path("customers/create/", CustomerCreateView.as_view(), name="customer_create"),
+    path("customers/<int:pk>/", CustomerDetailView.as_view(), name="customer_detail"),
     path("customers/<int:pk>/edit/", CustomerUpdateView.as_view(), name="customer_edit"),
     path("customers/<int:pk>/upgrade/", CustomerUpgradeView.as_view(), name="customer_upgrade"),
     path("", MemberListView.as_view(), name="list"),
