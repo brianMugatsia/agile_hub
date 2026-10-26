@@ -1,26 +1,163 @@
 {% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block page_actions %}
+  <div class="com-export__buttons">
+    <a class="btn btn--secondary com-export__btn" href="{% url 'finance:projections' %}">
+      {% icon "trending-up" %} Projections
+    </a>
+    <a class="btn btn--secondary com-export__btn" href="{% url 'finance:break_even' %}">
+      {% icon "target" %} Break-even
+    </a>
+  </div>
+{% endblock %}
+
 {% block content %}
-  <form method="get" class="filter-bar card card__body" aria-label="Filter financial ratios by hub">
-    <label class="field filter-bar__field">
-      <span class="field__label">Hub</span>
-      <select class="select" name="hub">
+<div class="dash">
+
+  <!-- HERO -->
+  <section class="dash-hero com-hero--solo" aria-label="Financial ratios overview">
+    <div class="dash-hero__bg" aria-hidden="true">
+      <span class="dash-hero__orb dash-hero__orb--a"></span>
+      <span class="dash-hero__orb dash-hero__orb--b"></span>
+    </div>
+
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Decision Support & Analysis</span>
+      <h2 class="dash-hero__title">Financial <span class="dash-gradient">Ratios.</span></h2>
+      <p class="dash-hero__note">Evaluate leverage, solvency, profitability, and overall financial health across hubs and operations.</p>
+    </div>
+  </section>
+
+  <!-- FINANCE TOOLS NAV -->
+  <nav class="cluster dash-panel" aria-label="Finance tools" style="margin-bottom: 1.25rem; display: flex; gap: .75rem; flex-wrap: wrap;">
+    <a class="btn btn--secondary" href="{% url 'finance:income_statement' %}">Income statement</a>
+    <a class="btn btn--secondary" href="{% url 'finance:cash_flow' %}">Cash flow</a>
+    <a class="btn btn--secondary" href="{% url 'finance:expenses' %}">Expenses</a>
+    <a class="btn btn--secondary" href="{% url 'finance:break_even' %}">Break-even</a>
+    <a class="btn btn--secondary" href="{% url 'finance:projections' %}">Projections</a>
+    <a class="btn btn--secondary is-active" href="{% url 'finance:ratios' %}">Financial ratios</a>
+  </nav>
+
+  <!-- FILTER BAR -->
+  <form class="filter-bar card card__body dash-panel" method="get" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+    <div class="form-field" style="flex: 1; min-width: 220px;">
+      <label for="hub">Hub scope</label>
+      <select class="select" id="hub" name="hub">
         <option value="">All hubs</option>
         {% for hub in filter_hubs %}<option value="{{ hub.pk }}"{% if selected_hub == hub.pk|stringformat:"s" %} selected{% endif %}>{{ hub.name }}</option>{% endfor %}
       </select>
-    </label>
-    <button class="btn btn--secondary" type="submit">Filter</button>
+    </div>
+    <button class="btn btn--primary" type="submit">Filter ratios</button>
   </form>
+
   {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
-  <section class="finance-summary">
-    {% include "components/stat_card.html" with label="Debt to assets" value=ratios.debt_to_assets %}
-    {% include "components/stat_card.html" with label="Liabilities to equity" value=ratios.liabilities_to_equity %}
+
+  <!-- HEALTH RISK STATUS BANNER -->
+  <div class="card card__body dash-panel" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="margin: 0 0 .25rem 0; font-size: 1.15rem; font-weight: 600;">Financial Health Status</h3>
+      <p style="margin: 0; color: var(--text-muted); font-size: 0.925rem;">Automated solvency and leverage assessment based on recorded balance sheet items.</p>
+    </div>
+    <div>
+      <span class="badge {{ ratios.risk_badge_class }}" style="font-size: 1rem; padding: .5rem 1.25rem; font-weight: 600;">{{ ratios.risk_level }}</span>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <section class="dashboard-stats" aria-label="Financial ratios metrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <div class="stat-card" style="--tone: #2563eb;">
+      <span class="stat-card__label">Debt to Assets</span>
+      <strong class="stat-card__value">{{ ratios.debt_to_assets|default:"N/A" }}</strong>
+      <span class="stat-card__note">Liabilities / Assets</span>
+    </div>
+    <div class="stat-card" style="--tone: #087d9b;">
+      <span class="stat-card__label">Liabilities to Equity</span>
+      <strong class="stat-card__value">{{ ratios.liabilities_to_equity|default:"N/A" }}</strong>
+      <span class="stat-card__note">Liabilities / Equity</span>
+    </div>
+    <div class="stat-card" style="--tone: #6841bf;">
+      <span class="stat-card__label">Equity Multiplier</span>
+      <strong class="stat-card__value">{{ ratios.equity_multiplier|default:"N/A" }}</strong>
+      <span class="stat-card__note">Assets / Equity</span>
+    </div>
+    <div class="stat-card" style="--tone: #218357;">
+      <span class="stat-card__label">Return on Assets (ROA)</span>
+      <strong class="stat-card__value">{{ ratios.roa|default:"N/A" }}</strong>
+      <span class="stat-card__note">Net Income / Assets</span>
+    </div>
+    <div class="stat-card" style="--tone: #be185d;">
+      <span class="stat-card__label">Return on Equity (ROE)</span>
+      <strong class="stat-card__value">{{ ratios.roe|default:"N/A" }}</strong>
+      <span class="stat-card__note">Net Income / Equity</span>
+    </div>
   </section>
-  <p class="finance-disclaimer">Ratios use recorded asset, liability, and equity values. Missing or zero denominators are shown as unavailable.</p>
-  <section class="card"><div class="card__body">
-    <dl class="detail-list">
-      <div><dt>Total assets</dt><dd>{{ total_assets }}</dd></div>
-      <div><dt>Total liabilities</dt><dd>{{ total_liabilities }}</dd></div>
-      <div><dt>Total equity</dt><dd>{{ total_equity }}</dd></div>
-    </dl>
-  </div></section>
+
+  <!-- ACCOUNTING BASE VALUES TABLE -->
+  <section class="card dash-panel" style="margin-bottom: 1.5rem;">
+    <div class="card__header">
+      <h3 class="card__title">Underlying Financial Position</h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+      <div class="table-wrap">
+        <table class="table finance-table">
+          <thead>
+            <tr>
+              <th scope="col">Financial Metric</th>
+              <th scope="col">Description & Component</th>
+              <th scope="col" class="finance-value">Recorded Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight: 600;">Total Assets</td>
+              <td>Total cost of recorded assets and property across hubs.</td>
+              <td class="finance-value" style="font-weight: 600; font-variant-numeric: tabular-nums;">{{ total_assets }}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 600;">Total Liabilities</td>
+              <td>Total current debt and outstanding liability balances.</td>
+              <td class="finance-value" style="font-weight: 600; font-variant-numeric: tabular-nums;">{{ total_liabilities }}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 600;">Total Equity</td>
+              <td>Accumulated equity and capital contributions.</td>
+              <td class="finance-value" style="font-weight: 600; font-variant-numeric: tabular-nums;">{{ total_equity }}</td>
+            </tr>
+            <tr class="finance-total">
+              <td style="font-weight: 700;">Net Income (Operations)</td>
+              <td>Total revenue minus cost of goods, payroll, commissions, and expenses.</td>
+              <td class="finance-value" style="font-weight: 700; font-variant-numeric: tabular-nums;">{{ net_income }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUIDANCE & DISCLAIMER -->
+  <section class="card dash-panel">
+    <div class="card__header">
+      <h3 class="card__title">Ratio Analysis Guide</h3>
+    </div>
+    <div class="card__body">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1rem;">
+        <div>
+          <strong style="display: block; margin-bottom: .25rem; color: var(--text-main);">Debt to Assets</strong>
+          <span style="color: var(--text-muted); font-size: 0.9rem;">Measures the proportion of total assets financed by creditors. Ratios below 0.40 generally indicate strong solvency.</span>
+        </div>
+        <div>
+          <strong style="display: block; margin-bottom: .25rem; color: var(--text-main);">Liabilities to Equity</strong>
+          <span style="color: var(--text-muted); font-size: 0.9rem;">Evaluates capital structure and how much debt is used to finance assets relative to shareholder value.</span>
+        </div>
+        <div>
+          <strong style="display: block; margin-bottom: .25rem; color: var(--text-main);">ROA & ROE</strong>
+          <span style="color: var(--text-muted); font-size: 0.9rem;">Profitability indicators demonstrating how efficiently management generates earnings from assets and equity investments.</span>
+        </div>
+      </div>
+      <p class="finance-disclaimer" style="margin: 0;">Ratios use recorded asset, liability, equity, and operational transaction values. Missing or zero denominators are shown as unavailable.</p>
+    </div>
+  </section>
+
+</div>
 {% endblock %}

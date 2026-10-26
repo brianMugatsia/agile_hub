@@ -8,6 +8,7 @@ from apps.finance.services.calculations import (
     calculate_service_provider_commission,
     calculate_net_hub_profit,
 )
+from apps.finance.services.ratios import calculate_financial_ratios
 
 pytestmark = pytest.mark.django_db
 
@@ -30,3 +31,19 @@ def test_financial_calculations():
 
     net_profit = calculate_net_hub_profit(profit_before_commission=Decimal("500.00"), provider_commission=Decimal("100.00"))
     assert net_profit == Decimal("400.00")
+
+
+def test_calculate_financial_ratios():
+    ratios = calculate_financial_ratios(
+        total_assets=Decimal("1000.00"),
+        total_liabilities=Decimal("300.00"),
+        total_equity=Decimal("700.00"),
+        net_income=Decimal("150.00"),
+    )
+    assert ratios["debt_to_assets"] == Decimal("0.3000")
+    assert ratios["liabilities_to_equity"] == Decimal("0.4286")
+    assert ratios["equity_multiplier"] == Decimal("1.4286")
+    assert ratios["roa"] == Decimal("0.1500")
+    assert ratios["roe"] == Decimal("0.2143")
+    assert ratios["risk_level"] == "Strong / Low Risk"
+    assert ratios["risk_badge_class"] == "badge--success"

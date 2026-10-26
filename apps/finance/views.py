@@ -28,6 +28,7 @@ from .models import (
     EquityRecord,
     Expense,
     FundingSource,
+    IncomeStatement,
     IncomeStatementItem,
     Liability,
     StartupCost,
@@ -484,18 +485,85 @@ class FinancialRatiosView(LoginRequiredMixin, PermissionRequiredMixin, TemplateV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         available_hubs, selected, hub_error = selected_hub(self.request)
+        role = self.request.user.role
+        hub_ids = available_hubs.values_list("pk", flat=True)
+        is_platform_admin = role in (Role.SUPER_ADMIN, Role.ADMIN)
+        hub_scoped_roles = (Role.HUB_MANAGER, Role.FINANCE_OFFICER, Role.VIEWER)
+
         assets = scope_queryset(Asset.objects.all(), self.request.user)
         liabilities = scope_queryset(Liability.objects.all(), self.request.user)
         equity = scope_queryset(EquityRecord.objects.all(), self.request.user)
+        sales = Sale.objects.filter(status=Sale.Status.COMPLETED)
+        businesses = Business.objects.filter(amount__gt=0)
+        expenses_qs = Expense.objects.all()
+
+        if role in hub_scoped_roles:
+            sales = sales.filter(hub_id__in=hub_ids)
+            businesses = businesses.filter(hub_id__in=hub_ids)
+            expenses_qs = expenses_qs.filter(Q(hub_id__in=hub_ids) | Q(business__hub_id__in=hub_ids))
+        elif role == Role.MEMBER:
+            sales = sales.filter(business__member__user=self.request.user)
+            businesses = businesses.filter(member__user=self.request.user)
+            expenses_qs = expenses_qs.filter(business__member__user=self.request.user)
+        elif not is_platform_admin:
+            sales = sales.none()
+            businesses = businesses.none()
+            expenses_qs = expenses_qs.none()
+
         if selected:
             assets = assets.filter(Q(hub=selected) | Q(business__hub=selected))
             liabilities = liabilities.filter(Q(hub=selected) | Q(business__hub=selected))
             equity = equity.filter(Q(hub=selected) | Q(business__hub=selected))
+            sales = sales.filter(hub=selected)
+            businesses = businesses.filter(hub=selected)
+            expenses_qs = expenses_qs.filter(Q(hub=selected) | Q(business__hub=selected))
         elif hub_error:
-            assets, liabilities, equity = assets.none(), liabilities.none(), equity.none()
+            assets, liabilities, equity, sales, businesses, expenses_qs = assets.none(), liabilities.none(), equity.none(), sales.none(), businesses.none(), expenses_qs.none()
+
         total_assets = _sum(assets, "cost")
         total_liabilities = _sum(liabilities, "balance")
         total_equity = _sum(equity, "amount")
+
+        sales_rev = _sum(sales, "total")
+        contrib_rev = _sum(businesses, "amount")
+        total_rev = sales_rev + contrib_rev
+
+        sale_items = SaleItem.objects.filter(sale__in=sales)
+        cogs = _sum(
+            sale_items,
+            None,
+            expression=ExpressionWrapper(
+                F("quantity") * F("unit_cost"),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+        )
+        cogs_exp = _sum(expenses_qs.filter(category=Expense.Category.STOCK_COST_OF_GOODS), "amount")
+        total_cogs = cogs + cogs_exp
+
+        commissions_total = _sum(sales.filter(commission__status__in=["PENDING", "APPROVED", "PAID"]), "commission__amount")
+
+        from apps.payroll.models import SalaryRecord
+        salaries = SalaryRecord.objects.filter(status__in=[SalaryRecord.Status.PENDING, SalaryRecord.Status.APPROVED, SalaryRecord.Status.PAID])
+        if role in hub_scoped_roles:
+            salaries = salaries.filter(worker__hub_id__in=hub_ids)
+        elif role == Role.MEMBER or not is_platform_admin:
+            salaries = salaries.none()
+        if selected:
+            salaries = salaries.filter(worker__hub=selected)
+        elif hub_error:
+            salaries = salaries.none()
+        payroll_total = _sum(salaries, "gross_amount")
+
+        other_exp = _sum(expenses_qs.exclude(category=Expense.Category.STOCK_COST_OF_GOODS), "amount")
+
+        net_income = total_rev - total_cogs - commissions_total - payroll_total - other_exp
+
+        ratios = calculate_financial_ratios(
+            total_assets=total_assets,
+            total_liabilities=total_liabilities,
+            total_equity=total_equity,
+            net_income=net_income,
+        )
         context.update(
             page_title=self.page_title,
             filter_hubs=available_hubs,
@@ -504,11 +572,8 @@ class FinancialRatiosView(LoginRequiredMixin, PermissionRequiredMixin, TemplateV
             total_assets=total_assets,
             total_liabilities=total_liabilities,
             total_equity=total_equity,
-            ratios=calculate_financial_ratios(
-                total_assets=total_assets,
-                total_liabilities=total_liabilities,
-                total_equity=total_equity,
-            ),
+            net_income=net_income,
+            ratios=ratios,
         )
         return context
 
