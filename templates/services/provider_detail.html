@@ -64,8 +64,8 @@
             <span class="badge {% if provider.is_active %}badge--positive{% elif provider.is_dormant %}badge--warning{% else %}badge--danger{% endif %}">
               {{ provider.get_status_display }}
             </span>
-            &nbsp;·&nbsp; Category: <strong>{{ provider.service_category_display }}</strong>
-            {% if provider.member %}&nbsp;·&nbsp; Member: <strong>{{ provider.member.display_name }}</strong>{% endif %}
+            &nbsp;&middot;&nbsp; Category: <strong>{{ provider.service_category_display }}</strong>
+            {% if provider.member %}&nbsp;&middot;&nbsp; Member: <strong>{{ provider.member.display_name }}</strong>{% endif %}
           </p>
         </div>
       </div>
@@ -102,7 +102,7 @@
           </span>
           <span class="badge badge--positive" style="font-size: 0.75rem;">Earned</span>
         </div>
-        <span class="stat-card__label" style="margin-top: 0.75rem;">Total Commissions</span>
+        <span class="stat-card__label" style="margin-top: 0.75rem;">Service Commissions</span>
         <strong class="stat-card__value">{{ CURRENCY_CODE }} {{ total_commissions|default:"0.00" }}</strong>
       </div>
     </article>
@@ -159,13 +159,13 @@
             </dd>
           </div>
           <div class="hub-fact">
-            <dt>Phone Number</dt><dd>{{ provider.phone_number|default:"—" }}</dd>
+            <dt>Phone Number</dt><dd>{{ provider.phone_number|default:"&mdash;" }}</dd>
           </div>
           <div class="hub-fact">
-            <dt>Email Address</dt><dd>{{ provider.email|default:"—" }}</dd>
+            <dt>Email Address</dt><dd>{{ provider.email|default:"&mdash;" }}</dd>
           </div>
           <div class="hub-fact">
-            <dt>Address</dt><dd>{{ provider.address|default:"—" }}</dd>
+            <dt>Address</dt><dd>{{ provider.address|default:"&mdash;" }}</dd>
           </div>
           <div class="hub-fact">
             <dt>Payment Status</dt><dd><span class="badge badge--neutral">{{ provider.payment_status_display }}</span></dd>
@@ -280,6 +280,44 @@
       {% endif %}
     </div>
   </section>
+
+  <!-- SALES AGENT COMMISSIONS (if linked to a user/sales agent) -->
+  {% if sales_commissions %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot style="margin-bottom: 2rem;">
+      <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card__title">Sales Agent Commissions (Member is also Sales Agent)</h2>
+        <span class="badge badge--info">{{ sales_commissions|length }} Records</span>
+      </div>
+      <div class="card__body">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Sale</th>
+                <th>Rate</th>
+                <th>Base Amount</th>
+                <th>Commission</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sc in sales_commissions %}
+                <tr>
+                  <td>{% if sc.sale %}<a href="{% url 'sales:detail' sc.sale.pk %}">{{ sc.sale }}</a>{% else %}Sale #{{ sc.pk }}{% endif %}</td>
+                  <td>{{ sc.rate|percentage|floatformat:1 }}%</td>
+                  <td>{{ CURRENCY_CODE }} {{ sc.base_amount }}</td>
+                  <td><strong>{{ CURRENCY_CODE }} {{ sc.amount }}</strong></td>
+                  <td><span class="badge badge--{{ sc.status|lower }}">{{ sc.get_status_display }}</span></td>
+                  <td>{{ sc.created_at|date:"j M Y, H:i" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
 
 </div>
 <script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>

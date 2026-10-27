@@ -111,9 +111,18 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
 
     # 8. Pay action
     response = client.post(
-        reverse("services:booking_action", kwargs={"pk": booking.pk}),
-        data={"action": "pay", "payment_reference": "MPESA-TEST-123"},
+        reverse("services:booking_action", kwargs={"pk": booking.pk}),      
+        data={"action": "pay", "payment_reference": "MPESA-TEST-123"},      
     )
     assert response.status_code == 302
     booking.refresh_from_db()
     assert booking.payment_status == ServiceBooking.PaymentStatus.PAID
+
+    # 9. Provider detail view
+    provider = ServiceProvider.objects.create(
+        provider_type=ProviderType.EXTERNAL,
+        name="Test Provider Detail",
+        service_category="SRV-RIPEN",
+    )
+    response = client.get(reverse("services:provider_detail", kwargs={"pk": provider.pk}))
+    assert response.status_code == 200

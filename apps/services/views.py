@@ -349,6 +349,7 @@ class ExternalServiceProviderListView(ServiceProviderListView):
 class ServiceProviderCreateView(ProtectedCreateView):
     model = ServiceProvider
     form_class = ServiceProviderForm
+    template_name = "services/serviceprovider_form.html"
     page_title = "Register Service Provider"
     success_url_name = "services:provider_list"
     cancel_url_name = "services:provider_list"
@@ -357,6 +358,7 @@ class ServiceProviderCreateView(ProtectedCreateView):
 class ServiceProviderUpdateView(ProtectedUpdateView):
     model = ServiceProvider
     form_class = ServiceProviderForm
+    template_name = "services/serviceprovider_form.html"
     page_title = "Edit Service Provider"
     success_url_name = "services:provider_list"
     cancel_url_name = "services:provider_list"
@@ -381,15 +383,28 @@ class ServiceProviderDetailView(LoginRequiredMixin, PermissionRequiredMixin, Pag
         bookings = self.object.bookings.select_related("service_type", "resource", "hub").order_by("-start_date")
         commissions = self.object.commissions.select_related("booking", "service_type").order_by("-created_at")
 
+        sales_commissions = []
+        sales_records = []
+        user = self.object.member.user if (self.object.member and self.object.member.user) else None
+        if user:
+            from apps.commissions.models import SalesAgentCommission
+            from apps.sales.models import Sale
+            sales_commissions = SalesAgentCommission.objects.filter(agent=user).select_related("sale__hub").order_by("-created_at")
+            sales_records = Sale.objects.filter(agent=user).select_related("hub").order_by("-completed_at")[:20]
+
         total_commissions = commissions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        total_sales_commissions = sum((c.amount for c in sales_commissions), Decimal("0.00"))
         paid_commissions = commissions.filter(status="PAID").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         pending_commissions = commissions.filter(status__in=["PENDING", "APPROVED"]).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
         context.update(
             bookings=bookings[:20],
             commissions=commissions[:20],
+            sales_commissions=sales_commissions[:20],
+            sales_records=sales_records,
             total_bookings_count=bookings.count(),
             total_commissions=total_commissions,
+            total_sales_commissions=total_sales_commissions,
             paid_commissions=paid_commissions,
             pending_commissions=pending_commissions,
             can_edit_provider=self.request.user.has_perm("services.change_serviceprovider"),

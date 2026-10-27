@@ -11,7 +11,7 @@
     <symbol id="ben-i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
     <symbol id="ben-i-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16a3 3 0 0 1 6 0"/><path d="M14 10h4"/><path d="M14 14h3"/></symbol>
     <symbol id="ben-i-store" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 21V12"/><path d="M19 21V12"/><path d="M5 21h14"/></symbol>
-    <symbol id="ben-i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="ben-i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol> 
     <symbol id="ben-i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
   </svg>
 
@@ -38,6 +38,20 @@
       <div class="hub-manager__text">
         <span class="hub-manager__label">Assigned hub</span>
         <strong class="hub-manager__name">{{ member.hub|default:"No hub assigned" }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMISSION MANAGEMENT & SETTINGS QUICK ACTIONS -->
+  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot style="margin-bottom: 1.5rem;">
+    <div class="card__body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h3 class="card__title">Commission Rate Tables & Management</h3>
+        <p class="text-muted text-sm">Configure or update global commission rate schedules and rates.</p>
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'commissions:settings' %}" class="btn btn--primary btn--sm">Manage Commission Rate Tables</a>
+        <a href="{% url 'finance:settings' %}" class="btn btn--secondary btn--sm">Financial Settings</a>
       </div>
     </div>
   </section>
@@ -71,123 +85,132 @@
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-phone"/></svg></span>
-          <dt>Phone</dt><dd>{{ member.phone_number|default:"—" }}</dd>
+          <dt>Phone</dt><dd>{{ member.phone_number|default:"&mdash;" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-id"/></svg></span>
-          <dt>National ID / ID</dt><dd>{{ member.national_id|default:"—" }}</dd>
+          <dt>National ID / ID</dt><dd>{{ member.national_id|default:"&mdash;" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-pin"/></svg></span>
-          <dt>Location</dt><dd>{{ member.location|default:"—" }}</dd>
+          <dt>Location</dt><dd>{{ member.location|default:"&mdash;" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
-          <dt>Crops Grown</dt><dd>{{ member.crops|default:"—" }}</dd>
+          <dt>Crops Grown</dt><dd>{{ member.crops|default:"&mdash;" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
-          <dt>Loop Feedback</dt><dd>{{ member.loop_feedback|default:"—" }}</dd>
+          <dt>Loop Feedback</dt><dd>{{ member.loop_feedback|default:"&mdash;" }}</dd>
         </div>
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
-          <dt>Hub</dt><dd>{{ member.hub|default:"—" }}</dd>
+          <dt>Hub</dt><dd>{{ member.hub|default:"&mdash;" }}</dd>
         </div>
+        {% if assigned_services %}
+        <div class="hub-fact">
+          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-tag"/></svg></span>
+          <dt>Assigned Services</dt>
+          <dd>
+            {% for s in assigned_services %}
+              <span class="badge badge--info">{{ s.name }}</span>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </dd>
+        </div>
+        {% endif %}
         {% if member.service_providers.exists %}
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
           <dt>Service Provider</dt>
           <dd>
-            {% for p in member.service_providers.all %}
-              <a href="{{ p.get_absolute_url }}" class="badge badge--info" style="text-decoration:none;">{{ p.name }} ({{ p.get_status_display }})</a>
+            {% for sp in member.service_providers.all %}
+              <a href="{{ sp.get_absolute_url }}" class="text-indigo-600 underline font-semibold">{{ sp.name }} ({{ sp.get_provider_type_display }})</a>{% if not forloop.last %}, {% endif %}
             {% endfor %}
           </dd>
         </div>
         {% endif %}
-        <div class="hub-fact">
-          <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
-          <dt>Offered Services</dt>
-          <dd>
-            {% if assigned_services %}
-              {% for s in assigned_services %}<span class="badge badge--success">{{ s.name }}</span> {% endfor %}
-            {% else %}
-              —
-            {% endif %}
-          </dd>
-        </div>
       </dl>
     </div>
   </section>
 
-  <!-- REPORTS & SUMMARY -->
+  <!-- SERVICE COMMISSIONS -->
   <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
     <div class="card__body">
-      <div class="dashboard-section__heading">
-        <h2 class="card__title">Activity & Financial Reports</h2>
-      </div>
-      <div class="grid grid--3 gap-4 mb-4">
-        <div class="stat-card">
-          <span class="stat-card__label">Total Service Commissions</span>
-          <strong class="stat-card__value">{{ reports_summary.total_commissions }}</strong>
-          <span class="stat-card__note">{{ reports_summary.commissions_count }} commission record(s)</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__label">Total Contributions</span>
-          <strong class="stat-card__value">{{ reports_summary.total_contributions }}</strong>
-          <span class="stat-card__note">{{ contributions|length }} contribution(s)</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__label">Total Service Bookings</span>
-          <strong class="stat-card__value">{{ reports_summary.total_bookings_amount }}</strong>
-          <span class="stat-card__note">{{ reports_summary.bookings_count }} booking(s)</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- COMMISSIONS PER SERVICE -->
-  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
-    <div class="card__body">
-      <div class="dashboard-section__heading">
-        <h2 class="card__title">Service Commissions <span class="dash-count">{{ service_commissions|length }}</span></h2>
-      </div>
+      <h2 class="card__title">Service Commissions <span class="dash-count">{{ service_commissions|length }}</span></h2>
       {% if service_commissions %}
         <div class="table-wrap">
           <table class="table">
             <thead>
               <tr>
-                <th>Service</th>
+                <th>Booking</th>
+                <th>Provider</th>
                 <th>Rate</th>
                 <th>Base Amount</th>
-                <th>Commission Amount</th>
+                <th>Commission</th>
                 <th>Status</th>
+                <th>Date</th>
               </tr>
             </thead>
             <tbody>
               {% for c in service_commissions %}
                 <tr>
-                  <td>{{ c.service_type.name|default:"General Service" }}</td>
-                  <td>{{ c.rate|percentage|floatformat:2 }}%</td>
-                  <td>{{ c.base_amount }}</td>
-                  <td><strong>{{ c.amount }}</strong></td>
-                  <td><span class="badge {% if c.status == 'PAID' %}badge--success{% else %}badge--warning{% endif %}">{{ c.get_status_display }}</span></td>
+                  <td>{% if c.booking %}<a href="{{ c.booking.get_absolute_url }}">{{ c.service_type.name }}</a>{% else %}Service Commission{% endif %}</td>
+                  <td>{{ c.provider.name|default:"&mdash;" }}</td>
+                  <td>{{ c.rate|percentage|floatformat:1 }}%</td>
+                  <td>{{ CURRENCY_CODE }} {{ c.base_amount }}</td>
+                  <td><strong>{{ CURRENCY_CODE }} {{ c.amount }}</strong></td>
+                  <td><span class="badge badge--{{ c.status|lower }}">{{ c.get_status_display }}</span></td>
+                  <td>{{ c.created_at|date:"Y-m-d H:i" }}</td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       {% else %}
-        <p class="text-muted">No service commissions recorded for this profile yet.</p>
+        <p class="text-muted">No service commission records for this profile.</p>
       {% endif %}
     </div>
   </section>
 
-  <!-- SERVICE BOOKINGS & PAYMENT STATUS -->
+  <!-- SALES AGENT COMMISSIONS -->
+  {% if sales_commissions %}
+    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
+      <div class="card__body">
+        <h2 class="card__title">Sales Agent Commissions <span class="dash-count">{{ sales_commissions|length }}</span></h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Sale</th>
+                <th>Rate</th>
+                <th>Base Amount</th>
+                <th>Commission</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sc in sales_commissions %}
+                <tr>
+                  <td>{% if sc.sale %}<a href="{% url 'sales:detail' sc.sale.pk %}">{{ sc.sale }}</a>{% else %}Sale #{{ sc.pk }}{% endif %}</td>
+                  <td>{{ sc.rate|percentage|floatformat:1 }}%</td>
+                  <td>{{ CURRENCY_CODE }} {{ sc.base_amount }}</td>
+                  <td><strong>{{ CURRENCY_CODE }} {{ sc.amount }}</strong></td>
+                  <td><span class="badge badge--{{ sc.status|lower }}">{{ sc.get_status_display }}</span></td>
+                  <td>{{ sc.created_at|date:"Y-m-d H:i" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  <!-- SERVICE BOOKINGS -->
   <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
     <div class="card__body">
-      <div class="dashboard-section__heading">
-        <h2 class="card__title">Service Bookings & Payment Status <span class="dash-count">{{ service_bookings|length }}</span></h2>
-      </div>
+      <h2 class="card__title">Service Bookings <span class="dash-count">{{ service_bookings|length }}</span></h2>
       {% if service_bookings %}
         <div class="table-wrap">
           <table class="table">
@@ -205,7 +228,7 @@
               {% for b in service_bookings %}
                 <tr>
                   <td><a href="{{ b.get_absolute_url }}">{{ b.service_type.name }}</a></td>
-                  <td>{{ b.resource.name|default:"—" }}</td>
+                  <td>{{ b.resource.name|default:"&mdash;" }}</td>
                   <td>{{ b.start_date|date:"Y-m-d H:i" }}</td>
                   <td>{{ b.total_amount }}</td>
                   <td><span class="badge badge--info">{{ b.get_status_display }}</span></td>
@@ -220,6 +243,8 @@
       {% endif %}
     </div>
   </section>
+
+
 
   <!-- CONTRIBUTIONS -->
   {% if contributions or can_add_contribution %}

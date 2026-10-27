@@ -475,3 +475,22 @@ def test_customer_detail_profile_view(client, make_user, roles):
     assert res_after.status_code == 200
     assert b"Farmer profile" in res_after.content
     assert b"Upgrade to Farmer" not in res_after.content
+
+
+def test_member_detail_full_view(client, make_user, roles):
+    admin = make_user(role=Role.ADMIN)
+    hub = Hub.objects.create(code="MEM-HUB-FULL", name="Full Hub")
+    client.force_login(admin)
+
+    member = MemberProfile.objects.create(
+        customer_type=MemberProfile.CustomerType.FARMER,
+        name="Bob Builder",
+        phone_number="0755555555",
+        hub=hub,
+    )
+
+    res = client.get(reverse("members:detail", args=[member.pk]))
+    assert res.status_code == 200
+    assert b"Bob Builder" in res.content
+    assert b"Commission Rate Tables & Management" in res.content
+

@@ -158,6 +158,10 @@ def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, no
         booking.notes = f"{booking.notes}\nCompletion Notes: {notes.strip()}".strip()
     booking.save(update_fields=["status", "quantity", "total_amount", "notes", "updated_at"])
 
+    if booking.service_provider:
+        from apps.commissions.services import accrue_service_commission
+        accrue_service_commission(booking)
+
     resource = booking.resource
     other_active = (
         ServiceBooking.objects.filter(

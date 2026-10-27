@@ -230,19 +230,31 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
 
     def get_breadcrumbs(self):
         return [
-            ("Clients & Customers", reverse("members:customers_list")),
+            ("Clients & Customers", reverse("members:customers_list")),     
             (self.object.display_name, None),
         ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+        user = self.object.user
+
         commissions = ServiceCommission.objects.filter(
-            Q(provider__member=self.object) | Q(booking__member=self.object)
-        ).select_related("provider", "booking", "service_type")
+            Q(provider__member=self.object) | Q(provider__in=self.object.service_providers.all())
+        ).select_related("provider", "booking", "service_type").distinct()
+
+        sales_commissions = []
+        sales_records = []
+        if user:
+            from apps.commissions.models import SalesAgentCommission
+            from apps.sales.models import Sale
+            sales_commissions = SalesAgentCommission.objects.filter(agent=user).select_related("sale__hub").order_by("-created_at")
+            sales_records = Sale.objects.filter(agent=user).select_related("hub").order_by("-completed_at")[:20]
 
         bookings = scope_queryset(
-            self.object.service_bookings.all(), self.request.user
+            ServiceBooking.objects.filter(
+                Q(member=self.object) | Q(service_provider__member=self.object) | Q(service_provider__in=self.object.service_providers.all())
+            ).distinct(),
+            self.request.user
         ).select_related("service_type", "resource")
 
         contributions = scope_queryset(
@@ -250,6 +262,7 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
         ).select_related("hub")
 
         total_commissions = commissions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        total_sales_commissions = sum((c.amount for c in sales_commissions), Decimal("0.00"))
         total_contributions = contributions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         total_bookings_amount = bookings.aggregate(total=Sum("total_amount"))["total"] or Decimal("0.00")
 
@@ -264,14 +277,18 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
                 {"label": "Status", "field": "status"},
             ),
             assigned_services=self.object.services.all(),
+            service_providers=self.object.service_providers.all(),
             service_commissions=commissions,
+            sales_commissions=sales_commissions[:20],
+            sales_records=sales_records,
             service_bookings=bookings,
             reports_summary={
                 "total_commissions": total_commissions,
+                "total_sales_commissions": total_sales_commissions,
                 "total_contributions": total_contributions,
                 "total_bookings_amount": total_bookings_amount,
                 "bookings_count": bookings.count(),
-                "commissions_count": commissions.count(),
+                "commissions_count": commissions.count() + len(sales_commissions),
             },
             can_edit_member=self.request.user.has_perm(
                 "members.change_memberprofile"

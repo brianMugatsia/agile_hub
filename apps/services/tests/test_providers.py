@@ -82,3 +82,29 @@ def test_dormancy_check():
     assert dormant_count >= 1
     provider.refresh_from_db()
     assert provider.status == ServiceProviderStatus.DORMANT
+
+
+def test_service_provider_form_service_catalogue_choices_and_display():
+    from apps.services.forms import ServiceProviderForm
+    from apps.services.models import ServiceType, ServiceCategory
+
+    st = ServiceType.objects.create(
+        code="TEST-CAT-SRV",
+        name="Test Catalogue Service",
+        category=ServiceCategory.RIPENING,
+        standard_rate=Decimal("10.00"),
+        is_active=True,
+    )
+
+    form = ServiceProviderForm()
+    choices = dict(form.fields["service_category"].choices)
+    assert "TEST-CAT-SRV" in choices
+    assert "Test Catalogue Service" in choices["TEST-CAT-SRV"]
+
+    provider = ServiceProvider(
+        provider_type=ProviderType.EXTERNAL,
+        name="External Cat Provider",
+        service_category="TEST-CAT-SRV",
+    )
+    assert provider.service_category_display == "Test Catalogue Service"
+

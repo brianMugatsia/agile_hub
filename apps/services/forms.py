@@ -117,6 +117,13 @@ class ServiceProviderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Populate service_category dropdown with active ServiceType entries
+        from apps.services.models import ServiceType
+        service_choices = [("", "---------")] + [
+            (st.code, f"{st.name} ({st.get_category_display()})")
+            for st in ServiceType.objects.filter(is_active=True).order_by("category", "name")
+        ]
+        self.fields["service_category"].choices = service_choices
         self.fields["member"].queryset = MemberProfile.objects.select_related("user").all()
         self.fields["member"].required = False
         self.fields["name"].required = False

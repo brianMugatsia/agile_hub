@@ -88,7 +88,7 @@ class ServiceProvider(models.Model):
     email = models.EmailField(blank=True)
     address = models.CharField(max_length=255, blank=True)
     service_category = models.CharField(
-        max_length=24, choices=ServiceCategory.choices, blank=True, db_index=True
+        max_length=32, blank=True, db_index=True
     )
     status = models.CharField(
         max_length=16, choices=ServiceProviderStatus.choices, default=ServiceProviderStatus.ACTIVE, db_index=True
@@ -139,7 +139,15 @@ class ServiceProvider(models.Model):
 
     @property
     def service_category_display(self):
-        return self.get_service_category_display() or "General"
+        if not self.service_category:
+            return "General"
+        st = ServiceType.objects.filter(code=self.service_category).first()
+        if st:
+            return st.name
+        cat_choices = dict(ServiceCategory.choices)
+        if self.service_category in cat_choices:
+            return cat_choices[self.service_category]
+        return self.service_category
 
     @property
     def status_display(self):
