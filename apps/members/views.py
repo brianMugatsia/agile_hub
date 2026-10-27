@@ -34,9 +34,14 @@ class MemberListView(ScopedModelListView):
     template_name = "members/member_list.html"
     columns = (
         {"label": "Name", "field": "display_name"},
+        {"label": "National ID", "field": "national_id"},
         {"label": "Phone Number", "field": "phone_number"},
+        {"label": "Location", "field": "location"},
+        {"label": "Crops", "field": "crops"},
+        {"label": "Assigned Services", "field": "services_display"},
+        {"label": "Hub", "field": "hub__name"},
     )
-    search_fields = ("user__first_name", "user__last_name", "user__email", "name", "phone_number", "crops", "location")
+    search_fields = ("user__first_name", "user__last_name", "user__email", "name", "phone_number", "national_id", "crops", "location", "hub__name", "loop_feedback")
     create_url_name = "members:create"
     create_label = "Add member"
     create_permission = "members.add_memberprofile"
@@ -53,6 +58,7 @@ class MemberListView(ScopedModelListView):
         context = super().get_context_data(**kwargs)
         context.update(_provider_stats())
         context["active_tab"] = "all_members"
+        context["search_placeholder"] = "Search by name, phone, national ID, location, crops, hub..."
         return context
 
 
@@ -243,7 +249,8 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
             Q(provider__in=self.object.service_providers.all()) |
             Q(booking__member=self.object) |
             Q(booking__service_provider__member=self.object) |
-            Q(booking__service_provider__in=self.object.service_providers.all())
+            Q(booking__service_provider__in=self.object.service_providers.all()) |
+            (Q(booking__customer_phone__isnull=False) & Q(booking__customer_phone__exact=self.object.phone_number))
         ).select_related("provider", "booking", "service_type").distinct()
 
         sales_commissions = []
@@ -255,7 +262,10 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
             sales_records = Sale.objects.filter(agent=user).select_related("hub").order_by("-completed_at")[:20]
 
         bookings = ServiceBooking.objects.filter(
-            Q(member=self.object) | Q(service_provider__member=self.object) | Q(service_provider__in=self.object.service_providers.all())
+            Q(member=self.object) |
+            Q(service_provider__member=self.object) |
+            Q(service_provider__in=self.object.service_providers.all()) |
+            (Q(customer_phone__isnull=False) & Q(customer_phone__exact=self.object.phone_number))
         ).select_related("service_type", "resource").distinct()
 
         contributions = scope_queryset(

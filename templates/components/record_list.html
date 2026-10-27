@@ -29,7 +29,7 @@
           {% if search_fields %}
           <label class="sr-only" for="record-search">Search records</label>
           <input id="record-search" class="input" type="search" name="q" value="{{ search_query }}"
-                 placeholder="Search {{ page_title|lower }}…" autocomplete="off">
+                 placeholder="{% if search_placeholder %}{{ search_placeholder }}{% else %}Search {{ page_title|lower }}…{% endif %}" autocomplete="off">
           {% endif %}
           {% if date_filter_field %}
             <label class="field filter-bar__field"><span class="field__label">From</span><input class="input" type="date" name="start" value="{{ filter_start }}"></label>
@@ -59,4 +59,25 @@
       {% include "partials/pagination.html" %}
     </div>
   </section>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const searchInput = document.getElementById("record-search");
+      if (!searchInput) return;
+      const tableRows = document.querySelectorAll("table.table tbody tr");
+      if (!tableRows.length) return;
+
+      searchInput.addEventListener("input", function() {
+        const query = searchInput.value.toLowerCase().trim();
+        tableRows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          if (text.includes(query)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      });
+    });
+  </script>
 {% endblock %}

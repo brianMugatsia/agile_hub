@@ -5,7 +5,7 @@ from apps.hubs.models import Hub
 from apps.hubs.permissions import hubs_for_user
 from apps.members.models import Business, MemberProfile
 
-from .models import HubResource, ServiceBooking, ServiceProvider, ServiceType
+from .models import HubResource, ServiceBooking, ServiceProvider, ServiceProviderStatus, ServiceType
 
 
 class ServiceTypeForm(forms.ModelForm):
@@ -57,6 +57,21 @@ class ServiceBookingForm(forms.ModelForm):
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
         initial=lambda: timezone.now() + timezone.timedelta(days=1),
     )
+    member = forms.ModelChoiceField(
+        queryset=MemberProfile.objects.all(),
+        required=True,
+        label="Customer / Client",
+        help_text="Select a registered customer from the system.",
+        widget=forms.Select(attrs={"class": "select"}),
+    )
+    unit_rate = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=True,
+        label="Unit Rate (per quantity/unit)",
+        help_text="The price charged per unit (e.g. per Kg, per Acre, per Day) for this service. Defaults to the service catalogue standard rate.",
+        widget=forms.NumberInput(attrs={"class": "input", "step": "0.01"}),
+    )
 
     class Meta:
         model = ServiceBooking
@@ -66,9 +81,8 @@ class ServiceBookingForm(forms.ModelForm):
             "resource",
             "service_provider",
             "member",
-            "business",
-            "customer_name",
-            "customer_phone",
+            "status",
+            "payment_status",
             "start_date",
             "end_date",
             "quantity",
@@ -78,6 +92,11 @@ class ServiceBookingForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if not self.initial.get("status"):
+            self.initial["status"] = ServiceBooking.Status.SCHEDULED
+        if not self.initial.get("payment_status"):
+            self.initial["payment_status"] = ServiceBooking.PaymentStatus.PENDING
+
         if user:
             permitted_hubs = hubs_for_user(user, active_only=True)
             self.fields["hub"].queryset = permitted_hubs
@@ -93,8 +112,7 @@ class ServiceBookingForm(forms.ModelForm):
                 self.fields["resource"].queryset = HubResource.objects.filter(hub__in=permitted_hubs)
 
             self.fields["member"].queryset = MemberProfile.objects.select_related("user").all()
-            self.fields["business"].queryset = Business.objects.filter(status=Business.Status.ACTIVE)
-            self.fields["service_provider"].queryset = ServiceProvider.objects.filter(status=ServiceProvider.status.field.choices[0][0] if hasattr(ServiceProvider, 'status') else 'ACTIVE')
+            self.fields["service_provider"].queryset = ServiceProvider.objects.filter(status=ServiceProviderStatus.ACTIVE)
 
 
 class BookingActionForm(forms.Form):

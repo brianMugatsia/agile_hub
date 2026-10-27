@@ -42,10 +42,11 @@ class ServiceBookingListView(ScopedModelListView):
     page_title = "Service Bookings"
     template_name = "services/booking_list.html"
     export_url_name = "services:booking_export"
+    row_detail_url_name = "services:booking_detail"
     columns = (
         {"label": "Service", "field": "service_type__name"},
         {"label": "Equipment / Chamber", "field": "resource__name"},
-        {"label": "Customer / Farmer", "field": "customer_name"},
+        {"label": "Customer / Client", "field": "client_display"},
         {"label": "Start Date", "field": "start_date"},
         {"label": "End Date", "field": "end_date"},
         {"label": "Total Amount", "field": "total_amount"},

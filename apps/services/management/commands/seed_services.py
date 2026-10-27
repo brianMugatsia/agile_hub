@@ -59,6 +59,11 @@ class Command(BaseCommand):
             ("MILL-GRAIN", "Commercial Grain Milling & Grading", ServiceCategory.PROCESSING, ServicePricingUnit.PER_KG, Decimal("3.50"), "Professional milling, sorting, and packaging of grains."),
             ("COLD-STR", "Cold & Dry Storage Facility", ServiceCategory.STORAGE, ServicePricingUnit.PER_DAY, Decimal("200.00"), "Temperature-controlled cold storage for perishable horticulture produce."),
             ("TRANS-LOG", "Bulk Produce Haulage & Transport", ServiceCategory.TRANSPORT, ServicePricingUnit.PER_DAY, Decimal("12000.00"), "Heavy-duty truck transport for farm-to-hub and market delivery."),
+            ("AGR-TEST", "Soil Testing & Agronomy Advisory", ServiceCategory.AGRONOMY, ServicePricingUnit.PER_ACRE, Decimal("1500.00"), "Comprehensive soil nutrient analysis and expert agronomist recommendations."),
+            ("PKG-SORT", "Produce Grading & Sorting", ServiceCategory.PACKAGING, ServicePricingUnit.PER_KG, Decimal("2.50"), "Professional sorting, grading, and packaging of fresh produce."),
+            ("IRR-SYS", "Irrigation System Setup & Maintenance", ServiceCategory.IRRIGATION, ServicePricingUnit.PER_DAY, Decimal("5000.00"), "Installation, servicing, and repair of farm irrigation systems."),
+            ("EXT-TRAIN", "Farmer Capacity Building & Training", ServiceCategory.EXTENSION, ServicePricingUnit.PER_DAY, Decimal("2000.00"), "Agricultural extension officer training workshops and farmer field schools."),
+            ("FIN-INS", "Agri-Insurance & Micro-Credit Brokerage", ServiceCategory.FINANCIAL, ServicePricingUnit.FIXED, Decimal("1000.00"), "Facilitation of agricultural crop insurance and micro-loans."),
         ]
 
         services = []

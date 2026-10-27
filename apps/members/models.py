@@ -50,6 +50,13 @@ class MemberProfile(models.Model):
         return (self.customer_type or "").upper() == self.CustomerType.LEAD
 
     @property
+    def services_display(self):
+        services = self.services.all()
+        if not services.exists():
+            return "No service offered"
+        return ", ".join(s.name for s in services)
+
+    @property
     def is_farmer(self):
         return (self.customer_type or "").upper() == self.CustomerType.FARMER or not self.customer_type
 

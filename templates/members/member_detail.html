@@ -118,17 +118,26 @@
           </dd>
         </div>
         {% endif %}
-        {% if member.service_providers.exists %}
         <div class="hub-fact">
           <span class="hub-fact__icon" aria-hidden="true"><svg class="dash-icon"><use href="#ben-i-user"/></svg></span>
-          <dt>Service Provider</dt>
+          <dt>Services Offered</dt>
           <dd>
-            {% for sp in member.service_providers.all %}
-              <a href="{{ sp.get_absolute_url }}" class="text-indigo-600 underline font-semibold">{{ sp.name }} ({{ sp.get_provider_type_display }})</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
+            {% if member.service_providers.exists or assigned_services %}
+              {% if member.service_providers.exists %}
+                {% for sp in member.service_providers.all %}
+                  <a href="{{ sp.get_absolute_url }}" class="text-indigo-600 underline font-semibold">{{ sp.name }} ({{ sp.get_provider_type_display }})</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              {% endif %}
+              {% if assigned_services %}
+                {% for s in assigned_services %}
+                  <span class="badge badge--info">{{ s.name }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% else %}
+              <span class="text-muted">No service offered</span>
+            {% endif %}
           </dd>
         </div>
-        {% endif %}
       </dl>
     </div>
   </section>

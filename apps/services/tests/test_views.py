@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.roles import Role
 from apps.hubs.models import Hub, HubMembership
+from apps.members.models import MemberProfile
 from apps.services.models import HubResource, ServiceBooking, ServiceCategory, ServicePricingUnit, ServiceType, ServiceProvider, ProviderType, ServiceProviderStatus
 
 pytestmark = pytest.mark.django_db
@@ -64,6 +65,7 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
     assert response.status_code == 200
 
     # 4. Create booking through POST
+    member = MemberProfile.objects.create(name="Farmer John", phone_number="0700000000", hub=hub)
     start_date = timezone.now() + timedelta(days=1)
     end_date = start_date + timedelta(days=2)
     response = client.post(
@@ -72,17 +74,18 @@ def test_service_views_permissions_and_workflow(client, make_user, roles):
             "hub": hub.pk,
             "service_type": service.pk,
             "resource": resource.pk,
+            "member": member.pk,
+            "status": "SCHEDULED",
+            "payment_status": "PENDING",
             "start_date": start_date.strftime("%Y-%m-%dT%H:%M"),
             "end_date": end_date.strftime("%Y-%m-%dT%H:%M"),
             "quantity": "800.00",
             "unit_rate": "12.00",
-            "customer_name": "Farmer John",
-            "customer_phone": "0700000000",
             "notes": "Premium mangoes",
         },
     )
     assert response.status_code == 302
-    booking = ServiceBooking.objects.get(customer_name="Farmer John")
+    booking = ServiceBooking.objects.get(member=member)
     assert booking.total_amount == Decimal("9600.00")
 
     # 5. Detail view

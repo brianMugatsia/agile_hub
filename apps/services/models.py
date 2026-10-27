@@ -15,6 +15,11 @@ class ServiceCategory(models.TextChoices):
     PROCESSING = "PROCESSING", "Processing & Milling"
     STORAGE = "STORAGE", "Cold & Dry Storage"
     TRANSPORT = "TRANSPORT", "Transport & Haulage"
+    AGRONOMY = "AGRONOMY", "Agronomy & Soil Testing"
+    PACKAGING = "PACKAGING", "Grading, Sorting & Packaging"
+    IRRIGATION = "IRRIGATION", "Irrigation & Water Management"
+    EXTENSION = "EXTENSION", "Farmer Training & Extension"
+    FINANCIAL = "FINANCIAL", "Financial Services & Insurance"
     OTHER = "OTHER", "Other Service"
 
 
@@ -308,6 +313,8 @@ class ServiceBooking(models.Model):
             raise ValidationError({"resource": "Selected resource belongs to a different hub."})
 
     def save(self, *args, **kwargs):
+        if self.member and not self.customer_name:
+            self.customer_name = self.client_display
         if not self.total_amount:
             raw_total = (self.quantity or Decimal("1.00")) * (self.unit_rate or Decimal("0.00"))
             self.total_amount = raw_total.quantize(Decimal("0.01"))
@@ -319,7 +326,9 @@ class ServiceBooking(models.Model):
     @property
     def client_display(self):
         if self.member:
-            return self.member.user.display_name
+            if self.member.user:
+                return self.member.user.display_name
+            return self.member.name or self.member.phone_number or f"Customer #{self.member.pk}"
         if self.business:
             return self.business.name
         return self.customer_name or "Walk-in Farmer/Client"
