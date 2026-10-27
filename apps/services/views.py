@@ -111,6 +111,7 @@ class ServiceBookingDetailView(LoginRequiredMixin, PermissionRequiredMixin, Page
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["action_form"] = BookingActionForm()
+        context["booking_commissions"] = self.object.commissions.select_related("service_type").all()
         return context
 
 

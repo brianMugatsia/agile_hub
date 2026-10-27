@@ -1,52 +1,65 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="booking-detail">
-  <p>
-    <a class="btn btn--secondary" href="{% url 'services:booking_list' %}">Back to bookings</a>
-    {% if perms.services.change_servicebooking %}
-      <a class="btn btn--secondary" href="{% url 'services:booking_edit' servicebooking.pk %}">Edit booking</a>
-    {% endif %}
-  </p>
+{% load static ui_tags %}
 
-  <section class="grid grid--2">
-    <article class="card">
+{% block content %}
+<div class="dash" style="max-width: 1000px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+    <a class="btn btn--secondary" href="{% url 'services:booking_list' %}">
+      {% icon "arrow-left" %}<span>Back to bookings</span>
+    </a>
+    {% if perms.services.change_servicebooking %}
+      <a class="btn btn--primary" href="{% url 'services:booking_edit' servicebooking.pk %}">
+        {% icon "edit" %}<span>Edit Booking Rates & Details</span>
+      </a>
+    {% endif %}
+  </div>
+
+  <section class="grid grid--2" style="gap: 1.5rem;">
+    <article class="card dash-panel">
       <div class="card__header">
         <h2 class="card__title">Booking Information</h2>
       </div>
       <div class="card__body">
-        <dl class="detail-list">
-          <div><dt>Service</dt><dd><strong>{{ servicebooking.service_type.name }}</strong> ({{ servicebooking.service_type.get_category_display }})</dd></div>
-          <div><dt>Hub</dt><dd>{{ servicebooking.hub.name }}</dd></div>
-          <div><dt>Equipment / Chamber</dt><dd><a href="{% url 'services:resource_detail' servicebooking.resource.pk %}">{{ servicebooking.resource.name }}</a></dd></div>
-          <div><dt>Client</dt><dd>{{ servicebooking.client_display }}</dd></div>
-          <div><dt>Contact Phone</dt><dd>{{ servicebooking.customer_phone|default:"—" }}</dd></div>
+        <dl class="hub-facts">
+          <div class="hub-fact"><dt>Service</dt><dd><strong>{{ servicebooking.service_type.name }}</strong> ({{ servicebooking.service_type.get_category_display }})</dd></div>
+          <div class="hub-fact"><dt>Hub</dt><dd>{{ servicebooking.hub.name }}</dd></div>
+          <div class="hub-fact"><dt>Equipment / Chamber</dt><dd><a href="{% url 'services:resource_detail' servicebooking.resource.pk %}" style="color: #2563eb; font-weight: 600;">{{ servicebooking.resource.name }}</a></dd></div>
+          <div class="hub-fact"><dt>Client / Customer</dt><dd>{{ servicebooking.client_display }}</dd></div>
           {% if servicebooking.service_provider %}
-            <div><dt>Assigned Provider</dt><dd><a href="{{ servicebooking.service_provider.get_absolute_url }}" style="font-weight: 600; color: #2563eb;">{{ servicebooking.service_provider.name }}</a> ({{ servicebooking.service_provider.get_provider_type_display }})</dd></div>
+            <div class="hub-fact">
+              <dt>Assigned Provider</dt>
+              <dd>
+                <a href="{{ servicebooking.service_provider.get_absolute_url }}" style="font-weight: 600; color: #2563eb;">{{ servicebooking.service_provider.name }}</a> 
+                ({{ servicebooking.service_provider.get_provider_type_display }})<br>
+                <span style="font-size: 0.85rem; color: var(--color-muted);">
+                  Phone: {{ servicebooking.service_provider.phone_number|default:"—" }} | Email: {{ servicebooking.service_provider.email|default:"—" }}
+                </span>
+              </dd>
+            </div>
           {% endif %}
-          <div><dt>Start Date</dt><dd>{{ servicebooking.start_date|date:"j M Y, H:i" }}</dd></div>
-          <div><dt>End Date</dt><dd>{{ servicebooking.end_date|date:"j M Y, H:i" }}</dd></div>
-          <div><dt>Quantity / Duration</dt><dd>{{ servicebooking.quantity }} {{ servicebooking.service_type.get_pricing_unit_display }}</dd></div>
-          <div><dt>Unit Rate</dt><dd>{{ servicebooking.unit_rate }}</dd></div>
-          <div><dt>Total Amount</dt><dd><strong>{{ CURRENCY_CODE }} {{ servicebooking.total_amount }}</strong></dd></div>
-          <div><dt>Booking Status</dt><dd><span class="badge badge--{{ servicebooking.status|lower }}">{{ servicebooking.get_status_display }}</span></dd></div>
-          <div><dt>Payment Status</dt><dd><span class="badge badge--{{ servicebooking.payment_status|lower }}">{{ servicebooking.get_payment_status_display }}</span></dd></div>
+          <div class="hub-fact"><dt>Start Date</dt><dd>{{ servicebooking.start_date|date:"j M Y, H:i" }}</dd></div>
+          <div class="hub-fact"><dt>End Date</dt><dd>{{ servicebooking.end_date|date:"j M Y, H:i" }}</dd></div>
+          <div class="hub-fact"><dt>Quantity / Duration</dt><dd>{{ servicebooking.quantity }} {{ servicebooking.service_type.get_pricing_unit_display }}</dd></div>
+          <div class="hub-fact"><dt>Total Amount</dt><dd><strong style="font-size: 1.1rem; color: #166534;">{{ CURRENCY_CODE }} {{ servicebooking.total_amount }}</strong></dd></div>
+          <div class="hub-fact"><dt>Booking Status</dt><dd><span class="badge badge--{{ servicebooking.status|lower }}">{{ servicebooking.get_status_display }}</span></dd></div>
+          <div class="hub-fact"><dt>Payment Status</dt><dd><span class="badge badge--{{ servicebooking.payment_status|lower }}">{{ servicebooking.get_payment_status_display }}</span></dd></div>
           {% if servicebooking.payment_reference %}
-            <div><dt>Payment Ref</dt><dd>{{ servicebooking.payment_reference }}</dd></div>
+            <div class="hub-fact"><dt>Payment Ref</dt><dd>{{ servicebooking.payment_reference }}</dd></div>
           {% endif %}
         </dl>
       </div>
     </article>
 
-    <article class="card">
+    <article class="card dash-panel">
       <div class="card__header">
-        <h2 class="card__title">Manage Workflow & Payment</h2>
+        <h2 class="card__title">Manage Workflow & Follow-up</h2>
       </div>
       <div class="card__body">
         {% if servicebooking.status == "SCHEDULED" %}
           <form method="post" action="{% url 'services:booking_action' servicebooking.pk %}" style="margin-bottom: 1.5rem;">
             {% csrf_token %}
             <input type="hidden" name="action" value="start">
-            <p>Ready to start operation (e.g. ripening intake or machinery dispatch)?</p>
+            <p class="text-muted text-sm">Ready to start operation (e.g. ripening intake or machinery dispatch)?</p>
             <button type="submit" class="btn btn--primary">Start Operation</button>
           </form>
         {% elif servicebooking.status == "IN_PROGRESS" %}
@@ -54,25 +67,25 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="complete">
             <div style="margin-bottom: 0.75rem;">
-              <label for="actual_quantity">Actual Final Quantity (optional adjustment):</label>
+              <label for="actual_quantity" style="font-weight: 500; font-size: 0.9rem;">Actual Final Quantity (optional adjustment):</label>
               <input type="number" step="0.01" name="actual_quantity" id="actual_quantity" value="{{ servicebooking.quantity }}" class="input">
             </div>
             <div style="margin-bottom: 0.75rem;">
-              <label for="completion_notes">Completion / Yield Notes:</label>
-              <textarea name="notes" id="completion_notes" rows="2" class="input" placeholder="Produce condition, acres completed, fuel used..."></textarea>
+              <label for="completion_notes" style="font-weight: 500; font-size: 0.9rem;">Completion / Yield / Follow-up Notes:</label>
+              <textarea name="notes" id="completion_notes" rows="3" class="input" placeholder="Produce condition, acres completed, fuel used, follow-up remarks..."></textarea>
             </div>
-            <button type="submit" class="btn btn--primary">Complete & Release Resource</button>
+            <button type="submit" class="btn btn--primary">Complete & Accrue Commission</button>
           </form>
         {% endif %}
 
         {% if servicebooking.payment_status != "PAID" %}
           <hr style="margin: 1.5rem 0;">
-          <h3>Record Payment</h3>
+          <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Record Payment</h3>
           <form method="post" action="{% url 'services:booking_action' servicebooking.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="pay">
             <div style="margin-bottom: 0.75rem;">
-              <label for="payment_ref">Payment Reference (M-Pesa / Receipt #):</label>
+              <label for="payment_ref" style="font-weight: 500; font-size: 0.9rem;">Payment Reference (M-Pesa / Receipt #):</label>
               <input type="text" name="payment_reference" id="payment_ref" class="input" placeholder="e.g. QKH7892XX" required>
             </div>
             <button type="submit" class="btn btn--secondary">Confirm Payment ({{ CURRENCY_CODE }} {{ servicebooking.total_amount }})</button>
@@ -85,7 +98,7 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="cancel">
             <div style="margin-bottom: 0.75rem;">
-              <label for="cancel_notes">Cancellation Reason:</label>
+              <label for="cancel_notes" style="font-weight: 500; font-size: 0.9rem;">Cancellation Reason:</label>
               <input type="text" name="notes" id="cancel_notes" class="input" placeholder="Client cancelled, machine breakdown..." required>
             </div>
             <button type="submit" class="btn btn--danger">Cancel Booking</button>
@@ -94,11 +107,53 @@
 
         {% if servicebooking.notes %}
           <hr style="margin: 1.5rem 0;">
-          <h4>Notes / Logs</h4>
-          <p>{{ servicebooking.notes|linebreaksbr }}</p>
+          <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">Follow-up Notes & Logs</h4>
+          <div style="background: var(--color-surface-muted, #f8fafc); padding: 0.75rem; border-radius: 6px; font-size: 0.9rem;">
+            {{ servicebooking.notes|linebreaksbr }}
+          </div>
         {% endif %}
       </div>
     </article>
   </section>
+
+  <!-- COMMISSION RATES & PAYOUT DETAILS -->
+  <section class="card dash-panel" data-reveal="up" data-spot style="margin-top: 1.5rem;">
+    <div class="card__header">
+      <h2 class="card__title">Commission Rates & Payout Details</h2>
+    </div>
+    <div class="card__body">
+      {% if booking_commissions %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Type</th>
+                <th>Rate Set</th>
+                <th>Base Amount</th>
+                <th>Commission Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bc in booking_commissions %}
+                <tr>
+                  <td>{{ bc.provider.name }}</td>
+                  <td>{{ bc.get_provider_type_display }}</td>
+                  <td><strong>{{ bc.rate|percentage|floatformat:2 }}%</strong></td>
+                  <td>{{ CURRENCY_CODE }} {{ bc.base_amount }}</td>
+                  <td><strong>{{ CURRENCY_CODE }} {{ bc.amount }}</strong></td>
+                  <td><span class="badge badge--{{ bc.status|lower }}">{{ bc.get_status_display }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted">No commission records accrued for this booking yet. Commissions are accrued automatically upon completion of the service.</p>
+      {% endif %}
+    </div>
+  </section>
 </div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}
