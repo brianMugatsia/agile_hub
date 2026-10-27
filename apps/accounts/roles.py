@@ -115,6 +115,7 @@ ROLE_PERMISSIONS = {
         *perms("hubmembership", "view", "add", "change"),
         *perms("product", "view", "add", "change"),
         *perms("commissionsetting", "view", "add", "change"),
+        "configure_financialsetting",
         *perms("inventorytransaction", "view", "add"),
         *perms("supplier", "view", "add", "change", "delete"),
         *perms("purchaseorder", "view", "add", "change"),

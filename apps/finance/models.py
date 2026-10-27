@@ -261,26 +261,32 @@ class FinancialSetting(models.Model):
     default_commission_rate = models.DecimalField(
         max_digits=5,
         decimal_places=4,
-        default=Decimal("0.20"),
+        default=Decimal("0.00"),
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
     )
     internal_commission_rate = models.DecimalField(
         max_digits=5,
         decimal_places=4,
-        default=Decimal("0.20"),
+        default=Decimal("0.00"),
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
     )
     external_commission_rate = models.DecimalField(
         max_digits=5,
         decimal_places=4,
-        default=Decimal("0.20"),
+        default=Decimal("0.00"),
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
     )
     default_sales_expense_rate = models.DecimalField(
         max_digits=5,
         decimal_places=4,
-        default=Decimal("0.05"),
+        default=Decimal("0.00"),
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))]
+    )
+    target_contribution_amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("10000.00"),
+        validators=[MinValueValidator(Decimal("0.00"))]
     )
     sales_expense_calculation_basis = models.CharField(max_length=64, default="NET_REVENUE")
     commission_calculation_basis = models.CharField(max_length=64, default="PROFIT_BEFORE_COMMISSION")

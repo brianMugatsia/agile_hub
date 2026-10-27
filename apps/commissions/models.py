@@ -6,8 +6,16 @@ from django.db import models
 
 
 class CommissionSetting(models.Model):
-    rate = models.DecimalField(
-        max_digits=5, decimal_places=4,
+    sales_agent_rate = models.DecimalField(
+        max_digits=5, decimal_places=4, default=Decimal("0"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))],
+    )
+    internal_provider_rate = models.DecimalField(
+        max_digits=5, decimal_places=4, default=Decimal("0"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))],
+    )
+    external_provider_rate = models.DecimalField(
+        max_digits=5, decimal_places=4, default=Decimal("0"),
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("1"))],
     )
     effective_from = models.DateField(db_index=True)
@@ -20,8 +28,18 @@ class CommissionSetting(models.Model):
     class Meta:
         ordering = ["-effective_from", "-created_at"]
 
+    @property
+    def rate(self):
+        return self.sales_agent_rate or Decimal("0")
+
+    @rate.setter
+    def rate(self, value):
+        self.sales_agent_rate = value
+        self.internal_provider_rate = value
+        self.external_provider_rate = value
+
     def __str__(self):
-        return f"{self.rate:.2%} from {self.effective_from}"
+        return f"Commissions from {self.effective_from}"
 
 
 class SalesAgentCommission(models.Model):

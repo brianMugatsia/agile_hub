@@ -19,7 +19,10 @@ CENT = Decimal("0.01")
 def commission_rate_for(day=None):
     day = day or timezone.localdate()
     setting = CommissionSetting.objects.filter(is_active=True, effective_from__lte=day).first()
-    return setting.rate if setting else settings.DEFAULT_COMMISSION_RATE
+    if setting and setting.sales_agent_rate is not None:
+        return setting.sales_agent_rate
+    fin_setting = get_active_financial_setting(day)
+    return getattr(fin_setting, "default_commission_rate", Decimal("0.00"))
 
 
 @transaction.atomic
@@ -160,12 +163,18 @@ def reverse_commission(*, commission_id, actor, notes=""):
 def accrue_service_commission(booking):
     if not booking.service_provider:
         return None
-    setting = get_active_financial_setting(booking.start_date.date() if booking.start_date else None)
+    day = booking.start_date.date() if booking.start_date else timezone.localdate()
+    com_setting = CommissionSetting.objects.filter(is_active=True, effective_from__lte=day).first()
+    setting = get_active_financial_setting(day)
     provider_type = booking.service_provider.provider_type
     if provider_type == "INTERNAL":
-        rate = setting.internal_commission_rate
+        rate = (com_setting.internal_provider_rate if (com_setting and com_setting.internal_provider_rate is not None) else None)
+        if rate is None:
+            rate = setting.internal_commission_rate
     else:
-        rate = setting.external_commission_rate
+        rate = (com_setting.external_provider_rate if (com_setting and com_setting.external_provider_rate is not None) else None)
+        if rate is None:
+            rate = setting.external_commission_rate
 
     base_amount = booking.total_amount
     amount = (base_amount * rate).quantize(CENT, rounding=ROUND_HALF_UP)

@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -239,7 +239,22 @@ class CommissionSettingsView(LoginRequiredMixin, PermissionRequiredMixin, PageMi
         setting = form.save(commit=False)
         setting.created_by = self.request.user
         setting.save()
-        messages.success(self.request, "Commission rate saved.")
+
+        CENT = Decimal("0.01")
+        
+        for c in SalesAgentCommission.objects.filter(status=SalesAgentCommission.Status.PENDING):
+            rate = setting.sales_agent_rate
+            c.rate = rate
+            c.amount = (c.base_amount * rate).quantize(CENT, rounding=ROUND_HALF_UP)
+            c.save(update_fields=["rate", "amount"])
+
+        for sc in ServiceCommission.objects.filter(status=ServiceCommission.Status.PENDING):
+            rate = setting.internal_provider_rate if sc.provider_type == "INTERNAL" else setting.external_provider_rate
+            sc.rate = rate
+            sc.amount = (sc.base_amount * rate).quantize(CENT, rounding=ROUND_HALF_UP)
+            sc.save(update_fields=["rate", "amount"])
+
+        messages.success(self.request, "Commission rates updated and pending commission records recalculated.")
         return redirect("commissions:settings")
 
 

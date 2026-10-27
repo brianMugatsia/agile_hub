@@ -33,15 +33,17 @@
         <div class="stat-card__icon" style="color: var(--color-primary); background: var(--color-primary-soft);">
           {% icon "percent" %}
         </div>
-        <div class="stat-card__content">
-          <span class="stat-card__label">Active Rate</span>
-          <strong class="stat-card__value">
-            {% if active_setting %}
-              {{ active_setting.rate|percentage|floatformat:2 }}%
-            {% else %}
-              20.00% <span style="font-size: 0.75rem; font-weight: 500; color: var(--color-muted);">(Default)</span>
-            {% endif %}
-          </strong>
+        <div class="stat-card__content" style="font-size: 0.9rem;">
+          <span class="stat-card__label" style="font-weight: 600; margin-bottom: 0.25rem;">Active Rates</span>
+          {% if active_setting %}
+            <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+              <span>Sales & Members: <strong>{{ active_setting.sales_agent_rate|percentage|floatformat:2|default:"0.00" }}%</strong></span>
+              <span>Internal Providers: <strong>{{ active_setting.internal_provider_rate|percentage|floatformat:2|default:"0.00" }}%</strong></span>
+              <span>External Providers: <strong>{{ active_setting.external_provider_rate|percentage|floatformat:2|default:"0.00" }}%</strong></span>
+            </div>
+          {% else %}
+            <span style="color: var(--color-muted);">0.00% (Not Configured)</span>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -112,13 +114,18 @@
               <li class="com-rate{% if setting.is_active %} is-active{% endif %}" style="--r: {{ forloop.counter0 }}">
                 <span class="com-rate__dot" aria-hidden="true"></span>  
                 <div class="com-rate__body">
-                  <div class="com-rate__header" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
-                    <strong class="com-rate__value" style="font-size: 1.15rem; font-weight: 750;">{{ setting.rate|percentage|floatformat:2 }}%</strong>
+                  <div class="com-rate__header" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 700; font-size: 1rem;">Rate Schedule</span>
                     {% if setting.is_active %}
                       <span class="com-badge" data-status="paid">{% icon "check-circle" %} Active Rate</span>
                     {% else %}
                       <span class="com-badge" data-status="pending">Archived</span>
                     {% endif %}
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.875rem; margin-bottom: 0.5rem; background: rgba(0,0,0,0.03); padding: 0.5rem; border-radius: 6px;">
+                    <div>Sales & Members: <strong>{{ setting.sales_agent_rate|percentage|floatformat:2|default:"0.00" }}%</strong></div>
+                    <div>Internal Providers: <strong>{{ setting.internal_provider_rate|percentage|floatformat:2|default:"0.00" }}%</strong></div>
+                    <div>External Providers: <strong>{{ setting.external_provider_rate|percentage|floatformat:2|default:"0.00" }}%</strong></div>
                   </div>
                   <span class="com-rate__date">Effective from <strong>{{ setting.effective_from }}</strong></span>
                   {% if setting.created_by %}

@@ -239,7 +239,11 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
         user = self.object.user
 
         commissions = ServiceCommission.objects.filter(
-            Q(provider__member=self.object) | Q(provider__in=self.object.service_providers.all())
+            Q(provider__member=self.object) |
+            Q(provider__in=self.object.service_providers.all()) |
+            Q(booking__member=self.object) |
+            Q(booking__service_provider__member=self.object) |
+            Q(booking__service_provider__in=self.object.service_providers.all())
         ).select_related("provider", "booking", "service_type").distinct()
 
         sales_commissions = []
@@ -250,12 +254,9 @@ class MemberDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, D
             sales_commissions = SalesAgentCommission.objects.filter(agent=user).select_related("sale__hub").order_by("-created_at")
             sales_records = Sale.objects.filter(agent=user).select_related("hub").order_by("-completed_at")[:20]
 
-        bookings = scope_queryset(
-            ServiceBooking.objects.filter(
-                Q(member=self.object) | Q(service_provider__member=self.object) | Q(service_provider__in=self.object.service_providers.all())
-            ).distinct(),
-            self.request.user
-        ).select_related("service_type", "resource")
+        bookings = ServiceBooking.objects.filter(
+            Q(member=self.object) | Q(service_provider__member=self.object) | Q(service_provider__in=self.object.service_providers.all())
+        ).select_related("service_type", "resource").distinct()
 
         contributions = scope_queryset(
             self.object.businesses.all(), self.request.user
@@ -359,7 +360,9 @@ class ContributionListView(ScopedModelListView):
         scoped_members = scope_queryset(MemberProfile.objects.all(), self.request.user)
         total_members_count = scoped_members.count()
 
-        equal_unit_amount = Decimal("10000.00")
+        from apps.finance.models import FinancialSetting
+        setting = FinancialSetting.objects.filter(is_active=True).order_by("-effective_from").first()
+        equal_unit_amount = setting.target_contribution_amount if setting else Decimal("10000.00")
         total_expected_amount = total_members_count * equal_unit_amount
 
         scoped_businesses = scope_queryset(Business.objects.all(), self.request.user)
