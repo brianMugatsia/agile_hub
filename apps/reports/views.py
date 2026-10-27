@@ -13,8 +13,8 @@ from django.utils import timezone
 from django.views.generic import TemplateView, View
 from openpyxl import Workbook
 
-from apps.commissions.models import SalesAgentCommission
-from apps.commissions.services import approve_commission
+from apps.commissions.models import SalesAgentCommission, ServiceCommission
+from apps.commissions.services import approve_commission, approve_service_commission, reject_service_commission
 from apps.core.scoping import scope_queryset
 from apps.hubs.permissions import selected_hub
 from apps.inventory.models import InventoryTransaction
@@ -401,8 +401,15 @@ class GrossMarginsReportView(LoginRequiredMixin, PermissionRequiredMixin, Templa
 
 class ApprovalInboxView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     template_name = "reports/approval_inbox.html"
-    permission_required = ("commissions.approve_salesagentcommission", "payroll.approve_salaryrecord")
     page_title = "Approval inbox"
+
+    def has_permission(self):
+        user = self.request.user
+        return (
+            user.has_perm("commissions.approve_salesagentcommission")
+            or user.has_perm("commissions.approve_servicecommission")
+            or user.has_perm("payroll.approve_salaryrecord")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -421,6 +428,14 @@ class ApprovalInboxView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVie
             self.request.user,
         ).select_related("agent", "sale", "sale__hub").order_by("-created_at")
 
+        service_commissions = scope_queryset(
+            ServiceCommission.objects.filter(
+                status=ServiceCommission.Status.PENDING,
+                booking__hub__in=hubs,
+            ),
+            self.request.user,
+        ).select_related("provider", "booking", "booking__hub", "service_type").order_by("-created_at")
+
         salaries = scope_queryset(
             SalaryRecord.objects.filter(
                 status=SalaryRecord.Status.PENDING,
@@ -431,11 +446,14 @@ class ApprovalInboxView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVie
 
         context.update(
             commissions=commissions,
+            service_commissions=service_commissions,
             salaries=salaries,
             pending_commissions=commissions,
+            pending_service_commissions=service_commissions,
             pending_salaries=salaries,
             can_approve_salary=self.request.user.has_perm("payroll.approve_salaryrecord"),
             can_approve_commission=self.request.user.has_perm("commissions.approve_salesagentcommission"),
+            can_approve_service_commission=self.request.user.has_perm("commissions.approve_servicecommission"),
             available_hubs=available_hubs,
             filter_hubs=available_hubs,
             chosen_hub=chosen_hub,
@@ -458,6 +476,23 @@ class ApproveInboxCommissionView(LoginRequiredMixin, PermissionRequiredMixin, Vi
             else:
                 approve_commission(commission_id=pk, actor=request.user)
                 messages.success(request, "Commission approved.")
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))
+        return redirect("reports:approvals")
+
+
+class ApproveInboxServiceCommissionView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = "commissions.approve_servicecommission"
+
+    def post(self, request, pk):
+        action = request.POST.get("action", "approve")
+        try:
+            if action == "reject":
+                reject_service_commission(commission_id=pk, actor=request.user, notes=request.POST.get("notes", ""))
+                messages.success(request, "Service commission rejected.")
+            else:
+                approve_service_commission(commission_id=pk, actor=request.user)
+                messages.success(request, "Service commission approved.")
         except ValidationError as error:
             messages.error(request, " ".join(error.messages))
         return redirect("reports:approvals")

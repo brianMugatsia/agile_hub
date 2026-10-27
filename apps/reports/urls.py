@@ -4,6 +4,7 @@ from .views import (
     ApprovalInboxView,
     ApproveInboxCommissionView,
     ApproveInboxSalaryView,
+    ApproveInboxServiceCommissionView,
     ForecastingReportView,
     GrossMarginsReportView,
     InventoryReconciliationView,
@@ -39,5 +40,10 @@ urlpatterns = [
         "approvals/commissions/<int:pk>/approve/",
         ApproveInboxCommissionView.as_view(),
         name="approve_commission",
+    ),
+    path(
+        "approvals/service-commissions/<int:pk>/approve/",
+        ApproveInboxServiceCommissionView.as_view(),
+        name="approve_service_commission",
     ),
 ]

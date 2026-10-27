@@ -142,7 +142,11 @@
                   <td>{{ bc.get_provider_type_display }}</td>
                   <td><strong>{{ bc.rate|percentage|floatformat:2 }}%</strong></td>
                   <td>{{ CURRENCY_CODE }} {{ bc.base_amount }}</td>
-                  <td><strong>{{ CURRENCY_CODE }} {{ bc.amount }}</strong></td>
+                  <td>
+                    <a href="{% url 'commissions:service_detail' bc.pk %}" style="color: #2563eb; font-weight: 600; text-decoration: underline;">
+                      {{ CURRENCY_CODE }} {{ bc.amount }}
+                    </a>
+                  </td>
                   <td><span class="badge badge--{{ bc.status|lower }}">{{ bc.get_status_display }}</span></td>
                 </tr>
               {% endfor %}

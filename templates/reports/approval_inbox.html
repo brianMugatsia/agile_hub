@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui_tags %}
 
 {% block content %}
   <form method="get" class="filter-bar card card__body" aria-label="Filter approvals by hub">
@@ -12,8 +13,9 @@
     <button class="btn btn--secondary" type="submit">Filter</button>
   </form>
   {% if hub_error %}<p class="alert alert--danger" role="alert">{{ hub_error }}</p>{% endif %}
+
   {% if can_approve_salary %}
-    <section class="card">
+    <section class="card" style="margin-bottom: 1.5rem;">
       <div class="card__body">
         <h2 class="card__title">Pending salaries</h2>
         <div class="table-wrap">
@@ -46,7 +48,7 @@
   {% endif %}
 
   {% if can_approve_commission %}
-    <section class="card">
+    <section class="card" style="margin-bottom: 1.5rem;">
       <div class="card__body">
         <h2 class="card__title">Pending sales-agent commissions</h2>
         <div class="table-wrap">
@@ -68,7 +70,39 @@
                   </td>
                 </tr>
               {% empty %}
-                <tr><td colspan="5">No pending commissions.</td></tr>
+                <tr><td colspan="5">No pending sales commissions.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if can_approve_service_commission %}
+    <section class="card" style="margin-bottom: 1.5rem;">
+      <div class="card__body">
+        <h2 class="card__title">Pending service providers commissions</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Provider</th><th>Service / Booking</th><th>Rate</th><th>Amount</th><th><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>
+              {% for item in pending_service_commissions %}
+                <tr>
+                  <td>{{ item.provider.name }}</td>
+                  <td>{% if item.booking %}<a href="{{ item.booking.get_absolute_url }}">{{ item.booking.service_type.name }}</a> ({{ item.booking.client_display }}){% else %}Service Commission{% endif %}</td>
+                  <td>{{ item.rate|percentage|floatformat:2 }}%</td>
+                  <td>{{ item.amount }}</td>
+                  <td class="table__actions">
+                    <form method="post" action="{% url 'reports:approve_service_commission' item.pk %}">
+                      {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5">No pending service commissions.</td></tr>
               {% endfor %}
             </tbody>
           </table>
