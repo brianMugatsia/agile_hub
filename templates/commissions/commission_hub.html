@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash" style="max-width: 1100px; margin: 3rem auto; padding: 0 1rem;">
+
+  <!-- HERO -->
+  <section class="dash-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 20px; padding: 3rem; color: #fff; margin-bottom: 2.5rem; box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.2);">
+    <div class="dash-hero__text">
+      <span class="dash-hero__eyebrow" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.08em; color: #38bdf8; font-weight: 700;">Commissions Hub</span>
+      <h2 class="dash-hero__title" style="font-size: 2.75rem; font-weight: 800; margin: 0.5rem 0; color: #ffffff;">Financial Payouts Management</h2>
+      <p class="dash-hero__note" style="font-size: 0.95rem; color: #94a3b8; margin: 0; max-width: 600px;">Select a commission category below to manage accruals, reviews, approvals, disbursements, and rates.</p>
+    </div>
+  </section>
+
+  <!-- 3 MAIN OPTION CARDS -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+    
+    <!-- 1. Service Providers Commission -->
+    <div class="card dash-panel" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 30px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.04)'">
+      <div>
+        <div style="width: 48px; height: 48px; background: #e0f2fe; color: #0284c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">🤝</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 0.75rem 0;">Service Providers Commission</h3>
+        <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0 0 2rem 0;">Manage payouts, approvals, and reviews for internal and external service providers and machine operators.</p>
+      </div>
+      <div>
+        <a href="{% url 'commissions:service_list' %}" class="btn btn--primary" style="width: 100%; text-align: center; justify-content: center; font-weight: 600; padding: 0.75rem 1rem;">View Service Commissions →</a>
+      </div>
+    </div>
+
+    <!-- 2. Sales Agents Commissions -->
+    <div class="card dash-panel" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 30px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.04)'">
+      <div>
+        <div style="width: 48px; height: 48px; background: #dcfce7; color: #16a34a; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">💼</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 0.75rem 0;">Sales Agents Commissions</h3>
+        <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0 0 2rem 0;">Review, approve, and disburse sales commissions accrued by sales agents across all operational hubs.</p>
+      </div>
+      <div>
+        <a href="{% url 'commissions:agent_list' %}" class="btn btn--primary" style="width: 100%; text-align: center; justify-content: center; font-weight: 600; padding: 0.75rem 1rem;">View Sales Agent Commissions →</a>
+      </div>
+    </div>
+
+    <!-- 3. Setting Commissions -->
+    <div class="card dash-panel" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 2.5rem; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 30px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.04)'">
+      <div>
+        <div style="width: 48px; height: 48px; background: #fef3c7; color: #d97706; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">⚙️</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 0.75rem 0;">Commission Settings</h3>
+        <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0 0 1.5rem 0;">Configure global commission rates for sales agents, internal providers, and external providers with effective dating.</p>
+      </div>
+      <div>
+        <div style="margin-bottom: 1.5rem; font-size: 0.8125rem; color: #64748b;">
+          Active Rate: <strong>{{ active_setting.sales_agent_rate|percentage|default:"20%" }}</strong>
+        </div>
+        <a href="{% url 'commissions:settings' %}" class="btn btn--primary" style="width: 100%; text-align: center; justify-content: center; font-weight: 600; padding: 0.75rem 1rem;">Manage Settings →</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
+{% endblock %}

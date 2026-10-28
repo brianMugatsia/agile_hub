@@ -98,7 +98,12 @@ def get_attr(value, path):
 @register.filter
 def percentage(value):
     """Convert a stored fractional rate (0.2) to a display percentage (20)."""
-    return Decimal(str(value)) * Decimal("100")
+    if value == "" or value is None:
+        return Decimal("0.00")
+    try:
+        return Decimal(str(value)) * Decimal("100")
+    except Exception:
+        return Decimal("0.00")
 
 
 @register.filter

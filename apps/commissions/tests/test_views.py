@@ -17,7 +17,7 @@ def test_main_stylesheet_loads_commission_overrides_after_shared_page_styles():
     stylesheet = Path(__file__).resolve().parents[3] / "static" / "css" / "main.css"
     imports = stylesheet.read_text(encoding="utf-8")
 
-    assert imports.index('url("pages/dashboard.css")') < imports.index(
+    assert imports.index('url("pages/dashboard.css")') < imports.index(     
         'url("pages/commissions.css")'
     )
     assert imports.index('url("pages/hub.css")') < imports.index(
@@ -29,7 +29,7 @@ def test_commission_list_renders_one_pair_of_export_buttons(client, make_user):
     admin = make_user(role=Role.ADMIN, is_superuser=True)
     client.force_login(admin)
 
-    response = client.get(reverse("commissions:list"))
+    response = client.get(reverse("commissions:agent_list"))
 
     assert response.status_code == 200
     assert response.content.count(b"Download CSV") == 1
@@ -38,20 +38,20 @@ def test_commission_list_renders_one_pair_of_export_buttons(client, make_user):
     assert reverse("commissions:export", args=["xlsx"]).encode() in response.content
 
 
-def test_commission_list_shows_table_empty_state_and_permission_links(
+def test_commission_list_shows_table_empty_state_and_permission_links(      
     client, make_user, roles
 ):
     admin = make_user(role=Role.ADMIN)
     client.force_login(admin)
 
-    response = client.get(reverse("commissions:list"))
+    response = client.get(reverse("commissions:agent_list"))
 
     assert response.status_code == 200
     for heading in (b"Created", b"Agent", b"Sale", b"Rate", b"Amount", b"Status"):
         assert heading in response.content
     assert b"No commissions yet" in response.content
-    assert reverse("commissions:pending").encode() in response.content
-    assert reverse("commissions:settings").encode() in response.content
+    assert reverse("commissions:pending").encode() in response.content      
+    assert reverse("commissions:settings").encode() in response.content     
     assert b'<section class="card dashboard-section dash-panel" data-spot>' in response.content
 
 
@@ -59,21 +59,21 @@ def test_commission_links_remain_hidden_without_their_permissions(client, make_u
     agent = make_user(role=Role.SALES_AGENT)
     client.force_login(agent)
 
-    response = client.get(reverse("commissions:list"))
+    response = client.get(reverse("commissions:agent_list"))
 
     assert response.status_code == 200
     assert b"No commissions yet" in response.content
-    assert reverse("commissions:pending").encode() not in response.content
-    assert reverse("commissions:settings").encode() not in response.content
+    assert reverse("commissions:pending").encode() not in response.content  
+    assert reverse("commissions:settings").encode() not in response.content 
 
 
 def test_commission_search_matches_agent_first_and_last_name(client, make_user):
     admin = make_user(role=Role.ADMIN, is_superuser=True)
     agent = make_user(role=Role.SALES_AGENT, first_name="Jane", last_name="Doe")
     other_agent = make_user(role=Role.SALES_AGENT, first_name="Alex", last_name="Kim")
-    hub = Hub.objects.create(code="COM-SEARCH", name="Commission search")
+    hub = Hub.objects.create(code="COM-SEARCH", name="Commission search")   
     matching_sale = Sale.objects.create(
-        hub=hub, agent=agent, status=Sale.Status.COMPLETED, total="100.00"
+        hub=hub, agent=agent, status=Sale.Status.COMPLETED, total="100.00"  
     )
     other_sale = Sale.objects.create(
         hub=hub, agent=other_agent, status=Sale.Status.COMPLETED, total="50.00"
@@ -86,7 +86,7 @@ def test_commission_search_matches_agent_first_and_last_name(client, make_user):
     )
     client.force_login(admin)
 
-    response = client.get(reverse("commissions:list"), {"q": "Jane Doe"})
+    response = client.get(reverse("commissions:agent_list"), {"q": "Jane Doe"})   
 
     assert response.status_code == 200
     assert str(matching.pk).encode() in response.content
@@ -96,7 +96,7 @@ def test_commission_search_matches_agent_first_and_last_name(client, make_user):
 def test_commission_detail_and_agent_statement_render_and_link_from_list(client, make_user):
     admin = make_user(role=Role.ADMIN, is_superuser=True)
     agent = make_user(role=Role.SALES_AGENT)
-    hub = Hub.objects.create(code="COM-PAGES", name="Commission pages")
+    hub = Hub.objects.create(code="COM-PAGES", name="Commission pages")     
     HubMembership.objects.create(hub=hub, user=agent)
     sale = Sale.objects.create(
         hub=hub,
@@ -127,7 +127,7 @@ def test_commission_detail_and_agent_statement_render_and_link_from_list(client,
     )
     client.force_login(admin)
 
-    list_response = client.get(reverse("commissions:list"))
+    list_response = client.get(reverse("commissions:agent_list"))
     detail_response = client.get(reverse("commissions:detail", kwargs={"pk": commission.pk}))
     sale_detail_response = client.get(reverse("sales:detail", kwargs={"pk": sale.pk}))
     statement_response = client.get(
@@ -159,11 +159,11 @@ def test_commission_detail_and_agent_statement_render_and_link_from_list(client,
     assert b'data-reveal="up"' not in detail_response.content
     assert statement_response.status_code == 200
     assert b"10.00%" in statement_response.content
-    assert statement_response.context["earned_total"] == Decimal("10.00")
-    assert statement_response.context["pending_total"] == Decimal("10.00")
+    assert statement_response.context["earned_total"] == Decimal("10.00")   
+    assert statement_response.context["pending_total"] == Decimal("10.00")  
 
 
-def test_agent_cannot_view_another_agents_statement(client, make_user):
+def test_agent_cannot_view_another_agents_statement(client, make_user):     
     agent = make_user(role=Role.SALES_AGENT)
     other_agent = make_user(role=Role.SALES_AGENT)
     client.force_login(agent)
@@ -175,23 +175,23 @@ def test_agent_cannot_view_another_agents_statement(client, make_user):
     assert response.status_code == 403
 
 
-def test_sale_detail_link_respects_hub_scope(client, make_user, roles):
+def test_sale_detail_link_respects_hub_scope(client, make_user, roles):     
     manager = make_user(role=Role.HUB_MANAGER)
     agent = make_user(role=Role.SALES_AGENT)
     manager_hub = Hub.objects.create(code="SALE-ALLOWED", name="Manager hub")
-    other_hub = Hub.objects.create(code="SALE-OTHER", name="Other hub")
+    other_hub = Hub.objects.create(code="SALE-OTHER", name="Other hub")     
     HubMembership.objects.create(hub=manager_hub, user=manager)
     sale = Sale.objects.create(
         hub=other_hub, agent=agent, status=Sale.Status.COMPLETED, total="50.00"
     )
     client.force_login(manager)
 
-    response = client.get(reverse("sales:detail", kwargs={"pk": sale.pk}))
+    response = client.get(reverse("sales:detail", kwargs={"pk": sale.pk}))  
 
     assert response.status_code == 404
 
 
-def test_pending_and_commission_settings_pages_render(client, make_user):
+def test_pending_and_commission_settings_pages_render(client, make_user):   
     admin = make_user(role=Role.SUPER_ADMIN)
     agent = make_user(role=Role.SALES_AGENT)
     hub = Hub.objects.create(code="COM-SETTINGS", name="Commission settings")
@@ -229,7 +229,7 @@ def test_pending_and_commission_settings_pages_render(client, make_user):
     ).exists()
 
 
-def test_commission_rate_form_accepts_percent_input_and_rejects_over_100():
+def test_commission_rate_form_accepts_percent_input_and_rejects_over_100(): 
     from apps.commissions.forms import CommissionSettingForm
 
     form = CommissionSettingForm(data={"sales_agent_rate": "20", "effective_from": "2026-10-01"})
@@ -243,7 +243,7 @@ def test_commission_rate_form_accepts_percent_input_and_rejects_over_100():
 def test_commission_reject_and_reverse_actions(client, make_user):
     admin = make_user(role=Role.SUPER_ADMIN)
     agent = make_user(role=Role.SALES_AGENT)
-    hub = Hub.objects.create(code="COM-ACT", name="Commission Action Hub")
+    hub = Hub.objects.create(code="COM-ACT", name="Commission Action Hub")  
     sale = Sale.objects.create(hub=hub, agent=agent, status=Sale.Status.COMPLETED, total="100.00")
     commission = SalesAgentCommission.objects.create(
         sale=sale,
@@ -256,12 +256,12 @@ def test_commission_reject_and_reverse_actions(client, make_user):
     client.force_login(admin)
 
     reject_response = client.post(
-        reverse("commissions:reject", kwargs={"pk": commission.pk}),
+        reverse("commissions:reject", kwargs={"pk": commission.pk}),        
         {"reason": "Invalid transaction details"},
     )
     assert reject_response.status_code == 302
     commission.refresh_from_db()
-    assert commission.status == SalesAgentCommission.Status.REJECTED
+    assert commission.status == SalesAgentCommission.Status.REJECTED        
 
     commission2 = SalesAgentCommission.objects.create(
         sale=Sale.objects.create(hub=hub, agent=agent, status=Sale.Status.COMPLETED, total="100.00"),
@@ -272,9 +272,9 @@ def test_commission_reject_and_reverse_actions(client, make_user):
         status=SalesAgentCommission.Status.APPROVED,
     )
     reverse_response = client.post(
-        reverse("commissions:reverse", kwargs={"pk": commission2.pk}),
+        reverse("commissions:reverse", kwargs={"pk": commission2.pk}),      
         {"reason": "Duplicate entry"},
     )
     assert reverse_response.status_code == 302
     commission2.refresh_from_db()
-    assert commission2.status == SalesAgentCommission.Status.REVERSED
+    assert commission2.status == SalesAgentCommission.Status.REVERSED       

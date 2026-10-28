@@ -29,6 +29,18 @@ from .forms import CommissionSettingForm
 from .models import CommissionSetting, SalesAgentCommission, ServiceCommission
 
 
+class CommissionHubView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, TemplateView):
+    template_name = "commissions/commission_hub.html"
+    permission_required = "commissions.view_salesagentcommission"
+    page_title = "Commissions Hub"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        active_setting = CommissionSetting.objects.filter(is_active=True).first()
+        context["active_setting"] = active_setting
+        return context
+
+
 class CommissionListView(ScopedModelListView):
     model = SalesAgentCommission
     template_name = "commissions/commission_list.html"
@@ -76,20 +88,6 @@ class CommissionListView(ScopedModelListView):
         context["total_pending_commission"] = base_qs.filter(status=SalesAgentCommission.Status.PENDING).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         context["total_approved_commission"] = base_qs.filter(status=SalesAgentCommission.Status.APPROVED).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         context["total_paid_commission"] = base_qs.filter(status=SalesAgentCommission.Status.PAID).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-
-        srv_qs = scope_queryset(ServiceCommission.objects.all(), self.request.user).select_related("provider", "booking", "service_type")
-        status_filter = self.request.GET.get("status")
-        if "approved" in self.request.path:
-            status_filter = ServiceCommission.Status.APPROVED
-        elif "pending" in self.request.path:
-            status_filter = ServiceCommission.Status.PENDING
-        elif "paid" in self.request.path:
-            status_filter = ServiceCommission.Status.PAID
-
-        if status_filter:
-            srv_qs = srv_qs.filter(status=status_filter)
-
-        context["service_commissions"] = srv_qs.order_by("-created_at")[:50]
         return context
 
 
@@ -326,7 +324,7 @@ class ReverseCommissionView(CommissionActionView):
 # Service Commissions
 class ServiceCommissionListView(ScopedModelListView):
     model = ServiceCommission
-    template_name = "commissions/commission_list.html"
+    template_name = "commissions/service_commission_list.html"
     page_title = "Service Commissions"
     columns = (
         {"label": "Created", "field": "created_at"},
@@ -340,10 +338,17 @@ class ServiceCommissionListView(ScopedModelListView):
     date_filter_field = "created_at"
     filter_fields = (("status", ServiceCommission.Status.choices),)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_view_commission_settings"] = self.request.user.has_perm("commissions.view_commissionsetting")
+        context["can_approve_service_commissions"] = self.request.user.has_perm("commissions.approve_servicecommission")
+        context["can_pay_service_commissions"] = self.request.user.has_perm("commissions.pay_servicecommission")
+        return context
+
 
 class ServiceCommissionDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):
     model = ServiceCommission
-    template_name = "commissions/commission_detail.html"
+    template_name = "commissions/service_commission_detail.html"
     context_object_name = "commission"
     permission_required = "commissions.view_servicecommission"
     page_title = "Service Commission Details"
@@ -375,7 +380,7 @@ class ServiceCommissionActionView(LoginRequiredMixin, PermissionRequiredMixin, V
             messages.error(request, str(error))
         else:
             messages.success(request, self.success_message)
-        return redirect("commissions:service_list")
+        return redirect("commissions:service_detail", pk=pk)
 
 
 class ApproveServiceCommissionView(ServiceCommissionActionView):

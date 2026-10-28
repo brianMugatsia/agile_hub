@@ -287,6 +287,9 @@ class Command(BaseCommand):
             ("ST-DRY", "Grain Drying (per Bag)", "PROCESSING", "PER_KG", Decimal("200.00")),
             ("ST-AGRO", "Agronomy Consultation", "AGRONOMY", "FIXED", Decimal("1500.00")),
             ("ST-COLD", "Cold Storage (per Week)", "STORAGE", "PER_DAY", Decimal("1000.00")),
+            ("ST-PACK", "Grading & Packaging", "PACKAGING", "PER_KG", Decimal("150.00")),
+            ("ST-IRR", "Drip Irrigation Setup", "IRRIGATION", "FIXED", Decimal("8000.00")),
+            ("ST-EXT", "Farmer Training & Extension", "EXTENSION", "PER_DAY", Decimal("1200.00")),
         ]
         service_types = []
         for code, name, cat, unit, rate in service_types_data:
@@ -296,14 +299,16 @@ class Command(BaseCommand):
             )
             service_types.append(st)
 
-        # Create some resources for hubs
+        # Create multiple resources for hubs
         hub_resources = []
         for hub in hubs:
             for i, st in enumerate(service_types):
                 hr = HubResource.objects.create(
                     hub=hub, service_type=st, 
                     name=f"{st.name} Unit {i+1}", 
-                    code=f"RES-{hub.code}-{st.code}-{i+1}",
+                    total_count=random.randint(3, 8),
+                    available_count=random.randint(2, 5),
+                    in_use_count=random.randint(0, 3),
                     status=HubResource.Status.AVAILABLE,
                 )
                 hub_resources.append(hr)

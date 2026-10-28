@@ -192,7 +192,7 @@ class HubResource(models.Model):
     hub = models.ForeignKey("hubs.Hub", on_delete=models.PROTECT, related_name="service_resources")
     service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, related_name="resources")
     name = models.CharField(max_length=160)
-    code = models.CharField(max_length=40)
+    code = models.CharField(max_length=40, blank=True)
     total_count = models.PositiveIntegerField(default=1, help_text="Total number of this equipment.")
     available_count = models.PositiveIntegerField(default=1, help_text="Number of equipment available.")
     in_use_count = models.PositiveIntegerField(default=0, help_text="Number of equipment currently in use.")
@@ -226,24 +226,24 @@ class HubResource(models.Model):
 
     def clean(self):
         super().clean()
-        if self.available_count > self.total_count:
-            raise ValidationError({"available_count": "Available equipment cannot exceed total equipment count."})
-        if self.in_use_count > self.total_count:
-            raise ValidationError({"in_use_count": "In-use equipment cannot exceed total equipment count."})
-        if (self.available_count + self.in_use_count) > self.total_count:
-            raise ValidationError({"available_count": "Sum of available and in-use equipment cannot exceed total equipment count."})
-
-    def __str__(self):
-        return f"{self.hub.name}: {self.name} [{self.get_status_display()}]"
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
         if not self.code and self.hub_id:
             count = HubResource.objects.filter(hub=self.hub).count() + 1
             self.code = f"EQ-{count:03d}"
             while HubResource.objects.filter(hub=self.hub, code=self.code).exists():
                 count += 1
                 self.code = f"EQ-{count:03d}"
+        if self.available_count > self.total_count:
+            self.available_count = self.total_count
+        if self.in_use_count > self.total_count:
+            self.in_use_count = self.total_count
+        if (self.available_count + self.in_use_count) > self.total_count:
+            self.available_count = max(0, self.total_count - self.in_use_count)
+
+    def __str__(self):
+        return f"{self.hub.name}: {self.name} [{self.get_status_display()}]"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
         super().save(*args, **kwargs)
 
     @property
