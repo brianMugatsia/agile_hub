@@ -365,3 +365,20 @@ def test_expense_deletion(client, make_user, roles):
     response = client.post(reverse("finance:expense_delete", args=[expense.pk]))
     assert response.status_code == 302
     assert not Expense.objects.filter(pk=expense.pk).exists()
+
+def test_expense_list_renders_add_modal_and_edit_buttons(client, make_user):
+    hub = Hub.objects.create(code="LIST-HUB", name="List Hub")
+    admin = make_user(role=Role.ADMIN)
+    Expense.objects.create(
+        hub=hub,
+        category=Expense.Category.UTILITIES,
+        title="Electricity Bill",
+        amount=Decimal("350.00"),
+        expense_date=timezone.localdate(),
+    )
+    client.force_login(admin)
+    response = client.get(reverse("finance:expenses"))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Add Single Expense" in content
+    assert "Edit" in content

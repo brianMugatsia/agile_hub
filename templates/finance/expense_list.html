@@ -3,9 +3,73 @@
 
 {% block page_actions %}
   {% if can_create %}
-    <a class="btn btn--primary" href="{% url 'finance:expense_create' %}" style="background: #16a34a; border-color: #16a34a; font-weight: 600;">
+    <button type="button" class="btn btn--primary" onclick="document.getElementById('add-expense-modal').showModal();" style="background: #16a34a; border-color: #16a34a; font-weight: 600;">
       {% icon "plus" %}<span>Add Expense</span>
-    </a>
+    </button>
   {% endif %}
+  {% if import_url_name and can_import %}
+    <a class="btn btn--secondary" href="{% url import_url_name %}">Import Excel</a> 
+  {% endif %}
+  {% if export_url_name %}
+    <a class="btn btn--secondary" href="{% url export_url_name 'csv' %}{% if export_query %}?{{ export_query }}{% endif %}">Download CSV</a>
+    <a class="btn btn--secondary" href="{% url export_url_name 'xlsx' %}{% if export_query %}?{{ export_query }}{% endif %}">Download Excel</a>
+    <a class="btn btn--secondary" href="{% url export_url_name 'pdf' %}{% if export_query %}?{{ export_query }}{% endif %}">Export PDF</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
   {{ block.super }}
+
+  {% if can_create %}
+    <dialog id="add-expense-modal" style="border: none; border-radius: 12px; padding: 2rem; max-width: 520px; width: 100%; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); background: #ffffff;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0;">Add Single Expense</h3>
+        <button type="button" onclick="document.getElementById('add-expense-modal').close();" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+      <form method="post" action="{% url 'finance:expense_create' %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 1rem;">
+          <label for="id_hub" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Hub:</label>
+          <select name="hub" id="id_hub" class="select" style="width: 100%;">
+            {% for hub in filter_hubs %}
+              <option value="{{ hub.pk }}">{{ hub.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label for="id_category" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Category:</label>
+          <select name="category" id="id_category" class="select" style="width: 100%;" required>
+            <option value="">Select category...</option>
+            {% for val, label in filter_fields.0.choices %}
+              <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label for="id_title" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Title:</label>
+          <input type="text" name="title" id="id_title" class="input" placeholder="e.g. Utility bill payment" style="width: 100%;" required>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label for="id_amount" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Amount ({{ CURRENCY_CODE }}):</label>
+          <input type="number" step="0.01" name="amount" id="id_amount" class="input" placeholder="e.g. 1500.00" style="width: 100%;" required>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label for="id_expense_date" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Expense Date:</label>
+          <input type="date" name="expense_date" id="id_expense_date" class="input" style="width: 100%;" required>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label for="id_reference" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Reference / Receipt #:</label>
+          <input type="text" name="reference" id="id_reference" class="input" placeholder="e.g. INV-9821" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label for="id_notes" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Notes:</label>
+          <textarea name="notes" id="id_notes" rows="2" class="input" placeholder="Optional notes..." style="width: 100%;"></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" onclick="document.getElementById('add-expense-modal').close();" class="btn btn--secondary">Cancel</button>
+          <button type="submit" class="btn btn--primary" style="background: #16a34a; border-color: #16a34a;">Save Expense</button>
+        </div>
+      </form>
+    </dialog>
+  {% endif %}
 {% endblock %}

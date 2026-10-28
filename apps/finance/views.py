@@ -347,11 +347,14 @@ class ExpenseCreateView(ProtectedCreateView):
         expense = self.object
         CashFlow.objects.create(
             hub=expense.hub,
-            kind=CashFlow.Kind.OUTFLOW,
+            business=expense.business,
+            direction=CashFlow.Direction.OUTFLOW,
+            category=expense.get_category_display(),
             amount=expense.amount,
-            occurred_at=timezone.make_aware(timezone.datetime.combine(expense.expense_date, timezone.datetime.min.time())),
+            transaction_date=expense.expense_date,
             reference=f"EXP-{expense.pk}",
-            notes=f"Auto-logged expense outflow: {expense.title}",
+            description=f"Auto-logged expense outflow: {expense.title}",
+            created_by=self.request.user if self.request.user.is_authenticated else None,
         )
         return response
 
