@@ -37,7 +37,7 @@ class SaleListView(ScopedModelListView):
         {"label": "Total", "field": "total"},
         {"label": "Status", "field": "status"},
     )
-    search_fields = ("customer_name", "customer_phone", "payment_reference")
+    search_fields = ("customer_name", "customer_phone", "payment_reference", "notes", "agent__first_name", "agent__last_name", "member__name", "member__user__first_name", "member__user__last_name", "business__name", "hub__name")
     date_filter_field = "created_at"
     create_url_name = "sales:create"
     create_label = "New sale"
@@ -107,7 +107,7 @@ class SaleUpdateView(ProtectedUpdateView):
 
 
 class SaleCreateView(FormView):
-    template_name = "components/record_form.html"
+    template_name = "sales/sale_form.html"
     form_class = SaleEntryForm
     page_title = "Record a sale"
     permission_required = "sales.add_sale"
@@ -192,14 +192,14 @@ class SalesAgentListView(ScopedModelListView):
         ).order_by("last_name", "first_name")
         if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN):
             hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)
-            queryset = queryset.filter(hub_memberships__hub_id__in=hub_ids, hub_memberships__is_active=True)
+            queryset = queryset.filter(Q(hub_memberships__hub_id__in=hub_ids, hub_memberships__is_active=True) | Q(hub_id__in=hub_ids))
         return queryset.distinct()
 
 
 class SalesAgentCreateView(PermissionRequiredMixin, PageMixin, FormView):
     permission_required = "accounts.add_user"
     form_class = UserCreateForm
-    template_name = "accounts/user_form.html"
+    template_name = "sales/agent_form.html"
     page_title = "Add sales agent"
     breadcrumbs = (("Sales agents", reverse_lazy("sales:agent_list")), ("New sales agent", None))
 

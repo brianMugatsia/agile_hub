@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash" style="max-width: 850px; margin: 0 auto; padding: 1.5rem 1rem;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <a class="btn btn--secondary" href="{% url 'sales:agent_list' %}">
+      {% icon "arrow-left" %}<span>Back to sales agents</span>
+    </a>
+  </div>
+
+  <section class="card dash-panel" style="border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05); overflow: hidden; background: #ffffff;">
+    <div class="card__header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 2rem; border-bottom: none;">
+      <h2 class="card__title" style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0;">Register Sales Agent</h2>
+      <p style="color: #dbeafe; font-size: 0.925rem; margin: 0; line-height: 1.5;">Create a sales agent account, configure user credentials, and assign hub access.</p>
+    </div>
+
+    <div class="card__body" style="padding: 2rem;">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert--danger" role="alert" style="margin-bottom: 1.5rem; border-radius: 8px;">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          {% for field in form %}
+            {% if field.name != "role" %}
+              <div class="form-field{% if field.errors %} form-field--invalid{% endif %}">
+                <label for="{{ field.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
+                {% if field.name == "password1" or field.name == "password2" %}
+                  {{ field|add_class:"input" }}
+                {% else %}
+                  {{ field|add_class:"input" }}
+                {% endif %}
+                {% if field.help_text %}<p class="form-field__help">{{ field.help_text }}</p>{% endif %}
+                {% for error in field.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+              </div>
+            {% else %}
+              {{ field }}
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+          <a class="btn btn--secondary" href="{% url 'sales:agent_list' %}">Cancel</a>
+          <button class="btn btn--primary" type="submit" style="background: #2563eb; border-color: #2563eb; font-weight: 600; padding: 0.75rem 1.75rem;">{{ submit_label|default:"Create sales agent" }}</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

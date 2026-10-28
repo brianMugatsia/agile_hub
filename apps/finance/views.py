@@ -247,7 +247,7 @@ class CashFlowListView(ScopedModelListView):
         {"label": "Hub", "field": "hub__name"},
         {"label": "Reference", "field": "reference"},
     )
-    search_fields = ("category", "reference", "description")
+    search_fields = ("category", "reference", "description", "hub__name", "business__name")
     create_url_name = "finance:cash_flow_create"
     create_label = "Record cash flow"
     create_permission = "finance.add_cashflow"
@@ -287,7 +287,7 @@ class ExpenseListView(ScopedModelListView):
         {"label": "Hub", "field": "hub__name"},
         {"label": "Reference", "field": "reference"},
     )
-    search_fields = ("title", "reference", "notes")
+    search_fields = ("title", "reference", "notes", "category", "hub__name", "business__name")
     create_url_name = "finance:expense_create"
     create_label = "Record expense"
     create_permission = "finance.add_expense"
@@ -391,7 +391,7 @@ class AssetListView(ScopedModelListView):
         {"label": "Acquired", "field": "acquisition_date"},
         {"label": "Hub", "field": "hub__name"},
     )
-    search_fields = ("name", "category")
+    search_fields = ("name", "category", "hub__name", "business__name")
     filter_hub = True
 
 
@@ -405,7 +405,7 @@ class LiabilityListView(ScopedModelListView):
         {"label": "Due", "field": "due_date"},
         {"label": "Hub", "field": "hub__name"},
     )
-    search_fields = ("name", "counterparty")
+    search_fields = ("name", "counterparty", "hub__name")
     filter_hub = True
 
 

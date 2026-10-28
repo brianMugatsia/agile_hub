@@ -1,1 +1,173 @@
-{% extends "components/record_form.html" %}
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash" style="max-width: 850px; margin: 0 auto; padding: 1.5rem 1rem;">
+  
+  <!-- HEADER -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <a class="btn btn--secondary" href="{% url 'sales:list' %}">
+      {% icon "arrow-left" %}<span>Back to sales</span>
+    </a>
+  </div>
+
+  <section class="card dash-panel" style="border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05); overflow: hidden; background: #ffffff;">
+    <div class="card__header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; padding: 2rem; border-bottom: none;">
+      <h2 class="card__title" style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5Rem 0;">Record a Direct Sale</h2>
+      <p style="color: #dcfce7; font-size: 0.925rem; margin: 0; line-height: 1.5;">Record transactions, assign sales agents or hub members, and automatically accrue commissions.</p>
+    </div>
+
+    <div class="card__body" style="padding: 2rem;">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert--danger" role="alert" style="margin-bottom: 1.5rem; border-radius: 8px;">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          
+          <!-- Hub -->
+          <div class="form-field{% if form.hub.errors %} form-field--invalid{% endif %}">
+            <label for="{{ form.hub.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Hub *</label>
+            {{ form.hub|add_class:"select" }}
+            {% if form.hub.help_text %}<p class="form-field__help">{{ form.hub.help_text }}</p>{% endif %}
+            {% for error in form.hub.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+
+          <!-- Seller Type (Interactive Toggle) -->
+          <div class="form-field" style="background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <label style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem; color: #1e293b;">Seller Type</label>
+            <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+              <label class="seller-pill" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; font-size: 0.9rem; padding: 0.5rem 1rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; flex: 1; justify-content: center; transition: all 0.2s;">
+                <input type="radio" name="seller_type" value="agent" {% if form.seller_type.value == "agent" or not form.seller_type.value %}checked{% endif %} style="accent-color: #16a34a;"> Sales Agent
+              </label>
+              <label class="seller-pill" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; font-size: 0.9rem; padding: 0.5rem 1rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; flex: 1; justify-content: center; transition: all 0.2s;">
+                <input type="radio" name="seller_type" value="member" {% if form.seller_type.value == "member" %}checked{% endif %} style="accent-color: #16a34a;"> Hub Member
+              </label>
+            </div>
+            <p class="form-field__help" style="margin: 0; font-size: 0.8rem; color: #64748b;">Choose whether the sale was made by a Sales Agent or a Hub Member. Both automatically accrue commissions.</p>
+          </div>
+
+          <!-- Agent Field -->
+          <div id="field-wrapper-agent" class="form-field{% if form.agent.errors %} form-field--invalid{% endif %}">
+            <label for="{{ form.agent.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Sales Agent</label>
+            {{ form.agent|add_class:"select" }}
+            {% if form.agent.help_text %}<p class="form-field__help">{{ form.agent.help_text }}</p>{% endif %}
+            {% for error in form.agent.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+
+          <!-- Member Field -->
+          <div id="field-wrapper-member" class="form-field{% if form.member.errors %} form-field--invalid{% endif %}" style="display: none;">
+            <label for="{{ form.member.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Hub Member</label>
+            {{ form.member|add_class:"select" }}
+            {% if form.member.help_text %}<p class="form-field__help">{{ form.member.help_text }}</p>{% endif %}
+            {% for error in form.member.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+
+          <!-- Other Fields Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-field{% if form.business.errors %} form-field--invalid{% endif %}">
+              <label for="{{ form.business.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Registered Customer / Outlet</label>
+              {{ form.business|add_class:"select" }}
+              {% if form.business.help_text %}<p class="form-field__help">{{ form.business.help_text }}</p>{% endif %}
+              {% for error in form.business.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field{% if form.product.errors %} form-field--invalid{% endif %}">
+              <label for="{{ form.product.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Product *</label>
+              {{ form.product|add_class:"select" }}
+              {% if form.product.help_text %}<p class="form-field__help">{{ form.product.help_text }}</p>{% endif %}
+              {% for error in form.product.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-field{% if form.quantity.errors %} form-field--invalid{% endif %}">
+              <label for="{{ form.quantity.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Quantity *</label>
+              {{ form.quantity|add_class:"input" }}
+              {% for error in form.quantity.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field{% if form.payment_method.errors %} form-field--invalid{% endif %}">
+              <label for="{{ form.payment_method.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Payment Method *</label>
+              {{ form.payment_method|add_class:"select" }}
+              {% for error in form.payment_method.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-field{% if form.customer_name.errors %} form-field--invalid{% endif %}">
+              <label for="{{ form.customer_name.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Walk-in Customer Name</label>
+              {{ form.customer_name|add_class:"input" }}
+              {% for error in form.customer_name.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field{% if form.customer_phone.errors %} form-field--invalid{% endif %}">
+              <label for="{{ form.customer_phone.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Walk-in Customer Phone</label>
+              {{ form.customer_phone|add_class:"input" }}
+              {% for error in form.customer_phone.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+          </div>
+
+          <div class="form-field{% if form.payment_reference.errors %} form-field--invalid{% endif %}">
+            <label for="{{ form.payment_reference.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Payment Reference / Receipt #</label>
+            {{ form.payment_reference|add_class:"input" }}
+            {% for error in form.payment_reference.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="form-field{% if form.notes.errors %} form-field--invalid{% endif %}">
+            <label for="{{ form.notes.id_for_label }}" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: #334155;">Notes / Remarks</label>
+            {{ form.notes|add_class:"input" }}
+            {% for error in form.notes.errors %}<p class="form-field__error" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+          <a class="btn btn--secondary" href="{% url 'sales:list' %}">Cancel</a>
+          <button class="btn btn--primary" type="submit" style="background: #16a34a; border-color: #16a34a; font-weight: 600; padding: 0.75rem 1.75rem;">{{ submit_label|default:"Complete sale" }}</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+
+<style>
+  input[name='seller_type'] { display: none; }
+  .seller-pill { background: #ffffff; border: 1px solid #cbd5e1; color: #475569; }
+  .seller-pill:has(input:checked) { background: #f0fdf4; border-color: #16a34a; color: #166534; font-weight: 600; box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15); }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const sellerTypeRadios = document.querySelectorAll("input[name='seller_type']");
+    const agentWrapper = document.getElementById("field-wrapper-agent");
+    const memberWrapper = document.getElementById("field-wrapper-member");
+
+    function updateSellerVisibility() {
+      let selectedValue = "agent";
+      sellerTypeRadios.forEach(radio => {
+        if (radio.checked) {
+          selectedValue = radio.value;
+        }
+      });
+
+      if (agentWrapper && memberWrapper) {
+        if (selectedValue === "agent") {
+          agentWrapper.style.display = "";
+          memberWrapper.style.display = "none";
+        } else if (selectedValue === "member") {
+          agentWrapper.style.display = "none";
+          memberWrapper.style.display = "";
+        }
+      }
+    }
+
+    sellerTypeRadios.forEach(radio => {
+      radio.addEventListener("change", updateSellerVisibility);
+    });
+
+    updateSellerVisibility();
+  });
+</script>
+{% endblock %}
