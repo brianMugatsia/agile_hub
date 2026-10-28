@@ -62,7 +62,8 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
             f"view_{self.list_view_class.model._meta.model_name}",
         )
 
-    def get(self, request, file_format):
+    def get(self, request, file_format=None, format=None):
+        file_format = file_format or format
         if file_format not in {"csv", "xlsx", "pdf"}:
             return HttpResponseBadRequest("Choose csv, xlsx, or pdf.")
         list_view = self.list_view_class()

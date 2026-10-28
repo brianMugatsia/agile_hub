@@ -1,1 +1,11 @@
 {% extends "components/record_list.html" %}
+{% load static ui_tags %}
+
+{% block page_actions %}
+  {% if can_create %}
+    <a class="btn btn--primary" href="{% url 'finance:expense_create' %}" style="background: #16a34a; border-color: #16a34a; font-weight: 600;">
+      {% icon "plus" %}<span>Add Expense</span>
+    </a>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

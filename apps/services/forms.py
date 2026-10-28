@@ -90,7 +90,7 @@ class ServiceBookingForm(forms.ModelForm):
         required=True,
         label="Customer / Client",
         help_text="Select a registered customer from the system.",
-        widget=forms.Select(attrs={"class": "select"}),
+        widget=forms.Select(attrs={"class": "select", "data-searchable-select": "true"}),
     )
     unit_rate = forms.DecimalField(
         max_digits=12,
@@ -117,6 +117,9 @@ class ServiceBookingForm(forms.ModelForm):
             "unit_rate",
             "notes",
         ]
+        widgets = {
+            "service_provider": forms.Select(attrs={"class": "select", "data-searchable-select": "true"}),
+        }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)

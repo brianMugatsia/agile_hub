@@ -6,6 +6,7 @@ import { initLoading } from "./modules/loading.js";
 import { initModals } from "./modules/modal.js";
 import { initMoney } from "./modules/money.js";
 import { initMotion } from "./modules/motion.js";
+import { initSearchableSelects } from "./modules/searchable-select.js";
 import { initTableFilters } from "./modules/table-filter.js";
 import { initThemeToggle } from "./modules/theme-toggle.js";
 import { initCommissionActions } from "./pages/commission-actions.js";
@@ -59,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initModals();
   initMoney();
   initMotion();
+  initSearchableSelects();
   initTableFilters();
   initThemeToggle();
   initCommissionActions();

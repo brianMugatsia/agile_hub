@@ -1,27 +1,48 @@
 {% extends "base.html" %}
-{% load ui_tags %}
+{% load static ui_tags %}
+
 {% block content %}
-  <div class="sale-detail">
-    <p>
-      <a class="btn btn--secondary" href="{% url 'sales:list' %}">Back to sales</a>
-      {% if can_edit_sale %}<a class="btn btn--secondary" href="{% url 'sales:edit' sale.pk %}">Edit sale details</a>{% endif %}
-    </p>
-    <section class="grid grid--2">
-      <article class="card"><div class="card__body">
-        <dl class="detail-list">
-          <div><dt>Sale ID</dt><dd>{{ sale.pk }}</dd></div>
-          <div><dt>Date</dt><dd>{{ sale.created_at|date:"j M Y, H:i" }}</dd></div>
-          <div><dt>Hub</dt><dd>{{ sale.hub }}</dd></div>
-          <div><dt>Agent</dt><dd>{{ sale.agent.display_name }}</dd></div>
-          <div><dt>Customer</dt><dd>{{ sale.customer_name|default:"—" }}</dd></div>
-          <div><dt>Payment method</dt><dd>{{ sale.get_payment_method_display }}</dd></div>
-          <div><dt>Status</dt><dd>{{ sale.get_status_display }}</dd></div>
-          <div><dt>Total</dt><dd>{{ sale.total }}</dd></div>
-        </dl>
-      </div></article>
-      <article class="card"><div class="card__header"><h2 class="card__title">Items</h2></div><div class="card__body">
-        {% include "components/data_table.html" with object_list=sale.items.all columns=item_columns %}
-      </div></article>
-    </section>
+<div class="dash" style="max-width: 1000px; margin: 2.5rem auto; padding: 0 1rem;">
+  
+  <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <a class="btn btn--secondary" href="{% url 'sales:list' %}">← Back to sales</a>
+    <div style="display: flex; gap: 0.75rem;">
+      {% if can_edit_sale %}
+        <a class="btn btn--primary" href="{% url 'sales:edit' sale.pk %}">Edit Sale Details</a>
+      {% endif %}
+    </div>
   </div>
+
+  <section class="grid grid--2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- Sale Info Card -->
+    <article class="card dash-panel" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 2rem;">
+      <div class="card__header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <h2 class="card__title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Sale Summary</h2>
+      </div>
+      <div class="card__body">
+        <dl class="detail-list" style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 0;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Sale ID</dt><dd style="font-weight: 600; color: #0f172a; font-size: 0.875rem; word-break: break-all;">{{ sale.pk }}</dd></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Date</dt><dd style="font-weight: 600; color: #0f172a; font-size: 0.875rem;">{{ sale.created_at|date:"j M Y, H:i" }}</dd></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Hub</dt><dd style="font-weight: 600; color: #0f172a; font-size: 0.875rem;">{{ sale.hub }}</dd></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Agent</dt><dd style="font-weight: 600; color: #0f172a; font-size: 0.875rem;">{% if sale.agent %}{{ sale.agent.display_name }}{% else %}—{% endif %}</dd></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Customer</dt><dd style="font-weight: 600; color: #0f172a; font-size: 0.875rem;">{{ sale.customer_name|default:"—" }}</dd></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Payment Method</dt><dd style="font-weight: 600; color: #0f172a; font-size: 0.875rem;">{{ sale.get_payment_method_display }}</dd></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding-bottom: 0.75rem;"><dt style="font-weight: 600; color: #64748b; font-size: 0.875rem;">Status</dt><dd><span class="com-badge" style="padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #e0f2fe; color: #0369a1;">{{ sale.get_status_display }}</span></dd></div>
+          <div style="display: flex; justify-content: space-between; padding-top: 0.5rem;"><dt style="font-weight: 700; color: #0f172a; font-size: 1rem;">Total Amount</dt><dd style="font-weight: 800; color: #16a34a; font-size: 1.125rem;">{{ sale.total }}</dd></div>
+        </dl>
+      </div>
+    </article>
+
+    <!-- Items Card -->
+    <article class="card dash-panel" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); padding: 2rem;">
+      <div class="card__header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <h2 class="card__title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Purchased Items</h2>
+      </div>
+      <div class="card__body">
+        {% include "components/data_table.html" with object_list=sale.items.all columns=item_columns %}
+      </div>
+    </article>
+  </section>
+</div>
+<script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>
 {% endblock %}

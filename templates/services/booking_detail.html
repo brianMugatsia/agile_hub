@@ -84,47 +84,80 @@
               </div>
 
               <div style="margin-bottom: 1rem;">
-                <label for="custom_rate" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Commission Rate Override (%):</label>
+                <label for="custom_rate" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Service Providers Commission Rate (%):</label>
                 <input type="number" step="0.01" name="custom_rate" id="custom_rate" value="{{ default_commission_rate }}" placeholder="e.g. 20 (leave blank for system rate)" class="input" style="width: 100%;">
                 <span style="font-size: 0.75rem; color: #64748b;">Defaults to the active system rate ({{ default_commission_rate }}%). Overrides the system percentage rate for this provider upon completion.</span>
               </div>
 
               <div style="margin-bottom: 1rem;">
-                <label for="custom_amount" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Commission Amount Override ({{ CURRENCY_CODE }}):</label>
+                <label for="custom_amount" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Service Provider Commission Amount ({{ CURRENCY_CODE }}):</label>
                 <input type="number" step="0.01" name="custom_amount" id="custom_amount" placeholder="e.g. 1500.00 (leave blank for calculated)" class="input" style="width: 100%;">
                 <span id="calculated_commission_hint" style="font-size: 0.75rem; color: #64748b;">Directly sets the final payout amount if desired. Calculated amount: <strong>0.00</strong></span>
               </div>
 
               <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                  const qtyInput = document.getElementById('actual_quantity');
+                  const qtyInput = document.getElementById('actual_quantity');      
                   const rateInput = document.getElementById('custom_rate');
-                  const amountInput = document.getElementById('custom_amount');
+                  const amountInput = document.getElementById('custom_amount');     
                   const hintSpan = document.getElementById('calculated_commission_hint');
-                  const unitRate = parseFloat("{{ unit_rate|default:'0' }}") || 0;
+                  const unitRate = parseFloat("{{ unit_rate|default:'0' }}") || 0;  
+                  const dynTotalSpan = document.getElementById('dyn_total_amount');
+                  const dynCommSpan = document.getElementById('dyn_provider_commission');
+                  const dynHubSpan = document.getElementById('dyn_hub_remaining');
 
                   function updateCalculatedAmount() {
                     const qty = parseFloat(qtyInput.value) || 0;
                     const rate = parseFloat(rateInput.value) || 0;
-                    const calculated = qty * unitRate * (rate / 100);
+                    const totalAmt = qty * unitRate;
+                    
+                    let commAmt = 0;
+                    if (amountInput && amountInput.value !== '' && !isNaN(parseFloat(amountInput.value))) {
+                      commAmt = parseFloat(amountInput.value);
+                    } else {
+                      commAmt = totalAmt * (rate / 100);
+                    }
+
+                    const hubRemaining = totalAmt - commAmt;
+
                     if (hintSpan) {
-                      hintSpan.innerHTML = `Directly sets the final payout amount if desired. Calculated amount: <strong>${calculated.toFixed(2)}</strong>`;
+                      hintSpan.innerHTML = `Directly sets the final payout amount if desired. Calculated amount: <strong>${(totalAmt * (rate / 100)).toFixed(2)}</strong>`;
                     }
-                    if (amountInput && !amountInput.dataset.userEdited) {
-                      amountInput.placeholder = `e.g. ${calculated.toFixed(2)} (calculated)`;
+                    if (amountInput && !amountInput.dataset.userEdited && amountInput.value === '') {
+                      amountInput.placeholder = `e.g. ${(totalAmt * (rate / 100)).toFixed(2)} (calculated)`;
                     }
+
+                    if (dynTotalSpan) dynTotalSpan.textContent = totalAmt.toFixed(2);
+                    if (dynCommSpan) dynCommSpan.textContent = commAmt.toFixed(2);
+                    if (dynHubSpan) dynHubSpan.textContent = hubRemaining.toFixed(2);
                   }
 
                   if (qtyInput && rateInput && amountInput) {
-                    qtyInput.addEventListener('input', updateCalculatedAmount);
-                    rateInput.addEventListener('input', updateCalculatedAmount);
+                    qtyInput.addEventListener('input', updateCalculatedAmount);     
+                    rateInput.addEventListener('input', updateCalculatedAmount);    
                     amountInput.addEventListener('input', function() {
                       amountInput.dataset.userEdited = "true";
+                      updateCalculatedAmount();
                     });
                     updateCalculatedAmount();
                   }
                 });
               </script>
+
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; font-size: 0.85rem; color: #334155;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <span>Total Booking Amount:</span>
+                  <strong>{{ CURRENCY_CODE }} <span id="dyn_total_amount">0.00</span></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <span>Service Provider Commission:</span>
+                  <strong>{{ CURRENCY_CODE }} <span id="dyn_provider_commission">0.00</span></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #cbd5e1; padding-top: 0.35rem; margin-top: 0.35rem; font-weight: 700; color: #166534;">
+                  <span>Remaining for Hub:</span>
+                  <span>{{ CURRENCY_CODE }} <span id="dyn_hub_remaining">0.00</span></span>
+                </div>
+              </div>
 
               <div style="margin-bottom: 1.25rem;">
                 <label for="completion_notes" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Completion / Yield / Follow-up Notes:</label>

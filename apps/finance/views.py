@@ -278,6 +278,7 @@ class CashFlowCreateView(ProtectedCreateView):
 class ExpenseListView(ScopedModelListView):
     model = Expense
     page_title = "Expenses"
+    template_name = "finance/expense_list.html"
     columns = (
         {"label": "Date", "field": "expense_date"},
         {"label": "Category", "field": "get_category_display"},
@@ -332,15 +333,27 @@ class ExpenseCreateView(ProtectedCreateView):
         available_hubs = hubs_for_user(self.request.user)
         form.fields["hub"].queryset = available_hubs
         if self.request.user.role == "MEMBER":
-            form.fields["business"].queryset = Business.objects.filter(
+            form.fields["business"].queryset = Business.objects.filter(     
                 member__user=self.request.user
             )
         else:
-            form.fields["business"].queryset = Business.objects.filter(
+            form.fields["business"].queryset = Business.objects.filter(     
                 Q(hub__in=available_hubs) | Q(hub__isnull=True)
             ).select_related("member__user")
         return form
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        expense = self.object
+        CashFlow.objects.create(
+            hub=expense.hub,
+            kind=CashFlow.Kind.OUTFLOW,
+            amount=expense.amount,
+            occurred_at=timezone.make_aware(timezone.datetime.combine(expense.expense_date, timezone.datetime.min.time())),
+            reference=f"EXP-{expense.pk}",
+            notes=f"Auto-logged expense outflow: {expense.title}",
+        )
+        return response
 
 class ExpenseUpdateView(ProtectedUpdateView):
     model = Expense

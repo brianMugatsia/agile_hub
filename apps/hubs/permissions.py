@@ -12,6 +12,9 @@ def hubs_for_user(user, *, active_only=False):
         queryset = queryset.filter(status=Hub.Status.ACTIVE)
     if getattr(user, "role", None) in PLATFORM_ROLES:
         return queryset
+    user_hub_id = getattr(user, "hub_id", None)
+    if user_hub_id:
+        return queryset.filter(pk=user_hub_id)
     if getattr(user, "role", None) == Role.MEMBER:
         return queryset.filter(
             Q(members__user=user) | Q(businesses__member__user=user)
@@ -19,7 +22,7 @@ def hubs_for_user(user, *, active_only=False):
     if getattr(user, "role", None) == Role.WORKER:
         return queryset.filter(workers__user=user).distinct()
     return queryset.filter(
-        Q(manager=user) | Q(memberships__user=user, memberships__is_active=True)
+        Q(manager=user) | Q(memberships__user=user, memberships__is_active=True)    
     ).distinct()
 
 
@@ -27,6 +30,8 @@ def user_can_access_hub(user, hub):
     if not getattr(user, "is_authenticated", False):
         return False
     if getattr(user, "role", None) in PLATFORM_ROLES:
+        return True
+    if getattr(user, "hub_id", None) == hub.pk:
         return True
     if getattr(user, "role", None) == Role.MEMBER:
         return (
@@ -36,7 +41,6 @@ def user_can_access_hub(user, hub):
     if getattr(user, "role", None) == Role.WORKER:
         return hub.workers.filter(user=user).exists()
     return hub.manager_id == user.pk or hub.memberships.filter(user=user, is_active=True).exists()
-
 
 def hub_is_locked(user, hubs):
     """Users who are not platform admins and belong to exactly one hub always work inside it."""

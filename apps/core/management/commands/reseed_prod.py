@@ -21,7 +21,7 @@ from apps.payroll.models import SalaryRecord, WorkerProfile
 from apps.products.models import Product
 from apps.sales.models import Sale, SaleItem
 from apps.sales.services import complete_sale
-from apps.services.models import ServiceProvider, ServiceBooking, HubResource, ServiceType
+from apps.services.models import ServiceProvider, ServiceBooking, HubResource, ServiceType, ServiceCategory
 from apps.commissions.models import ServiceCommission
 
 User = get_user_model()
@@ -313,18 +313,30 @@ class Command(BaseCommand):
                 )
                 hub_resources.append(hr)
 
-        # Seed Service Providers (External)
+        # Seed Service Providers
         providers = []
-        for i in range(5):
-            fname, lname = self.get_random_name()
-            sp = ServiceProvider.objects.create(
-                provider_type="EXTERNAL",
-                name=f"{lname} Agri-Services",
-                phone_number=f"07{random.randint(11000000, 19999999)}",
-                service_category=random.choice(["AGRONOMY", "HARVESTING"]),
-                status="ACTIVE"
-            )
+        for i in range(10):
+            if i < 5 and i < len(member_profiles):
+                member = member_profiles[i]
+                sp = ServiceProvider.objects.create(
+                    provider_type="INTERNAL",
+                    member=member,
+                    name=f"{member.user.get_full_name()} Services",
+                    phone_number=member.phone_number,
+                    service_category=random.choice(list(dict(ServiceCategory.choices).keys())),
+                    status="ACTIVE"
+                )
+            else:
+                fname, lname = self.get_random_name()
+                sp = ServiceProvider.objects.create(
+                    provider_type="EXTERNAL",
+                    name=f"{lname} Agri-Services",
+                    phone_number=f"07{random.randint(11000000, 19999999)}",
+                    service_category=random.choice(list(dict(ServiceCategory.choices).keys())),
+                    status="ACTIVE"
+                )
             providers.append(sp)
+
 
         # Seed Service Bookings over 90 days
         self.stdout.write("Seeding service bookings...")

@@ -23,7 +23,7 @@
     </div>
 
     <div class="dash-hero__text">
-      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>{{ member.get_customer_type_display }} profile</span>
+      <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span> member profile</span>
       <div class="ben-id">
         <span class="ben-id__avatar" aria-hidden="true">{{ member.display_name|default:"?"|slice:":1"|upper }}</span>
         <div class="ben-id__text">
@@ -166,29 +166,29 @@
                   <td>{% if c.booking %}<a href="{{ c.booking.get_absolute_url }}">{{ c.service_type.name }}</a>{% else %}Service Commission{% endif %}</td>
                   <td>{{ c.provider.name|default:"&mdash;" }}</td>
                   <td>{{ c.rate|percentage|floatformat:1 }}%</td>
-                  <td>{{ CURRENCY_CODE }} {{ c.base_amount }}</td>
-                  <td><strong>{{ CURRENCY_CODE }} {{ c.amount }}</strong></td>
+                  <td><a href="{% url 'commissions:service_detail' c.pk %}" style="color: #0284c7; text-decoration: underline;">{{ CURRENCY_CODE }} {{ c.base_amount }}</a></td>
+                  <td><strong><a href="{% url 'commissions:service_detail' c.pk %}" style="color: #0284c7; text-decoration: underline;">{{ CURRENCY_CODE }} {{ c.amount }}</a></strong></td>      
                   <td><span class="badge badge--{{ c.status|lower }}">{{ c.get_status_display }}</span></td>
                   <td>{{ c.created_at|date:"Y-m-d H:i" }}</td>
                 </tr>
               {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <p class="text-muted">No service commission records for this profile.</p>
-      {% endif %}
-    </div>
-  </section>
+              </tbody>
+              </table>
+              </div>
+              {% else %}
+              <p class="text-muted">No service commission records for this profile.</p>   
+              {% endif %}
+              </div>
+              </section>
 
-  <!-- SALES AGENT COMMISSIONS -->
-  {% if sales_commissions %}
-    <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
-      <div class="card__body">
-        <h2 class="card__title">Sales Agent Commissions <span class="dash-count">{{ sales_commissions|length }}</span></h2>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
+              <!-- SALES AGENT COMMISSIONS -->
+              {% if sales_commissions %}
+              <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>  
+              <div class="card__body">
+              <h2 class="card__title">Sales Agent Commissions <span class="dash-count">{{ sales_commissions|length }}</span></h2>
+              <div class="table-wrap">
+              <table class="table">
+              <thead>
               <tr>
                 <th>Sale</th>
                 <th>Rate</th>
@@ -197,33 +197,33 @@
                 <th>Status</th>
                 <th>Date</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody>
               {% for sc in sales_commissions %}
                 <tr>
                   <td>{% if sc.sale %}<a href="{% url 'sales:detail' sc.sale.pk %}">{{ sc.sale }}</a>{% else %}Sale #{{ sc.pk }}{% endif %}</td>
                   <td>{{ sc.rate|percentage|floatformat:1 }}%</td>
-                  <td>{{ CURRENCY_CODE }} {{ sc.base_amount }}</td>
-                  <td><strong>{{ CURRENCY_CODE }} {{ sc.amount }}</strong></td>
+                  <td><a href="{% url 'commissions:detail' sc.pk %}" style="color: #0284c7; text-decoration: underline;">{{ CURRENCY_CODE }} {{ sc.base_amount }}</a></td>
+                  <td><strong><a href="{% url 'commissions:detail' sc.pk %}" style="color: #0284c7; text-decoration: underline;">{{ CURRENCY_CODE }} {{ sc.amount }}</a></strong></td>     
                   <td><span class="badge badge--{{ sc.status|lower }}">{{ sc.get_status_display }}</span></td>
                   <td>{{ sc.created_at|date:"Y-m-d H:i" }}</td>
                 </tr>
               {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  {% endif %}
+              </tbody>
+              </table>
+              </div>
+              </div>
+              </section>
+              {% endif %}
 
-  <!-- SERVICE BOOKINGS -->
-  <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>
-    <div class="card__body">
-      <h2 class="card__title">Service Bookings <span class="dash-count">{{ service_bookings|length }}</span></h2>
-      {% if service_bookings %}
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
+              <!-- SERVICE BOOKINGS -->
+              <section class="card dashboard-section dash-panel" data-reveal="up" data-spot>    
+              <div class="card__body">
+              <h2 class="card__title">Service Bookings <span class="dash-count">{{ service_bookings|length }}</span></h2>
+              {% if service_bookings %}
+              <div class="table-wrap">
+              <table class="table">
+              <thead>
               <tr>
                 <th>Service</th>
                 <th>Resource</th>
@@ -232,21 +232,21 @@
                 <th>Booking Status</th>
                 <th>Payment Status</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody>
               {% for b in service_bookings %}
                 <tr>
                   <td><a href="{{ b.get_absolute_url }}">{{ b.service_type.name }}</a></td>
                   <td>{{ b.resource.name|default:"&mdash;" }}</td>
                   <td>{{ b.start_date|date:"Y-m-d H:i" }}</td>
-                  <td>{{ b.total_amount }}</td>
+                  <td><a href="{{ b.get_absolute_url }}" style="color: #0284c7; text-decoration: underline; font-weight: 600;">{{ b.total_amount }}</a></td>
                   <td><span class="badge badge--info">{{ b.get_status_display }}</span></td>
                   <td><span class="badge {% if b.payment_status == 'PAID' %}badge--success{% else %}badge--warning{% endif %}">{{ b.get_payment_status_display }}</span></td>
                 </tr>
               {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+              </table>
+              </div>
       {% else %}
         <p class="text-muted">No service bookings recorded for this profile.</p>
       {% endif %}
