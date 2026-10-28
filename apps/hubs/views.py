@@ -13,6 +13,7 @@ from django.views.generic import DetailView, TemplateView
 from apps.accounts.roles import Role
 from apps.core.mixins import PageMixin
 from apps.inventory.models import InventoryBalance
+from apps.services.models import HubResource
 from .forms import HubForm
 from .models import Hub
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView, hubs_for_user
@@ -36,6 +37,9 @@ class HubListView(ScopedModelListView):
         {"label": "Hub", "field": "name"},
         {"label": "Region", "field": "region"},
         {"label": "Manager", "field": "manager__display_name"},
+        {"label": "Available Eq", "field": "n_eq_available"},
+        {"label": "In Use Eq", "field": "n_eq_in_use"},
+        {"label": "Maintenance Eq", "field": "n_eq_maintenance"},
         {"label": "Status", "field": "status"},
     )
     search_fields = ("code", "name", "region")
@@ -68,6 +72,9 @@ class HubListView(ScopedModelListView):
             n_staff=Count("workers", filter=Q(workers__is_active=True), distinct=True),
             n_businesses=Count("businesses", distinct=True),
             n_members=Count("members", distinct=True),
+            n_eq_available=Count("service_resources", filter=Q(service_resources__status=HubResource.Status.AVAILABLE), distinct=True),
+            n_eq_in_use=Count("service_resources", filter=Q(service_resources__status=HubResource.Status.IN_USE), distinct=True),
+            n_eq_maintenance=Count("service_resources", filter=Q(service_resources__status=HubResource.Status.MAINTENANCE), distinct=True),
             n_low_stock=Count(
                 "stock_balances",
                 filter=Q(

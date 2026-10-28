@@ -9,6 +9,7 @@
     <a class="btn btn--secondary" href="{% url 'commissions:approved' %}">Approved</a>
     <a class="btn btn--secondary" href="{% url 'commissions:paid' %}">Paid</a>
   {% endif %}
+  <a class="btn btn--secondary" href="{% url 'commissions:service_list' %}">Service Provider Commissions</a>
   {% if can_view_commission_settings %}<a class="btn btn--secondary" href="{% url 'commissions:settings' %}">Commission settings</a>{% endif %}
 {% endblock %}
 
@@ -32,9 +33,8 @@
     <div class="dash-hero__text">
       <span class="dash-hero__eyebrow"><span class="dash-hero__dot"></span>Commissions</span>
       <h2 class="dash-hero__title">Every commission, <span class="dash-gradient">accounted for.</span></h2>
-      <p class="dash-hero__note">Commissions are automatically accrued for completed sales made by sales agents and hub members. Review, approve, or process payments simply and clearly.</p>
+      <p class="dash-hero__note">Commissions are automatically accrued for completed sales and services. Review, approve, or process payments simply and clearly.</p>
     </div>
-
   </section>
 
   <!-- Animated Commission Stat Cards -->
@@ -81,28 +81,11 @@
     </div>
   </section>
 
-
-
-  <!-- FILTERS -->
-  <section class="card dashboard-section dash-panel com-filters-card" data-spot>
-    <div class="card__body">
-      <form class="com-filters" method="get" role="search">
-        <div class="com-filters__search">
-          <label class="sr-only" for="commission-search">Search commissions</label>
-          <svg class="dash-icon" aria-hidden="true"><use href="#com-i-search"/></svg>
-          <input class="input" id="commission-search" type="search" name="q" value="{{ search_query }}" placeholder="Search commissions">
-        </div>
-        <label class="com-field"><span class="com-field__label">From</span><input class="input" type="date" name="start" value="{{ filter_start }}"></label>
-        <label class="com-field"><span class="com-field__label">To</span><input class="input" type="date" name="end" value="{{ filter_end }}"></label>
-        <label class="com-field"><span class="com-field__label">Status</span><select class="select" name="status"><option value="">All statuses</option>{% for value, label in filter_fields.0.choices %}<option value="{{ value }}"{% if filter_fields.0.selected == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        <button class="btn btn--primary com-filters__btn" type="submit">Filter</button>
-      </form>
-      {% if filter_error %}<p class="alert alert--danger" role="alert">{{ filter_error }}</p>{% endif %}
-    </div>
-  </section>
-
-  <!-- TABLE -->
+  <!-- SALES AGENT COMMISSIONS TABLE -->
   <section class="card dashboard-section dash-panel" data-spot>
+    <div class="card__header">
+      <h2 class="card__title">Sales Agent Commissions</h2>
+    </div>
     <div class="card__body">
       <div class="table-wrap">
         <table class="table com-table">
@@ -157,7 +140,7 @@
                 </td>
               </tr>
             {% empty %}
-              <tr><td colspan="7">{% include "partials/empty_state.html" with title="No commissions yet" message="Commissions are created when sales are completed." %}</td></tr>
+              <tr><td colspan="7">{% include "partials/empty_state.html" with title="No sales agent commissions" message="Commissions are created when sales are completed." %}</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -165,6 +148,78 @@
       {% include "partials/pagination.html" %}
     </div>
   </section>
+
+  <!-- SERVICE PROVIDER COMMISSIONS TABLE -->
+  {% if service_commissions %}
+    <section class="card dashboard-section dash-panel" data-spot style="margin-top: 1.5rem;">
+      <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card__title">Service Provider Commissions ({{ service_commissions|length }})</h2>
+        <a class="btn btn--secondary btn--sm" href="{% url 'commissions:service_list' %}">All Service Commissions</a>
+      </div>
+      <div class="card__body">
+        <div class="table-wrap">
+          <table class="table com-table">
+            <thead>
+              <tr>
+                <th scope="col">Created</th>
+                <th scope="col">Service Provider</th>
+                <th scope="col">Type</th>
+                <th scope="col">Service / Booking</th>
+                <th scope="col">Rate</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Status</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sc in service_commissions %}
+                <tr>
+                  <td>{{ sc.created_at|date:"Y-m-d" }}</td>
+                  <td>
+                    <a href="{{ sc.provider.get_absolute_url }}" style="font-weight: 600; color: #2563eb;">
+                      {{ sc.provider.name }}
+                    </a>
+                  </td>
+                  <td>{{ sc.get_provider_type_display }}</td>
+                  <td>
+                    {% if sc.booking %}
+                      <a href="{{ sc.booking.get_absolute_url }}">{{ sc.service_type.name|default:"Service Engagement" }}</a>
+                    {% else %}
+                      {{ sc.service_type.name|default:"Service Commission" }}
+                    {% endif %}
+                  </td>
+                  <td class="com-num">{{ sc.rate|percentage|floatformat:2 }}%</td>
+                  <td class="com-amount">
+                    <a href="{% url 'commissions:service_detail' sc.pk %}" style="font-weight: 600; color: #2563eb;">
+                      {{ sc.amount }}
+                    </a>
+                  </td>
+                  <td><span class="com-badge" data-status="{{ sc.status|lower }}">{{ sc.get_status_display }}</span></td>
+                  <td class="table__actions">
+                    <div class="com-actions">
+                      {% if sc.status == "PENDING" and can_approve_service_commissions %}
+                        <form method="post" action="{% url 'commissions:service_approve' sc.pk %}">
+                          {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                        </form>
+                      {% endif %}
+                      {% if sc.status == "APPROVED" and can_pay_service_commissions %}
+                        <form method="post" action="{% url 'commissions:service_pay' sc.pk %}">
+                          {% csrf_token %}<button class="btn btn--sm btn--primary" type="submit">Mark Paid</button>
+                        </form>
+                      {% endif %}
+                      {% if sc.status == "PAID" %}
+                        <span class="badge badge--positive" style="font-size: 0.75rem;">Paid</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
 
 </div>
 <script type="module" src="{% static 'js/pages/dashboard-motion.js' %}"></script>

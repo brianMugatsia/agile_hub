@@ -5,7 +5,7 @@ from apps.hubs.models import Hub
 from apps.hubs.permissions import hubs_for_user
 from apps.members.models import Business, MemberProfile
 
-from .models import HubResource, ServiceBooking, ServiceProvider, ServiceProviderStatus, ServiceType
+from .models import HubResource, ServiceBooking, ServiceProvider, ServiceProviderStatus, ServiceType, ServiceCategory
 
 
 class ServiceTypeForm(forms.ModelForm):
@@ -23,21 +23,48 @@ class ServiceTypeForm(forms.ModelForm):
 
 
 class HubResourceForm(forms.ModelForm):
+    total_count = forms.IntegerField(
+        initial=1,
+        min_value=0,
+        label="Total Equipment",
+        widget=forms.NumberInput(attrs={"class": "input", "placeholder": "e.g. 10"})
+    )
+    available_count = forms.IntegerField(
+        initial=1,
+        min_value=0,
+        label="Available Equipment",
+        widget=forms.NumberInput(attrs={"class": "input", "placeholder": "e.g. 8"})
+    )
+    in_use_count = forms.IntegerField(
+        initial=0,
+        min_value=0,
+        label="In Use Equipment",
+        widget=forms.NumberInput(attrs={"class": "input", "placeholder": "e.g. 2"})
+    )
+
     class Meta:
         model = HubResource
         fields = [
             "hub",
             "service_type",
             "name",
-            "code",
-            "capacity",
-            "capacity_unit",
-            "status",
+            "total_count",
+            "available_count",
+            "in_use_count",
             "operator_name",
             "operator_phone",
             "hourly_or_daily_cost",
             "notes",
         ]
+        widgets = {
+            "hub": forms.Select(attrs={"class": "select"}),
+            "service_type": forms.Select(attrs={"class": "select"}),
+            "name": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. Tractor 01"}),
+            "operator_name": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. John Doe"}),
+            "operator_phone": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. 0712345678"}),
+            "hourly_or_daily_cost": forms.NumberInput(attrs={"class": "input", "step": "0.01", "placeholder": "0.00"}),
+            "notes": forms.Textarea(attrs={"class": "input", "rows": 3, "placeholder": "Optional notes or equipment details..."}),
+        }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,6 +73,7 @@ class HubResourceForm(forms.ModelForm):
             user_hub = getattr(user, "hub", None)
             if user_hub and not getattr(self.instance, "hub_id", None):
                 self.fields["hub"].initial = user_hub
+
 
 
 class ServiceBookingForm(forms.ModelForm):
@@ -121,6 +149,13 @@ class BookingActionForm(forms.Form):
 
 
 class ServiceProviderForm(forms.ModelForm):
+    service_category = forms.ChoiceField(
+        choices=[("", "---------")] + list(ServiceCategory.choices),
+        required=False,
+        label="Service Category",
+        widget=forms.Select(attrs={"class": "select"}),
+    )
+
     class Meta:
         model = ServiceProvider
         fields = [
@@ -135,13 +170,6 @@ class ServiceProviderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Populate service_category dropdown with active ServiceType entries
-        from apps.services.models import ServiceType
-        service_choices = [("", "---------")] + [
-            (st.code, f"{st.name} ({st.get_category_display()})")
-            for st in ServiceType.objects.filter(is_active=True).order_by("category", "name")
-        ]
-        self.fields["service_category"].choices = service_choices
         self.fields["member"].queryset = MemberProfile.objects.select_related("user").all()
         self.fields["member"].required = False
         self.fields["name"].required = False

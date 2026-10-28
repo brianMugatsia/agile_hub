@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static ui_tags %}
+
+{% block content %}
+<div class="dash" style="max-width: 860px; margin: 2.5rem auto; padding: 0 1rem;">
+  <div class="card dash-panel" style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; overflow: hidden;">
+    <div class="card__header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; border-bottom: 1px solid #f1f5f9; background: #fafafa;">
+      <div>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">{{ page_title }}</h2>
+        <p style="font-size: 0.875rem; color: #64748b; margin: 0.25rem 0 0 0;">Manage equipment and facility counts, operating rates, and operators.</p>
+      </div>
+      <a href="{% url 'services:resource_list' %}" class="btn btn--secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;">Back to Equipment</a>
+    </div>
+
+    <form method="post" class="form" style="padding: 2rem;">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert--error" style="margin-bottom: 1.5rem; padding: 1rem; border-radius: 8px; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+        <div class="form-group" style="grid-column: span 2;">
+          <label for="{{ form.hub.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Hub Location:</label>
+          {{ form.hub }}
+          {% if form.hub.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.hub.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.service_type.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Service Type:</label>
+          {{ form.service_type }}
+          {% if form.service_type.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.service_type.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.name.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Equipment Name:</label>
+          {{ form.name }}
+          {% if form.name.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.total_count.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Total Equipment Count:</label>
+          {{ form.total_count }}
+          {% if form.total_count.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.total_count.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.available_count.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Available Equipment Count:</label>
+          {{ form.available_count }}
+          {% if form.available_count.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.available_count.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.in_use_count.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">In Use Equipment Count:</label>
+          {{ form.in_use_count }}
+          {% if form.in_use_count.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.in_use_count.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.hourly_or_daily_cost.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Operating Cost Rate:</label>
+          {{ form.hourly_or_daily_cost }}
+          {% if form.hourly_or_daily_cost.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.hourly_or_daily_cost.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.operator_name.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Operator Name:</label>
+          {{ form.operator_name }}
+          {% if form.operator_name.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.operator_name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.operator_phone.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Operator Phone:</label>
+          {{ form.operator_phone }}
+          {% if form.operator_phone.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.operator_phone.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group" style="grid-column: span 2;">
+          <label for="{{ form.notes.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #334155; margin-bottom: 0.5rem; display: block;">Notes & Comments:</label>
+          {{ form.notes }}
+          {% if form.notes.errors %}<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ form.notes.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #f1f5f9; display: flex; gap: 1rem; justify-content: flex-end;">
+        <a href="{% url 'services:resource_list' %}" class="btn btn--secondary" style="padding: 0.75rem 1.5rem;">Cancel</a>
+        <button type="submit" class="btn btn--primary" style="padding: 0.75rem 1.75rem; font-weight: 600;">{{ submit_label|default:"Save Equipment" }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

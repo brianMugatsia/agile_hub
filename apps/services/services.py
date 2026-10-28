@@ -125,9 +125,8 @@ def start_service_booking(*, booking_id, actor=None):
     booking.save(update_fields=["status", "updated_at"])
 
     resource = booking.resource
-    if resource.status == HubResource.Status.AVAILABLE:
-        resource.status = HubResource.Status.IN_USE
-        resource.save(update_fields=["status", "updated_at"])
+    resource.status = HubResource.Status.IN_USE
+    resource.save(update_fields=["status", "updated_at"])
 
     record_event(
         action="service_booking.started",
@@ -139,8 +138,8 @@ def start_service_booking(*, booking_id, actor=None):
 
 
 @transaction.atomic
-def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, notes=""):
-    """Marks booking COMPLETED and frees up the hub resource."""
+def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, notes="", custom_rate=None, custom_amount=None):
+    """Marks booking COMPLETED and frees up equipment status."""
     booking = ServiceBooking.objects.select_for_update().get(pk=booking_id)
 
     if actor and not user_can_access_hub(actor, booking.hub):
@@ -148,6 +147,8 @@ def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, no
 
     if booking.status not in (ServiceBooking.Status.SCHEDULED, ServiceBooking.Status.IN_PROGRESS):
         raise ValidationError(f"Cannot complete booking in status '{booking.get_status_display()}'.")
+
+    was_in_progress = (booking.status == ServiceBooking.Status.IN_PROGRESS)
 
     if actual_quantity is not None and actual_quantity > Decimal("0.00"):
         booking.quantity = actual_quantity
@@ -160,17 +161,10 @@ def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, no
 
     if booking.service_provider:
         from apps.commissions.services import accrue_service_commission
-        accrue_service_commission(booking)
+        accrue_service_commission(booking, custom_rate=custom_rate, custom_amount=custom_amount)
 
     resource = booking.resource
-    other_active = (
-        ServiceBooking.objects.filter(
-            resource=resource, status=ServiceBooking.Status.IN_PROGRESS
-        )
-        .exclude(pk=booking.pk)
-        .exists()
-    )
-    if not other_active and resource.status == HubResource.Status.IN_USE:
+    if was_in_progress:
         resource.status = HubResource.Status.AVAILABLE
         resource.save(update_fields=["status", "updated_at"])
 
@@ -186,7 +180,7 @@ def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, no
 
 @transaction.atomic
 def cancel_service_booking(*, booking_id, actor=None, reason=""):
-    """Cancels a scheduled or in-progress booking."""
+    """Cancels a scheduled or in-progress booking and frees up equipment status."""
     booking = ServiceBooking.objects.select_for_update().get(pk=booking_id)
 
     if actor and not user_can_access_hub(actor, booking.hub):
@@ -195,20 +189,15 @@ def cancel_service_booking(*, booking_id, actor=None, reason=""):
     if booking.status in (ServiceBooking.Status.COMPLETED, ServiceBooking.Status.CANCELLED):
         raise ValidationError(f"Cannot cancel booking with status '{booking.get_status_display()}'.")
 
+    was_in_progress = (booking.status == ServiceBooking.Status.IN_PROGRESS)
+
     booking.status = ServiceBooking.Status.CANCELLED
     if reason.strip():
         booking.notes = f"{booking.notes}\nCancellation reason: {reason.strip()}".strip()
     booking.save(update_fields=["status", "notes", "updated_at"])
 
     resource = booking.resource
-    other_active = (
-        ServiceBooking.objects.filter(
-            resource=resource, status=ServiceBooking.Status.IN_PROGRESS
-        )
-        .exclude(pk=booking.pk)
-        .exists()
-    )
-    if not other_active and resource.status == HubResource.Status.IN_USE:
+    if was_in_progress:
         resource.status = HubResource.Status.AVAILABLE
         resource.save(update_fields=["status", "updated_at"])
 
@@ -220,6 +209,9 @@ def cancel_service_booking(*, booking_id, actor=None, reason=""):
         changes={"reason": reason},
     )
     return booking
+
+
+
 
 
 @transaction.atomic

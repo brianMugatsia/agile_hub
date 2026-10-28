@@ -3,7 +3,8 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, OuterRef, Subquery, Count, Value, IntegerField, F
+from django.db.models.functions import Coalesce, Greatest
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -13,6 +14,8 @@ from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedMo
 from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin
 from apps.hubs.permissions import selected_hub
+from apps.commissions.models import CommissionSetting
+from apps.finance.services.calculations import get_active_financial_setting
 
 from .forms import (
     BookingActionForm,
@@ -112,6 +115,24 @@ class ServiceBookingDetailView(LoginRequiredMixin, PermissionRequiredMixin, Page
         context = super().get_context_data(**kwargs)
         context["action_form"] = BookingActionForm()
         context["booking_commissions"] = self.object.commissions.select_related("service_type").all()
+        
+        booking = self.object
+        day = booking.start_date.date() if booking.start_date else timezone.localdate()
+        com_setting = CommissionSetting.objects.filter(is_active=True, effective_from__lte=day).first()
+        setting = get_active_financial_setting(day)
+        provider_type = booking.service_provider.provider_type if booking.service_provider else "EXTERNAL"
+
+        if provider_type == "INTERNAL":
+            rate = (com_setting.internal_provider_rate if (com_setting and com_setting.internal_provider_rate is not None) else None)
+            if rate is None:
+                rate = setting.internal_commission_rate
+        else:
+            rate = (com_setting.external_provider_rate if (com_setting and com_setting.external_provider_rate is not None) else None)
+            if rate is None:
+                rate = setting.external_commission_rate
+                
+        context["default_commission_rate"] = (rate * Decimal("100")).quantize(Decimal("0.01"))
+        context["unit_rate"] = booking.unit_rate
         return context
 
 
@@ -135,10 +156,36 @@ class ServiceBookingActionView(LoginRequiredMixin, View):
                 messages.success(request, f"Booking '{booking}' is now In Progress.")
             elif action == "complete":
                 actual_qty = None
-                if request.POST.get("actual_quantity"):
-                    actual_qty = Decimal(request.POST.get("actual_quantity"))
+                raw_qty = request.POST.get("actual_quantity")
+                if raw_qty:
+                    try:
+                        actual_qty = Decimal(raw_qty)
+                    except Exception:
+                        actual_qty = None
+
+                custom_rate = None
+                raw_rate = request.POST.get("custom_rate")
+                if raw_rate:
+                    try:
+                        custom_rate = Decimal(raw_rate) / Decimal("100")
+                    except Exception:
+                        custom_rate = None
+
+                custom_amount = None
+                raw_amount = request.POST.get("custom_amount")
+                if raw_amount:
+                    try:
+                        custom_amount = Decimal(raw_amount)
+                    except Exception:
+                        custom_amount = None
+
                 complete_service_booking(
-                    booking_id=booking.pk, actor=request.user, actual_quantity=actual_qty, notes=notes
+                    booking_id=booking.pk,
+                    actor=request.user,
+                    actual_quantity=actual_qty,
+                    notes=notes,
+                    custom_rate=custom_rate,
+                    custom_amount=custom_amount,
                 )
                 messages.success(request, f"Booking '{booking}' has been marked as Completed.")
             elif action == "cancel":
@@ -171,10 +218,10 @@ class HubResourceListView(ScopedModelListView):
         {"label": "Code", "field": "code"},
         {"label": "Name", "field": "name"},
         {"label": "Service Type", "field": "service_type__name"},
-        {"label": "Capacity", "field": "capacity"},
-        {"label": "Capacity Unit", "field": "capacity_unit"},
-        {"label": "Status", "field": "status"},
-        {"label": "Operator", "field": "operator_name"},
+        {"label": "Operator", "field": "operator_display"},
+        {"label": "Total Eq", "field": "total_count"},
+        {"label": "Available", "field": "available_count"},
+        {"label": "In Use", "field": "in_use_count"},
     )
     search_fields = ("code", "name", "operator_name", "service_type__name")
     create_url_name = "services:resource_create"
@@ -187,16 +234,17 @@ class HubResourceListView(ScopedModelListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         base_qs = self.get_queryset()
-        context["total_resources_count"] = base_qs.count()
-        context["available_resources_count"] = base_qs.filter(status=HubResource.Status.AVAILABLE).count()
-        context["in_use_resources_count"] = base_qs.filter(status=HubResource.Status.IN_USE).count()
-        context["maintenance_resources_count"] = base_qs.filter(status=HubResource.Status.MAINTENANCE).count()
+        context["total_resources_count"] = base_qs.aggregate(total=Sum("total_count"))["total"] or 0
+        context["available_resources_count"] = base_qs.aggregate(total=Sum("available_count"))["total"] or 0
+        context["in_use_resources_count"] = base_qs.aggregate(total=Sum("in_use_count"))["total"] or 0
+        context["maintenance_resources_count"] = 0
         return context
 
 
 class HubResourceCreateView(ProtectedCreateView):
     model = HubResource
     form_class = HubResourceForm
+    template_name = "services/hubresource_form.html"
     page_title = "Add Equipment / Facility"
     success_url_name = "services:resource_list"
 
@@ -205,10 +253,20 @@ class HubResourceCreateView(ProtectedCreateView):
         kwargs["user"] = self.request.user
         return kwargs
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        hub = getattr(self.request.user, "hub", None)
+        qs = HubResource.objects.filter(hub=hub) if hub else HubResource.objects.all()
+        context["total_eq_count"] = qs.count()
+        context["available_eq_count"] = qs.filter(status=HubResource.Status.AVAILABLE).count()
+        context["in_use_eq_count"] = qs.filter(status=HubResource.Status.IN_USE).count()
+        return context
+
 
 class HubResourceUpdateView(ProtectedUpdateView):
     model = HubResource
     form_class = HubResourceForm
+    template_name = "services/hubresource_form.html"
     page_title = "Edit Equipment / Facility"
     success_url_name = "services:resource_list"
 
@@ -216,6 +274,15 @@ class HubResourceUpdateView(ProtectedUpdateView):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        resource = self.object
+        qs = HubResource.objects.filter(hub=resource.hub, service_type=resource.service_type)
+        context["total_eq_count"] = qs.count()
+        context["available_eq_count"] = qs.filter(status=HubResource.Status.AVAILABLE).count()
+        context["in_use_eq_count"] = qs.filter(status=HubResource.Status.IN_USE).count()
+        return context
 
 
 class HubResourceDetailView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin, DetailView):

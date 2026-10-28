@@ -63,19 +63,80 @@
             <button type="submit" class="btn btn--primary">Start Operation</button>
           </form>
         {% elif servicebooking.status == "IN_PROGRESS" %}
-          <form method="post" action="{% url 'services:booking_action' servicebooking.pk %}" style="margin-bottom: 1.5rem;">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="complete">
-            <div style="margin-bottom: 0.75rem;">
-              <label for="actual_quantity" style="font-weight: 500; font-size: 0.9rem;">Actual Final Quantity (optional adjustment):</label>
-              <input type="number" step="0.01" name="actual_quantity" id="actual_quantity" value="{{ servicebooking.quantity }}" class="input">
+          <div style="margin-bottom: 1.5rem;">
+            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">Service in progress. Click below to review quantities and edit commission rates before finalizing.</p>
+            <button type="button" class="btn btn--primary" onclick="document.getElementById('complete-modal').showModal();">Complete & Accrue Commission</button>
+          </div>
+
+          <!-- MODAL DIALOG -->
+          <dialog id="complete-modal" style="border: none; border-radius: 12px; padding: 2rem; max-width: 520px; width: 100%; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0;">Complete Booking & Accrue Commission</h3>
+              <button type="button" onclick="document.getElementById('complete-modal').close();" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
             </div>
-            <div style="margin-bottom: 0.75rem;">
-              <label for="completion_notes" style="font-weight: 500; font-size: 0.9rem;">Completion / Yield / Follow-up Notes:</label>
-              <textarea name="notes" id="completion_notes" rows="3" class="input" placeholder="Produce condition, acres completed, fuel used, follow-up remarks..."></textarea>
-            </div>
-            <button type="submit" class="btn btn--primary">Complete & Accrue Commission</button>
-          </form>
+            <form method="post" action="{% url 'services:booking_action' servicebooking.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="complete">
+              
+              <div style="margin-bottom: 1rem;">
+                <label for="actual_quantity" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Actual Final Quantity:</label>
+                <input type="number" step="0.01" name="actual_quantity" id="actual_quantity" value="{{ servicebooking.quantity }}" class="input" style="width: 100%;">
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label for="custom_rate" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Commission Rate Override (%):</label>
+                <input type="number" step="0.01" name="custom_rate" id="custom_rate" value="{{ default_commission_rate }}" placeholder="e.g. 20 (leave blank for system rate)" class="input" style="width: 100%;">
+                <span style="font-size: 0.75rem; color: #64748b;">Defaults to the active system rate ({{ default_commission_rate }}%). Overrides the system percentage rate for this provider upon completion.</span>
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label for="custom_amount" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Commission Amount Override ({{ CURRENCY_CODE }}):</label>
+                <input type="number" step="0.01" name="custom_amount" id="custom_amount" placeholder="e.g. 1500.00 (leave blank for calculated)" class="input" style="width: 100%;">
+                <span id="calculated_commission_hint" style="font-size: 0.75rem; color: #64748b;">Directly sets the final payout amount if desired. Calculated amount: <strong>0.00</strong></span>
+              </div>
+
+              <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                  const qtyInput = document.getElementById('actual_quantity');
+                  const rateInput = document.getElementById('custom_rate');
+                  const amountInput = document.getElementById('custom_amount');
+                  const hintSpan = document.getElementById('calculated_commission_hint');
+                  const unitRate = parseFloat("{{ unit_rate|default:'0' }}") || 0;
+
+                  function updateCalculatedAmount() {
+                    const qty = parseFloat(qtyInput.value) || 0;
+                    const rate = parseFloat(rateInput.value) || 0;
+                    const calculated = qty * unitRate * (rate / 100);
+                    if (hintSpan) {
+                      hintSpan.innerHTML = `Directly sets the final payout amount if desired. Calculated amount: <strong>${calculated.toFixed(2)}</strong>`;
+                    }
+                    if (amountInput && !amountInput.dataset.userEdited) {
+                      amountInput.placeholder = `e.g. ${calculated.toFixed(2)} (calculated)`;
+                    }
+                  }
+
+                  if (qtyInput && rateInput && amountInput) {
+                    qtyInput.addEventListener('input', updateCalculatedAmount);
+                    rateInput.addEventListener('input', updateCalculatedAmount);
+                    amountInput.addEventListener('input', function() {
+                      amountInput.dataset.userEdited = "true";
+                    });
+                    updateCalculatedAmount();
+                  }
+                });
+              </script>
+
+              <div style="margin-bottom: 1.25rem;">
+                <label for="completion_notes" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Completion / Yield / Follow-up Notes:</label>
+                <textarea name="notes" id="completion_notes" rows="3" class="input" placeholder="Produce condition, acres completed, follow-up remarks..." style="width: 100%;"></textarea>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="document.getElementById('complete-modal').close();" class="btn btn--secondary">Cancel</button>
+                <button type="submit" class="btn btn--primary">Finalize & Accrue Commission</button>
+              </div>
+            </form>
+          </dialog>
         {% endif %}
 
         {% if servicebooking.payment_status != "PAID" %}

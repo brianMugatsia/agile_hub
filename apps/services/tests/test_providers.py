@@ -86,25 +86,17 @@ def test_dormancy_check():
 
 def test_service_provider_form_service_catalogue_choices_and_display():
     from apps.services.forms import ServiceProviderForm
-    from apps.services.models import ServiceType, ServiceCategory
-
-    st = ServiceType.objects.create(
-        code="TEST-CAT-SRV",
-        name="Test Catalogue Service",
-        category=ServiceCategory.RIPENING,
-        standard_rate=Decimal("10.00"),
-        is_active=True,
-    )
+    from apps.services.models import ServiceCategory
 
     form = ServiceProviderForm()
     choices = dict(form.fields["service_category"].choices)
-    assert "TEST-CAT-SRV" in choices
-    assert "Test Catalogue Service" in choices["TEST-CAT-SRV"]
+    assert ServiceCategory.RIPENING in choices
+    assert choices[ServiceCategory.RIPENING] == "Produce Ripening"
 
     provider = ServiceProvider(
         provider_type=ProviderType.EXTERNAL,
         name="External Cat Provider",
-        service_category="TEST-CAT-SRV",
+        service_category=ServiceCategory.RIPENING,
     )
-    assert provider.service_category_display == "Test Catalogue Service"
+    assert provider.service_category_display == "Produce Ripening"
 

@@ -9,6 +9,22 @@ from apps.services.models import ServiceType
 from .models import MemberProfile, Business
 
 
+CROP_CHOICES = [
+    ("", "---------"),
+    ("Maize", "Maize"),
+    ("Beans", "Beans"),
+    ("Coffee", "Coffee"),
+    ("Tea", "Tea"),
+    ("Horticulture", "Horticulture (Fruits & Veg)"),
+    ("Wheat", "Wheat"),
+    ("Rice", "Rice"),
+    ("Sugarcane", "Sugarcane"),
+    ("Potatoes", "Irish & Sweet Potatoes"),
+    ("Cotton", "Cotton"),
+    ("Other", "Other"),
+]
+
+
 def _hub_choices(field, instance, user):
     queryset = hubs_for_user(user, active_only=True).distinct()
     if instance.pk and instance.hub_id:
@@ -29,11 +45,18 @@ def _member_choices(instance, user):
 class MemberProfileForm(forms.ModelForm):
     first_name = forms.CharField(max_length=150, required=False, label="First name")
     last_name = forms.CharField(max_length=150, required=False, label="Last name")
+    crops = forms.ChoiceField(
+        choices=CROP_CHOICES,
+        required=False,
+        label="Primary Crop",
+        widget=forms.Select(attrs={"class": "select"}),
+    )
     services = forms.ModelMultipleChoiceField(
         queryset=ServiceType.objects.filter(is_active=True),
         required=False,
-        label="Assigned Services",
-        widget=forms.SelectMultiple(attrs={"class": "input"}),
+        label="Assigned Services (Select 1 or more)",
+        widget=forms.CheckboxSelectMultiple(),
+        help_text="Optional. Check one or more services provided or utilized by this member.",
     )
 
     class Meta:
@@ -70,11 +93,18 @@ class MemberCreateForm(forms.ModelForm):
     first_name = forms.CharField(max_length=150, required=False, label="First name")
     last_name = forms.CharField(max_length=150, required=False, label="Last name")
     email = forms.EmailField(required=False, label="Email")
+    crops = forms.ChoiceField(
+        choices=CROP_CHOICES,
+        required=False,
+        label="Primary Crop",
+        widget=forms.Select(attrs={"class": "select"}),
+    )
     services = forms.ModelMultipleChoiceField(
         queryset=ServiceType.objects.filter(is_active=True),
         required=False,
-        label="Assigned Services",
-        widget=forms.SelectMultiple(attrs={"class": "input"}),
+        label="Assigned Services (Select 1 or more)",
+        widget=forms.CheckboxSelectMultiple(),
+        help_text="Optional. Check one or more services provided or utilized by this member.",
     )
 
     class Meta:
@@ -93,7 +123,7 @@ class MemberCreateForm(forms.ModelForm):
         profile = super().save(commit=False)
         profile.customer_type = MemberProfile.CustomerType.FARMER
         email = self.cleaned_data.get("email", "").strip().lower()
-        
+
         if email:
             username = email
             base_username = email.split("@")[0]
@@ -127,20 +157,19 @@ class CustomerForm(forms.ModelForm):
         label="Category / Type",
         widget=forms.Select(attrs={"class": "select"}),
     )
-    services = forms.ModelMultipleChoiceField(
-        queryset=ServiceType.objects.filter(is_active=True),
+    crops = forms.ChoiceField(
+        choices=CROP_CHOICES,
         required=False,
-        label="Offered Services",
-        widget=forms.SelectMultiple(attrs={"class": "input"}),
+        label="Primary Crop",
+        widget=forms.Select(attrs={"class": "select"}),
     )
 
     class Meta:
         model = MemberProfile
         fields = [
             "customer_type", "name", "phone_number", "national_id",
-            "location", "crops", "hub", "services", "loop_feedback", "notes"
+            "location", "crops", "hub", "loop_feedback", "notes"
         ]
-
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk and not self.initial.get("name"):

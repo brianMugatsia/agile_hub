@@ -193,6 +193,9 @@ class HubResource(models.Model):
     service_type = models.ForeignKey(ServiceType, on_delete=models.PROTECT, related_name="resources")
     name = models.CharField(max_length=160)
     code = models.CharField(max_length=40)
+    total_count = models.PositiveIntegerField(default=1, help_text="Total number of this equipment.")
+    available_count = models.PositiveIntegerField(default=1, help_text="Number of equipment available.")
+    in_use_count = models.PositiveIntegerField(default=0, help_text="Number of equipment currently in use.")
     capacity = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -221,8 +224,33 @@ class HubResource(models.Model):
             models.UniqueConstraint(fields=["hub", "code"], name="unique_hub_resource_code")
         ]
 
+    def clean(self):
+        super().clean()
+        if self.available_count > self.total_count:
+            raise ValidationError({"available_count": "Available equipment cannot exceed total equipment count."})
+        if self.in_use_count > self.total_count:
+            raise ValidationError({"in_use_count": "In-use equipment cannot exceed total equipment count."})
+        if (self.available_count + self.in_use_count) > self.total_count:
+            raise ValidationError({"available_count": "Sum of available and in-use equipment cannot exceed total equipment count."})
+
     def __str__(self):
         return f"{self.hub.name}: {self.name} [{self.get_status_display()}]"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        if not self.code and self.hub_id:
+            count = HubResource.objects.filter(hub=self.hub).count() + 1
+            self.code = f"EQ-{count:03d}"
+            while HubResource.objects.filter(hub=self.hub, code=self.code).exists():
+                count += 1
+                self.code = f"EQ-{count:03d}"
+        super().save(*args, **kwargs)
+
+    @property
+    def operator_display(self):
+        if self.operator_name and self.operator_phone:
+            return f"{self.operator_name} ({self.operator_phone})"
+        return self.operator_name or self.operator_phone or "—"
 
     def get_absolute_url(self):
         return reverse("services:resource_detail", kwargs={"pk": self.pk})

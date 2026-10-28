@@ -63,13 +63,33 @@ class CommissionListView(ScopedModelListView):
         context["can_view_commission_settings"] = self.request.user.has_perm(
             "commissions.view_commissionsetting"
         )
-        context["can_approve_commissions"] = self.request.user.has_perm(    
+        context["can_approve_commissions"] = self.request.user.has_perm(
             "commissions.approve_salesagentcommission"
+        )
+        context["can_approve_service_commissions"] = self.request.user.has_perm(
+            "commissions.approve_servicecommission"
+        )
+        context["can_pay_service_commissions"] = self.request.user.has_perm(
+            "commissions.pay_servicecommission"
         )
         base_qs = self.get_queryset()
         context["total_pending_commission"] = base_qs.filter(status=SalesAgentCommission.Status.PENDING).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         context["total_approved_commission"] = base_qs.filter(status=SalesAgentCommission.Status.APPROVED).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         context["total_paid_commission"] = base_qs.filter(status=SalesAgentCommission.Status.PAID).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        srv_qs = scope_queryset(ServiceCommission.objects.all(), self.request.user).select_related("provider", "booking", "service_type")
+        status_filter = self.request.GET.get("status")
+        if "approved" in self.request.path:
+            status_filter = ServiceCommission.Status.APPROVED
+        elif "pending" in self.request.path:
+            status_filter = ServiceCommission.Status.PENDING
+        elif "paid" in self.request.path:
+            status_filter = ServiceCommission.Status.PAID
+
+        if status_filter:
+            srv_qs = srv_qs.filter(status=status_filter)
+
+        context["service_commissions"] = srv_qs.order_by("-created_at")[:50]
         return context
 
 
