@@ -15,6 +15,20 @@ from .models import HubResource, ServiceBooking, ServiceProvider, ServiceProvide
 CENT = Decimal("0.01")
 
 
+def update_resource_counts(resource):
+    active_bookings_count = ServiceBooking.objects.filter(
+        resource=resource,
+        status__in=[ServiceBooking.Status.SCHEDULED, ServiceBooking.Status.IN_PROGRESS]
+    ).count()
+    resource.in_use_count = min(resource.total_count, active_bookings_count)
+    resource.available_count = max(0, resource.total_count - resource.in_use_count)
+    if resource.in_use_count > 0:
+        resource.status = HubResource.Status.IN_USE
+    else:
+        resource.status = HubResource.Status.AVAILABLE
+    resource.save(update_fields=["in_use_count", "available_count", "status", "updated_at"])
+
+
 @transaction.atomic
 def create_service_booking(
     *,
@@ -95,6 +109,8 @@ def create_service_booking(
         created_by=actor if getattr(actor, "is_authenticated", False) else None,
     )
 
+    update_resource_counts(resource)
+
     record_event(
         action="service_booking.created",
         summary=f"Service booking created: {booking}",
@@ -125,8 +141,7 @@ def start_service_booking(*, booking_id, actor=None):
     booking.save(update_fields=["status", "updated_at"])
 
     resource = booking.resource
-    resource.status = HubResource.Status.IN_USE
-    resource.save(update_fields=["status", "updated_at"])
+    update_resource_counts(resource)
 
     record_event(
         action="service_booking.started",
@@ -164,9 +179,7 @@ def complete_service_booking(*, booking_id, actor=None, actual_quantity=None, no
         accrue_service_commission(booking, custom_rate=custom_rate, custom_amount=custom_amount)
 
     resource = booking.resource
-    if was_in_progress:
-        resource.status = HubResource.Status.AVAILABLE
-        resource.save(update_fields=["status", "updated_at"])
+    update_resource_counts(resource)
 
     record_event(
         action="service_booking.completed",
@@ -197,9 +210,7 @@ def cancel_service_booking(*, booking_id, actor=None, reason=""):
     booking.save(update_fields=["status", "notes", "updated_at"])
 
     resource = booking.resource
-    if was_in_progress:
-        resource.status = HubResource.Status.AVAILABLE
-        resource.save(update_fields=["status", "updated_at"])
+    update_resource_counts(resource)
 
     record_event(
         action="service_booking.cancelled",
