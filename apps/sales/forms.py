@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from apps.accounts.roles import Role
 from apps.hubs.models import Hub
+from apps.hubs.permissions import hubs_for_user
 from apps.members.models import Business, MemberProfile
 from apps.products.models import Product
 from .models import Sale
@@ -49,6 +51,22 @@ class SaleEntryForm(forms.Form):
     ])
     payment_reference = forms.CharField(max_length=80, required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
+
+    def __init__(self, *args, actor=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.actor = actor
+        if actor is not None and actor.role not in (Role.SUPER_ADMIN, Role.ADMIN):
+            if actor.role == Role.SALES_AGENT:
+                self.fields["agent"].queryset = User.objects.filter(pk=actor.pk)
+                self.fields["agent"].initial = actor
+            else:
+                available_hubs = hubs_for_user(actor, active_only=True)
+                self.fields["agent"].queryset = User.objects.filter(
+                    role=Role.SALES_AGENT,
+                    is_active=True,
+                ).filter(
+                    Q(hub_id__in=available_hubs) | Q(hub_memberships__hub__in=available_hubs, hub_memberships__is_active=True)
+                ).distinct()
 
     def clean(self):
         cleaned_data = super().clean()

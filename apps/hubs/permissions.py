@@ -33,6 +33,8 @@ def user_can_access_hub(user, hub):
         return True
     if getattr(user, "hub_id", None) == hub.pk:
         return True
+    if getattr(user, "hub_id", None) is None and getattr(user, "role", None) == Role.SALES_AGENT:
+        return True
     if getattr(user, "role", None) == Role.MEMBER:
         return (
             hub.members.filter(user=user).exists()

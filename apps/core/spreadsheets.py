@@ -351,7 +351,7 @@ class ProductImportView(SpreadsheetImportView):
     required_headers = ("sku", "name", "selling_price")
     template_headers = (
         "sku", "name", "selling_price", "category", "description", "unit",
-        "cost_price", "reorder_level", "is_active",
+        "cost_price", "reorder_level", "is_active", "initial_stock", "hub_code",
     )
 
     def validate_rows(self, rows, user):
@@ -368,8 +368,17 @@ class ProductImportView(SpreadsheetImportView):
             .filter(normalized_sku__in=uploaded_skus)
             .values_list("normalized_sku", flat=True)
         )
+        available_hubs = {
+            hub.normalized_code: hub
+            for hub in hubs_for_user(user, active_only=False).annotate(
+                normalized_code=Lower("code"),
+                normalized_name=Lower("name")
+            )
+        }
+        default_hub = getattr(user, "hub", None) or hubs_for_user(user, active_only=False).first() or Hub.objects.first()
+
         for row in rows:
-            data = row["values"]
+            data = dict(row["values"])
             for field, default in (
                 ("cost_price", "0"),
                 ("reorder_level", 0),
@@ -387,6 +396,10 @@ class ProductImportView(SpreadsheetImportView):
                 continue
             seen_skus.add(sku.casefold())
             data["sku"] = sku
+
+            initial_stock = data.pop("initial_stock", None)
+            hub_code = data.pop("hub_code", None)
+
             form = ProductForm(data)
             if not form.is_valid():
                 detail = "; ".join(
@@ -396,20 +409,49 @@ class ProductImportView(SpreadsheetImportView):
                 errors.append(f"Row {row['line']}: {detail}")
                 continue
             cleaned = form.cleaned_data
-            cleaned["sku"] = cleaned["sku"].upper()
+            hub = None
+            if hub_code:
+                hub = available_hubs.get(str(hub_code).strip().casefold())
+                if hub is None:
+                    errors.append(f"Row {row['line']}: Hub is unknown or outside your access.")
+                    continue
+            elif initial_stock not in (None, "", 0, "0"):
+                hub = default_hub
+
             accepted.append({
-                key: str(value) if value is not None and key in ("cost_price", "selling_price") else value
-                for key, value in cleaned.items()
+                "product_data": {
+                    key: str(value) if value is not None and key in ("cost_price", "selling_price") else value
+                    for key, value in cleaned.items()
+                },
+                "initial_stock": int(initial_stock) if initial_stock not in (None, "") else 0,
+                "hub_id": str(hub.pk) if hub else "",
             })
         preview = _preview_rows(rows, self.template_headers)
         return preview, errors, accepted
 
+    @transaction.atomic
     def commit_rows(self, rows, user, *, request):
         for row in rows:
-            form = ProductForm(row)
+            product_data = row["product_data"]
+            initial_stock = row["initial_stock"]
+            hub_id = row["hub_id"]
+
+            form = ProductForm(product_data)
             if not form.is_valid():
                 raise ValidationError("Product data changed after preview. Upload and review the workbook again.")
             product = form.save()
+            if initial_stock > 0 and hub_id:
+                hub = Hub.objects.filter(pk=hub_id).first()
+                if hub:
+                    record_movement(
+                        hub=hub,
+                        product=product,
+                        kind=InventoryTransaction.Kind.RECEIPT,
+                        quantity=initial_stock,
+                        actor=user,
+                        reference="import-initial-stock",
+                        notes="Initial stock from product import",
+                    )
             record_event(
                 action="products.product.imported",
                 summary=f"Imported product {product}",

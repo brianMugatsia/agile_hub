@@ -37,6 +37,8 @@ def scope_queryset(queryset, user):
             hub_scope = Q(hub_id__in=hub_ids)
             if _has_field(model, "business"):
                 hub_scope |= Q(business__hub_id__in=hub_ids)
+            if model._meta.model_name == "user":
+                hub_scope |= Q(hub_id__isnull=True)
             queryset = queryset.filter(hub_scope)
         elif _has_field(model, "business"):
             queryset = queryset.filter(business__hub_id__in=hub_ids)

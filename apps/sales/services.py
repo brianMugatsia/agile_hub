@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from apps.accounts.roles import Role
 from apps.audit.services import record_event
 from apps.commissions.services import accrue_for_sale
 from apps.finance.models import CashFlow
@@ -51,7 +52,14 @@ def complete_sale(*, hub, agent=None, member=None, items, actor=None, customer_n
         if not user_can_access_hub(actor, hub):
             raise PermissionDenied
         if actor.role not in ("SUPER_ADMIN", "ADMIN") and agent and agent.pk != actor.pk:
-            raise PermissionDenied
+            if actor.role == Role.SALES_AGENT:
+                raise PermissionDenied
+            if not user_can_access_hub(agent, hub):
+                raise PermissionDenied
+
+    if agent and not agent.hub_id:
+        agent.hub = hub
+        agent.save(update_fields=["hub", "updated_at"])
 
     products = list(Product.objects.select_for_update().filter(pk__in=normalized).order_by("pk"))
     if len(products) != len(normalized):

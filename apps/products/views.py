@@ -10,10 +10,10 @@ from apps.core.exports import ScopedModelExportView
 from apps.core.spreadsheets import ProductImportTemplateView, ProductImportView
 from apps.core.mixins import PageMixin
 from apps.hubs.permissions import selected_hub
-from apps.inventory.models import InventoryBalance
-
-from .forms import ProductForm, ProductUpdateForm
-from .models import Product, ProductPriceHistory
+from apps.inventory.models import InventoryBalance, InventoryTransaction
+from apps.inventory.services import record_movement
+from apps.products.forms import ProductForm, ProductUpdateForm
+from apps.products.models import Product, ProductPriceHistory
 
 
 class ProductListView(ScopedModelListView):
@@ -86,6 +86,28 @@ class ProductCreateView(ProtectedCreateView):
     form_class = ProductForm
     page_title = "Add product"
     success_url_name = "products:list"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    @transaction.atomic
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        initial_stock = form.cleaned_data.get("initial_stock")
+        hub = form.cleaned_data.get("hub")
+        if initial_stock and initial_stock > 0 and hub:
+            record_movement(
+                hub=hub,
+                product=self.object,
+                kind=InventoryTransaction.Kind.RECEIPT,
+                quantity=initial_stock,
+                actor=self.request.user,
+                reference="initial-stock",
+                notes="Initial stock recorded on product creation",
+            )
+        return response
 
 
 class ProductUpdateView(ProtectedUpdateView):

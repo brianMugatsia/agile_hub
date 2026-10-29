@@ -124,6 +124,11 @@ class SaleCreateView(FormView):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         available_hubs = hubs_for_user(self.request.user, active_only=True)
@@ -192,7 +197,11 @@ class SalesAgentListView(ScopedModelListView):
         ).order_by("last_name", "first_name")
         if self.request.user.role not in (Role.SUPER_ADMIN, Role.ADMIN):
             hub_ids = hubs_for_user(self.request.user).values_list("pk", flat=True)
-            queryset = queryset.filter(Q(hub_memberships__hub_id__in=hub_ids, hub_memberships__is_active=True) | Q(hub_id__in=hub_ids))
+            queryset = queryset.filter(
+                Q(hub_memberships__hub_id__in=hub_ids, hub_memberships__is_active=True)
+                | Q(hub_id__in=hub_ids)
+                | Q(hub_id__isnull=True)
+            )
         return queryset.distinct()
 
 
@@ -225,6 +234,10 @@ class SalesAgentCreateView(PermissionRequiredMixin, PageMixin, FormView):
         form.cleaned_data["role"] = Role.SALES_AGENT
         user = create_user_from_form(form, actor=self.request.user, request=self.request)
         user.role = Role.SALES_AGENT
+        if not user.hub_id:
+            default_hub = getattr(self.request.user, "hub", None) or hubs_for_user(self.request.user, active_only=True).first()
+            if default_hub:
+                user.hub = default_hub
         user.save()
         messages.success(self.request, f"{user.display_name} was created as a sales agent.")
         return redirect("sales:agent_list")
