@@ -80,7 +80,8 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
             )
 
         model = self.list_view_class.model
-        filename = f"{model._meta.model_name}.{file_format}"
+        ext = "html" if file_format == "pdf" else file_format
+        filename = f"{model._meta.model_name}.{ext}"
         if file_format == "csv":
             writer = csv.writer(Echo())
 
@@ -118,7 +119,7 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
         else:
             rows = [
                 [_cell_value(row, column["field"]) for column in columns]
-                for row in queryset.iterator(chunk_size=1000)
+                for row in queryset.iterator(chunk_size=1000)        
             ]
             context = {
                 "page_title": f"{model._meta.verbose_name_plural} export",
@@ -127,6 +128,6 @@ class ScopedModelExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 "generated_at": timezone.now(),
                 "now": timezone.now(),
             }
-            return render(request, "components/record_print.html", context)
+            response = render(request, "components/record_print.html", context)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

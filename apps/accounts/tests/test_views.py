@@ -38,7 +38,6 @@ def test_user_registration_fields_include_styling_and_autocomplete(client, make_
 
     assert response.status_code == 200
     assert b'autocomplete="given-name"' in response.content
-    assert b'autocomplete="new-password"' in response.content
     assert b'class="input"' in response.content
 
 
@@ -125,7 +124,7 @@ def test_sales_agent_list_and_create(client, make_user, roles):
     create_response = client.post(reverse("sales:agent_create"), {
         "username": "newsagent", "email": "agent@example.com",
         "first_name": "Sales", "last_name": "Agent", "phone_number": "+254712345678",
-        "role": Role.SALES_AGENT, "password1": PASSWORD, "password2": PASSWORD,
+        "role": Role.SALES_AGENT,
     })
     assert create_response.status_code == 302
     agent = User.objects.get(username="newsagent")
@@ -149,7 +148,7 @@ def test_super_admin_can_create_user(client, make_user, roles):
     response = client.post(reverse("accounts:user_create"), {
         "username": "newmanager", "email": "manager@example.com",
         "first_name": "Ann", "last_name": "Wanjiru", "phone_number": "+254712345678",
-        "role": Role.HUB_MANAGER, "password1": PASSWORD, "password2": PASSWORD,
+        "role": Role.HUB_MANAGER,
     })
     assert response.status_code == 302
     created = User.objects.get(username="newmanager")
@@ -162,7 +161,7 @@ def test_admin_cannot_create_super_admin(client, make_user, roles):
     response = client.post(reverse("accounts:user_create"), {
         "username": "sneaky", "email": "sneaky@example.com",
         "first_name": "S", "last_name": "N", "phone_number": "",
-        "role": Role.SUPER_ADMIN, "password1": PASSWORD, "password2": PASSWORD,
+        "role": Role.SUPER_ADMIN,
     })
     assert response.status_code == 200
     assert not User.objects.filter(username="sneaky").exists()

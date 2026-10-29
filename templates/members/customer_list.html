@@ -10,9 +10,9 @@
       <span style="font-size: 0.75rem; color: #2563eb;">All registered leads, farmers & organizations</span>
     </a>
     <a href="{% url 'members:customers_list' %}?category=lead" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #fefce8); border: 1px solid #fef08a; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
-      <span style="font-size: 0.875rem; font-weight: 600; color: #854d0e; text-transform: uppercase;">Leads (Pending Upgrade)</span>
+      <span style="font-size: 0.875rem; font-weight: 600; color: #854d0e; text-transform: uppercase;">Inquiries Made</span>
       <strong style="font-size: 1.875rem; font-weight: 700; color: #713f12; display: block; margin-top: 0.25rem;">{{ leads_count|default:"0" }}</strong>
-      <span style="font-size: 0.75rem; color: #a16207;">Customers who have not upgraded to farmers</span>
+      <span style="font-size: 0.75rem; color: #a16207;">Total customers who have made inquiries</span>
     </a>
     <a href="{% url 'members:customers_list' %}?category=farmer" class="animated-stat-card" style="background: linear-gradient(135deg, #ffffff, #f0fdf4); border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
       <span style="font-size: 0.875rem; font-weight: 600; color: #166534; text-transform: uppercase;">Farmers</span>

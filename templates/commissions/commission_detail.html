@@ -56,9 +56,106 @@
       </dl>
     </div>
   </section>
-  <nav class="com-confirm__actions" aria-label="Commission actions">
+  <nav class="com-confirm__actions" aria-label="Commission actions"> 
     <a class="btn btn--secondary" href="{% url 'commissions:list' %}">Back to commissions</a>
-    {% if commission.status == "PENDING" and can_approve %}<form method="post" action="{% url 'commissions:approve' commission.pk %}">{% csrf_token %}<button class="btn btn--primary" type="submit">Approve</button></form>{% endif %}
+    {% if commission.status == "PENDING" and can_approve %}
+      <button type="button" class="btn btn--primary" onclick="document.getElementById('approve-commission-modal').showModal();" style="background: #16a34a; border-color: #16a34a; font-weight: 700;">Approve Commission</button>
+
+      <!-- APPROVAL MODAL -->
+      <dialog id="approve-commission-modal" style="border: none; border-radius: 12px; padding: 2rem; max-width: 520px; width: 100%; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0;">Approve Sales Agent Commission</h3>
+          <button type="button" onclick="document.getElementById('approve-commission-modal').close();" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        <form method="post" action="{% url 'commissions:approve' commission.pk %}">
+          {% csrf_token %}
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Base Sale Amount:</label>
+            <input type="text" value="{{ commission.base_amount }}" class="input" style="width: 100%; background: #f8fafc;" readonly>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label for="custom_rate" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Commission Rate (%):</label>
+            <input type="number" step="0.01" name="custom_rate" id="custom_rate" value="{{ commission.rate|percentage|floatformat:2 }}" class="input" style="width: 100%;">
+            <span style="font-size: 0.75rem; color: #64748b;">Adjust the percentage rate dynamically before approval.</span>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label for="custom_amount" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Agent Commission Amount ({{ CURRENCY_CODE|default:'KSh' }}):</label>
+            <input type="number" step="0.01" name="custom_amount" id="custom_amount" placeholder="e.g. {{ commission.amount }} (leave blank for calculated)" class="input" style="width: 100%;">
+            <span id="calculated_commission_hint" style="font-size: 0.75rem; color: #64748b;">Calculated amount: <strong>{{ commission.amount }}</strong></span>
+          </div>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const baseAmt = parseFloat("{{ commission.base_amount|default:'0' }}") || 0;
+              const rateInput = document.getElementById('custom_rate');
+              const amountInput = document.getElementById('custom_amount');
+              const hintSpan = document.getElementById('calculated_commission_hint');
+              const dynTotalSpan = document.getElementById('dyn_total_amount');
+              const dynCommSpan = document.getElementById('dyn_agent_commission');
+              const dynHubSpan = document.getElementById('dyn_hub_remaining');
+
+              function updateCalculatedAmount() {
+                const rate = parseFloat(rateInput ? rateInput.value : 0) || 0;
+                let commAmt = baseAmt * (rate / 100);
+
+                if (amountInput && amountInput.value !== '' && !isNaN(parseFloat(amountInput.value))) {
+                  commAmt = parseFloat(amountInput.value);
+                }
+
+                const hubRemaining = baseAmt - commAmt;
+
+                if (hintSpan) {
+                  hintSpan.innerHTML = `Calculated amount: <strong>${(baseAmt * (rate / 100)).toFixed(2)}</strong>`;
+                }
+                if (dynTotalSpan) dynTotalSpan.textContent = baseAmt.toFixed(2);
+                if (dynCommSpan) dynCommSpan.textContent = commAmt.toFixed(2);
+                if (dynHubSpan) dynHubSpan.textContent = hubRemaining.toFixed(2);
+              }
+
+              if (rateInput && amountInput) {
+                rateInput.addEventListener('input', updateCalculatedAmount);
+                amountInput.addEventListener('input', function() {
+                  amountInput.dataset.userEdited = "true";
+                  updateCalculatedAmount();
+                });
+                updateCalculatedAmount();
+              }
+            });
+          </script>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; font-size: 0.85rem; color: #334155;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Total Sale Amount:</span>
+              <strong>{{ CURRENCY_CODE|default:'KSh' }} <span id="dyn_total_amount">{{ commission.base_amount }}</span></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Sales Agent Commission:</span>
+              <strong>{{ CURRENCY_CODE|default:'KSh' }} <span id="dyn_agent_commission">{{ commission.amount }}</span></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid #cbd5e1; padding-top: 0.35rem; margin-top: 0.35rem; font-weight: 700; color: #166534;">
+              <span>Remaining for Hub:</span>
+              <span>{{ CURRENCY_CODE|default:'KSh' }} <span id="dyn_hub_remaining">0.00</span></span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label for="approval_notes" style="display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.35rem; color: #334155;">Approval / Review Notes:</label>
+            <textarea name="notes" id="approval_notes" rows="2" class="input" placeholder="Optional notes..." style="width: 100%;"></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; flex-wrap: wrap;">
+            <button type="button" onclick="document.getElementById('approve-commission-modal').close();" class="btn btn--secondary">Cancel</button>
+            <button type="submit" name="action" value="approve" class="btn btn--primary" style="background: #16a34a; border-color: #16a34a;">Approve Commission</button>
+            {% if can_pay %}
+              <button type="submit" name="action" value="approve_and_pay" class="btn btn--primary" style="background: #2563eb; border-color: #2563eb;">Mark as Paid</button>
+            {% endif %}
+          </div>
+        </form>
+      </dialog>
+    {% endif %}
     {% if commission.status == "APPROVED" and can_pay %}<form method="post" action="{% url 'commissions:pay' commission.pk %}">{% csrf_token %}<button class="btn btn--primary" type="submit">Mark paid</button></form>{% endif %}
     {% if commission.status == "PENDING" and can_reject %}<form method="post" action="{% url 'commissions:reject' commission.pk %}" class="com-detail-action">{% csrf_token %}<label class="sr-only" for="commission-reject-reason">Rejection reason</label><input class="input input--sm" id="commission-reject-reason" name="reason" required maxlength="255" placeholder="Rejection reason"><button class="btn btn--danger" type="submit">Reject</button></form>{% endif %}
     {% if commission.status != "REVERSED" and commission.status != "REJECTED" and can_reverse %}<form method="post" action="{% url 'commissions:reverse' commission.pk %}" class="com-detail-action">{% csrf_token %}<label class="sr-only" for="commission-reverse-reason">Reversal reason</label><input class="input input--sm" id="commission-reverse-reason" name="reason" required maxlength="255" placeholder="Reversal reason"><button class="btn btn--danger" type="submit">Reverse</button></form>{% endif %}

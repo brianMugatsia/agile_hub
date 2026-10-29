@@ -50,6 +50,11 @@ class User(AbstractUser):
         return self.get_full_name() or self.username
 
     @property
+    def location(self):
+        profile = getattr(self, "member_profile", None)
+        return profile.location if profile else ""
+
+    @property
     def initials(self):
         parts = [p for p in (self.first_name, self.last_name) if p]
         if parts:

@@ -84,10 +84,23 @@ class CustomerListView(ScopedModelListView):
     row_edit_permission = "members.change_memberprofile"
     filter_hub = False
 
+    def get_columns(self):
+        category = self.request.GET.get("category", "")
+        if category in ("lead", "inquiry"):
+            return (
+                {"label": "Name", "field": "display_name"},
+                {"label": "Location", "field": "location"},
+                {"label": "Email", "field": "user__email"},
+                {"label": "Required Services", "field": "services_display"},
+                {"label": "Inquiry Date", "field": "created_at"},
+                {"label": "Last Updated", "field": "updated_at"},
+            )
+        return super().get_columns()
+
     def get_queryset(self):
         queryset = super().get_queryset()
         category = self.request.GET.get("category", "")
-        if category == "lead":
+        if category in ("lead", "inquiry"):
             queryset = queryset.filter(customer_type=MemberProfile.CustomerType.LEAD)
         elif category == "farmer":
             queryset = queryset.filter(customer_type=MemberProfile.CustomerType.FARMER)

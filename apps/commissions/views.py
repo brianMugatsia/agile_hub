@@ -297,8 +297,34 @@ class CommissionActionView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
 class ApproveCommissionView(CommissionActionView):
     service = staticmethod(approve_commission)
-    permission_required = "commissions.approve_salesagentcommission"
+    permission_required = "commissions.approve_salesagentcommission" 
     success_message = "Commission approved."
+
+    def post(self, request, pk):
+        kwargs = {"commission_id": pk, "actor": request.user}
+        custom_rate = request.POST.get("custom_rate")
+        custom_amount = request.POST.get("custom_amount")
+        notes = request.POST.get("notes")
+        action = request.POST.get("action")
+        mark_paid = action == "approve_and_pay" or request.POST.get("mark_paid") == "on"
+
+        if custom_rate not in (None, ""):
+            kwargs["custom_rate"] = custom_rate
+        if custom_amount not in (None, ""):
+            kwargs["custom_amount"] = custom_amount
+        if notes:
+            kwargs["notes"] = notes
+        if mark_paid:
+            kwargs["mark_paid"] = True
+            self.success_message = "Commission approved and marked as paid."
+
+        try:
+            self.service(**kwargs)
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))        
+        else:
+            messages.success(request, self.success_message)
+        return redirect("commissions:detail", pk=pk)
 
 
 class RejectCommissionView(CommissionActionView):

@@ -149,7 +149,7 @@ class Command(BaseCommand):
 
         sales_agents = []
         member_profiles = []
-        for i in range(1, 13):
+        for i in range(1, 26):
             hub = hubs[(i - 1) % len(hubs)]
             is_member_seller = (i > 8)
             role = Role.MEMBER if is_member_seller else Role.SALES_AGENT

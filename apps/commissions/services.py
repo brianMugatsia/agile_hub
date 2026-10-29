@@ -66,24 +66,67 @@ def _require_commission_scope(actor, commission):
 
 
 @transaction.atomic
-def approve_commission(*, commission_id, actor):
-    _require(actor, "commissions.approve_salesagentcommission")
+def approve_commission(*, commission_id, actor, custom_rate=None, custom_amount=None, mark_paid=False, notes=None):
+    _require(actor, "commissions.approve_salesagentcommission")      
     commission = SalesAgentCommission.objects.select_for_update().select_related("sale__hub").get(pk=commission_id)
     _require_commission_scope(actor, commission)
-    if commission.status != SalesAgentCommission.Status.PENDING:
+    if commission.status not in (SalesAgentCommission.Status.PENDING, SalesAgentCommission.Status.APPROVED):
         raise ValidationError("Only pending commissions can be approved.")
+
+    CENT = Decimal("0.01")
+    if custom_rate is not None:
+        rate_val = Decimal(str(custom_rate))
+        if rate_val > Decimal("1"):
+            rate_val = rate_val / Decimal("100")
+        commission.rate = rate_val
+        commission.amount = (commission.base_amount * rate_val).quantize(CENT, rounding=ROUND_HALF_UP)
+    if custom_amount is not None:
+        commission.amount = Decimal(str(custom_amount)).quantize(CENT, rounding=ROUND_HALF_UP)
+
     commission.status = SalesAgentCommission.Status.APPROVED
     commission.approved_by = actor
-    commission.save(update_fields=["status", "approved_by"])
+    update_fields = ["status", "approved_by", "rate", "amount"]
+    if notes:
+        commission.notes = notes
+        update_fields.append("notes")
+    commission.save(update_fields=update_fields)
     record_event(action="commission.approved", summary=f"Commission approved for {commission.agent}",
-                 actor=actor, target=commission, changes={"amount": str(commission.amount)})
-    if commission.agent:
-        create_notification(
-            recipient=commission.agent,
-            title="Commission approved",
-            message=f"Your commission of {commission.amount} is approved.",
-            target_url=f"/commissions/{commission.pk}/",
+                 actor=actor, target=commission, changes={"amount": str(commission.amount), "rate": str(commission.rate)})
+
+    if mark_paid:
+        _require(actor, "commissions.pay_salesagentcommission")
+        commission.status = SalesAgentCommission.Status.PAID
+        commission.paid_by = actor
+        commission.paid_at = timezone.now()
+        commission.save(update_fields=["status", "paid_by", "paid_at"])
+        hub = commission.sale.hub if commission.sale else None
+        CashFlow.objects.create(
+            direction=CashFlow.Direction.OUTFLOW,
+            category="Commissions",
+            amount=commission.amount,
+            transaction_date=timezone.localdate(),
+            hub=hub,
+            reference=f"commission:{commission.pk}",
+            description=f"Commission paid to {commission.agent}",
+            created_by=actor,
         )
+        record_event(action="commission.paid", summary=f"Commission paid to {commission.agent}",
+                     actor=actor, target=commission, changes={"amount": str(commission.amount)})
+        if commission.agent:
+            create_notification(
+                recipient=commission.agent,
+                title="Commission paid",
+                message=f"Your commission of {commission.amount} has been paid.",
+                target_url=f"/commissions/{commission.pk}/",
+            )
+    else:
+        if commission.agent:
+            create_notification(
+                recipient=commission.agent,
+                title="Commission approved",
+                message=f"Your commission of {commission.amount} is approved.",
+                target_url=f"/commissions/{commission.pk}/",
+            )
     return commission
 
 

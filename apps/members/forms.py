@@ -119,6 +119,17 @@ class MemberCreateForm(forms.ModelForm):
         if user:
             self.fields["hub"].queryset = _hub_choices(self.fields["hub"], self.instance, user)
 
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if email:
+            email = email.strip().lower()
+            duplicates = User.objects.filter(email__iexact=email)
+            if self.instance and self.instance.pk and self.instance.user_id:
+                duplicates = duplicates.exclude(pk=self.instance.user_id)
+            if duplicates.exists():
+                raise forms.ValidationError("A user with this email already exists.")
+        return email
+
     def save(self, commit=True):
         profile = super().save(commit=False)
         profile.customer_type = MemberProfile.CustomerType.FARMER

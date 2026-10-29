@@ -350,6 +350,16 @@ class ServiceBooking(models.Model):
             self.total_amount = self.total_amount.quantize(Decimal("0.01"))
         self.full_clean()
         super().save(*args, **kwargs)
+        if self.resource_id:
+            from apps.services.services import update_resource_counts
+            update_resource_counts(self.resource)
+
+    def delete(self, *args, **kwargs):
+        resource = self.resource
+        super().delete(*args, **kwargs)
+        if resource:
+            from apps.services.services import update_resource_counts
+            update_resource_counts(resource)
 
     @property
     def client_display(self):

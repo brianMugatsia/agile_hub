@@ -13,14 +13,15 @@ from apps.accounts.models import User
 from apps.accounts.roles import Role
 from apps.accounts.forms import UserCreateForm
 from apps.accounts.services import create_user_from_form, sync_user_group
-from apps.members.models import Business
+from apps.members.models import Business, MemberProfile
 from apps.core.generic import ProtectedUpdateView, ScopedModelListView, hubs_for_user
 from apps.core.exports import ScopedModelExportView
 from apps.core.mixins import PageMixin
 from apps.core.scoping import scope_queryset
 from apps.core.spreadsheets import SpreadsheetImportView, ExcelTemplateView
 from apps.core.models import StagedSpreadsheetImport
-from apps.hubs.permissions import selected_hub
+from apps.hubs.models import HubMembership
+from apps.hubs.permissions import hubs_for_user, selected_hub
 from apps.sales.services import complete_sale
 
 from .forms import SaleEntryForm, SaleUpdateForm
@@ -174,10 +175,10 @@ class SalesAgentListView(ScopedModelListView):
     template_name = "components/record_list.html"
     page_title = "Sales agents"
     columns = (
-        {"label": "Agent", "field": "display_name"},
+        {"label": "Agent Name", "field": "display_name"},
         {"label": "Email", "field": "email"},
+        {"label": "Location", "field": "location"},
         {"label": "Phone", "field": "phone_number"},
-        {"label": "Hub", "field": "hub__name"},
     )
     search_fields = ("first_name", "last_name", "email", "username")
     permission_required = "sales.view_sale"
@@ -189,7 +190,7 @@ class SalesAgentListView(ScopedModelListView):
     row_edit_url_name = "accounts:user_edit"
     row_edit_permission = "accounts.change_user"
     filter_hub = True
-    hub_filter_paths = ("hub_memberships__hub_id",)
+    hub_filter_paths = ("hub_id", "hub_memberships__hub_id")
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(
@@ -239,6 +240,20 @@ class SalesAgentCreateView(PermissionRequiredMixin, PageMixin, FormView):
             if default_hub:
                 user.hub = default_hub
         user.save()
+        if user.hub:
+            HubMembership.objects.get_or_create(
+                hub=user.hub,
+                user=user,
+                defaults={"is_active": True},
+            )
+        MemberProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "phone_number": user.phone_number,
+                "hub": user.hub,
+                "location": getattr(user.hub, "name", "") if user.hub else "",
+            }
+        )
         messages.success(self.request, f"{user.display_name} was created as a sales agent.")
         return redirect("sales:agent_list")
 

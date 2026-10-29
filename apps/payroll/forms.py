@@ -23,8 +23,19 @@ class WorkerProfileForm(forms.ModelForm):
         if self.instance and self.instance.pk and self.instance.user:
             self.fields["first_name"].initial = self.instance.user.first_name
             self.fields["last_name"].initial = self.instance.user.last_name
-            self.fields["email"].initial = self.instance.user.email
+            self.fields["email"].initial = self.instance.user.email  
             self.fields["phone_number"].initial = self.instance.user.phone_number
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if email:
+            email = email.strip().lower()
+            duplicates = User.objects.filter(email__iexact=email)
+            if self.instance and self.instance.pk and self.instance.user_id:
+                duplicates = duplicates.exclude(pk=self.instance.user_id)
+            if duplicates.exists():
+                raise forms.ValidationError("A user with this email already exists.")
+        return email
 
     def save(self, commit=True):
         profile = super().save(commit=False)

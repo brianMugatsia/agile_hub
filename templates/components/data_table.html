@@ -13,7 +13,11 @@
           {% for column in columns %}
             {% with value=row|get_attr:column.field %}
               <td>
-                {% if forloop.first or column.field == "total_amount" or column.field == "display_name" or column.field == "code" or column.field == "name" %}
+                {% if column.field == "total" and row.commission %}
+                  <a href="{% url 'commissions:detail' row.commission.pk %}" style="color: inherit; text-decoration: underline; font-weight: 500;">
+                    {% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}
+                  </a>
+                {% elif forloop.first or column.field == "total_amount" or column.field == "total" or column.field == "seller_display" or column.field == "display_name" or column.field == "code" or column.field == "name" %}
                   {% if row_detail_url_name %}
                     <a href="{% url row_detail_url_name row.pk %}" style="color: inherit; text-decoration: underline; font-weight: 500;">
                       {% if column.format == "percent" %}{{ value|percentage|floatformat:2 }}%{% else %}{{ value|default:"—" }}{% endif %}

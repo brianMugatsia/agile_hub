@@ -23,6 +23,9 @@
           <div><dt>Hub</dt><dd>{{ hubresource.hub.name }}</dd></div>
           <div><dt>Service Category</dt><dd>{{ hubresource.service_type.name }} ({{ hubresource.service_type.get_category_display }})</dd></div>
           <div><dt>Status</dt><dd><span class="badge badge--{{ hubresource.status|lower }}">{{ hubresource.get_status_display }}</span></dd></div>
+          <div><dt>Total Equipment</dt><dd>{{ hubresource.total_count }}</dd></div>
+          <div><dt>Available Count</dt><dd>{{ hubresource.available_count }}</dd></div>
+          <div><dt>In Use Count</dt><dd>{{ hubresource.in_use_count }}</dd></div>
           <div><dt>Capacity</dt><dd>{{ hubresource.capacity }} {{ hubresource.capacity_unit }}</dd></div>
           <div><dt>Assigned Operator</dt><dd>{{ hubresource.operator_name|default:"—" }}</dd></div>
           <div><dt>Operator Phone</dt><dd>{{ hubresource.operator_phone|default:"—" }}</dd></div>

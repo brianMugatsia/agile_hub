@@ -78,8 +78,8 @@ class StyledSetPasswordForm(StyledFormMixin, SetPasswordForm):
 # ---------------------------------------------------------------------------
 # User management forms
 # ---------------------------------------------------------------------------
-class UserCreateForm(StyledFormMixin, UniqueEmailMixin, UserCreationForm):
-    class Meta(UserCreationForm.Meta):
+class UserCreateForm(StyledFormMixin, UniqueEmailMixin, forms.ModelForm):
+    class Meta:
         model = User
         fields = ("username", "email", "first_name", "last_name", "phone_number", "role")
 
@@ -98,10 +98,18 @@ class UserCreateForm(StyledFormMixin, UniqueEmailMixin, UserCreationForm):
             ("first_name", "given-name"),
             ("last_name", "family-name"),
             ("phone_number", "tel"),
-            ("password1", "new-password"),
-            ("password2", "new-password"),
         ):
-            self.fields[name].widget.attrs["autocomplete"] = autocomplete
+            if name in self.fields:
+                self.fields[name].widget.attrs["autocomplete"] = autocomplete
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if not user.pk:
+            user.set_password("password123")
+        if commit:
+            user.save()
+            self.save_m2m()
+        return user
 
 
 class UserUpdateForm(StyledFormMixin, UniqueEmailMixin, forms.ModelForm):

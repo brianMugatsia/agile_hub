@@ -51,3 +51,38 @@ def test_commission_must_be_approved_before_payment(make_user, roles):
         direction=CashFlow.Direction.OUTFLOW,
         amount=commission.amount,
     ).exists()
+
+
+def test_approve_commission_with_custom_options(make_user, roles):
+    hub = Hub.objects.create(code="H-COM2", name="Commission Hub 2")
+    agent = make_user(role=Role.SALES_AGENT)
+    admin_user = make_user(role=Role.ADMIN)
+    HubMembership.objects.create(hub=hub, user=agent)
+    HubMembership.objects.create(hub=hub, user=admin_user)
+    product = Product.objects.create(
+        sku="COM-002",
+        name="Fertilizer",
+        cost_price=Decimal("10.00"),
+        selling_price=Decimal("100.00"),
+    )
+    record_movement(hub=hub, product=product, kind="RECEIPT", quantity=5)
+    sale = complete_sale(
+        hub=hub,
+        agent=agent,
+        items=[{"product": product.pk, "quantity": 1}],
+        actor=agent,
+    )
+    commission = sale.commission
+
+    approve_commission(
+        commission_id=commission.pk,
+        actor=admin_user,
+        custom_rate=Decimal("15"),
+        mark_paid=True,
+        notes="Approved with custom 15% rate and paid",
+    )
+    commission.refresh_from_db()
+    assert commission.status == SalesAgentCommission.Status.PAID
+    assert commission.rate == Decimal("0.1500")
+    assert commission.amount == Decimal("15.00")
+    assert commission.notes == "Approved with custom 15% rate and paid"
