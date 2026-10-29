@@ -81,7 +81,6 @@ def read_workbook(uploaded, required_headers, allowed_headers):
             "qty": "quantity",
             "hub": "hub_code",
             "hub_name": "hub_code",
-            "location": "hub_code",
             "user": "username",
             "login": "username",
             "handle": "username",
