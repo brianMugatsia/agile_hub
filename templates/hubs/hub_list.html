@@ -67,6 +67,12 @@
             <a class="btn btn--secondary btn--sm" href="{{ hub.get_absolute_url }}">Details</a>
             <a class="btn btn--ghost btn--sm" href="{% url 'hubs:performance' hub.pk %}">Performance</a>
             {% if can_edit_rows %}<a class="btn btn--ghost btn--sm" href="{% url row_edit_url_name hub.pk %}">Edit</a>{% endif %}
+            {% if request.user.role == "SUPER_ADMIN" %}
+              <form method="post" action="{% url 'hubs:delete' hub.pk %}" style="display:inline; margin:0;" onsubmit="return confirm('Are you sure you want to delete hub {{ hub.name }}?');">
+                {% csrf_token %}
+                <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+              </form>
+            {% endif %}
           </footer>
         </article>
       {% endfor %}

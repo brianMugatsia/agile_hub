@@ -12,19 +12,41 @@ from apps.commissions.models import ServiceCommission
 from apps.core.generic import ProtectedCreateView, ProtectedUpdateView, ScopedModelListView
 from apps.core.mixins import ActiveHubInitialMixin, PageMixin
 from apps.core.scoping import scope_queryset
+from apps.hubs.permissions import selected_hub
 from apps.services.models import ServiceProvider, ServiceProviderStatus, ServiceBooking
 
 from .forms import MemberProfileForm, MemberCreateForm, CustomerForm, BusinessForm
 from .models import MemberProfile, Business
 
 
-def _provider_stats():
+def _provider_stats(request=None):
+    if request:
+        available_hubs, active_hub, hub_error = selected_hub(request)
+        hubs = available_hubs
+        if active_hub:
+            hubs = hubs.filter(pk=active_hub.pk)
+        elif hub_error:
+            hubs = hubs.none()
+        is_admin = request.user.role in (Role.SUPER_ADMIN, Role.ADMIN)
+    else:
+        is_admin = True
+        hubs = None
+
+    providers_qs = ServiceProvider.objects.all()
+    members_qs = MemberProfile.objects.all()
+    agents_qs = User.objects.filter(role=Role.SALES_AGENT, is_active=True)
+
+    if not is_admin and hubs is not None:
+        providers_qs = scope_queryset(providers_qs, request.user)
+        members_qs = members_qs.filter(hub__in=hubs)
+        agents_qs = agents_qs.filter(hub_memberships__hub__in=hubs).distinct()
+
     return {
-        "total_providers_count": ServiceProvider.objects.count(),
-        "active_sales_agents_count": User.objects.filter(role=Role.SALES_AGENT, is_active=True).count() + MemberProfile.objects.filter(user__role=Role.MEMBER, customer_type=MemberProfile.CustomerType.FARMER).count(),
-        "dormant_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.DORMANT).count(),
-        "active_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.ACTIVE).count(),
-        "suspended_providers_count": ServiceProvider.objects.filter(status=ServiceProviderStatus.SUSPENDED).count(),
+        "total_providers_count": providers_qs.count(),
+        "active_sales_agents_count": agents_qs.count() + members_qs.filter(customer_type=MemberProfile.CustomerType.FARMER).count(),
+        "dormant_providers_count": providers_qs.filter(status=ServiceProviderStatus.DORMANT).count(),
+        "active_providers_count": providers_qs.filter(status=ServiceProviderStatus.ACTIVE).count(),
+        "suspended_providers_count": providers_qs.filter(status=ServiceProviderStatus.SUSPENDED).count(),
     }
 
 
@@ -56,7 +78,7 @@ class MemberListView(ScopedModelListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(_provider_stats())
+        context.update(_provider_stats(self.request))
         context["active_tab"] = "all_members"
         context["search_placeholder"] = "Search by name, phone, national ID, location, crops, hub..."
         return context
@@ -205,7 +227,7 @@ class MemberSalesAgentsListView(ScopedModelListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(_provider_stats())
+        context.update(_provider_stats(self.request))
         context["active_tab"] = "sales_agents"
         return context
 
@@ -229,7 +251,7 @@ class MemberServiceProvidersListView(ScopedModelListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(_provider_stats())
+        context.update(_provider_stats(self.request))
         context["active_tab"] = "service_providers"
         return context
 

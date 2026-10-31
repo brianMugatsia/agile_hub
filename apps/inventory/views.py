@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -114,6 +115,7 @@ class SupplierUpdateView(ProtectedUpdateView):
 class SupplierDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = "inventory.delete_supplier"
 
+    @transaction.atomic
     def post(self, request, pk):
         supplier = get_object_or_404(Supplier, pk=pk)
         try:

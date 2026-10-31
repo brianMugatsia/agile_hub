@@ -1,13 +1,17 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.db import transaction
 from django.db.models import Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value
+from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce, TruncDate, TruncMonth
 from django.http import HttpResponseBadRequest
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.views import View
 from django.views.generic import DetailView, TemplateView
 
 from apps.accounts.roles import Role
@@ -310,3 +314,24 @@ class HubPerformanceView(LoginRequiredMixin, PermissionRequiredMixin, PageMixin,
             ),
         )
         return context
+
+
+class HubDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = "hubs.delete_hub"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or request.user.role != Role.SUPER_ADMIN:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Only super administrators can delete hubs.")
+        return super().dispatch(request, *args, **kwargs)
+
+    @transaction.atomic
+    def post(self, request, pk):
+        hub = get_object_or_404(Hub, pk=pk)
+        try:
+            hub.delete()
+        except ProtectedError:
+            messages.error(request, "Cannot delete this hub because related records are linked to it.")
+        else:
+            messages.success(request, "Hub deleted successfully.")
+        return redirect("hubs:list")

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 
 
 class InventoryBalance(models.Model):
@@ -81,6 +82,9 @@ class Supplier(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.code})" if self.code else self.name
+
+    def get_delete_url(self):
+        return reverse("inventory:supplier_delete", kwargs={"pk": self.pk})
 
 
 class PurchaseOrder(models.Model):

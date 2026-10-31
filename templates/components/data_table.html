@@ -40,7 +40,7 @@
               <div style="display: flex; gap: 0.5rem; align-items: center;">
                 {% if can_edit_rows %}<a class="btn btn--secondary btn--sm" href="{% url row_edit_url_name row.pk %}">Edit</a>{% endif %}
                 {% if can_delete_rows %}
-                  <form method="post" action="{% url row_delete_url_name row.pk %}" style="display:inline; margin:0;" onsubmit="return confirm('Are you sure you want to delete this record?');">
+                  <form method="post" action="{% if row.get_delete_url %}{{ row.get_delete_url }}{% else %}{% url row_delete_url_name row.pk %}{% endif %}" style="display:inline; margin:0;" onsubmit="return confirm('Are you sure you want to delete this record?');">
                     {% csrf_token %}
                     <button class="btn btn--danger btn--sm" type="submit">Delete</button>
                   </form>

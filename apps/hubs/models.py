@@ -36,6 +36,9 @@ class Hub(models.Model):
     def get_absolute_url(self):
         return reverse("hubs:detail", kwargs={"pk": self.pk})
 
+    def get_delete_url(self):
+        return reverse("hubs:delete", kwargs={"pk": self.pk})
+
 
 class HubMembership(models.Model):
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE, related_name="memberships")

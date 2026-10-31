@@ -3,7 +3,9 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models.deletion import ProtectedError
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
@@ -308,13 +310,18 @@ class ExpenseListView(ScopedModelListView):
 class ExpenseDeleteView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = "finance.delete_expense"
 
+    @transaction.atomic
     def post(self, request, pk):
         expense = get_object_or_404(
             scope_queryset(Expense.objects.all(), request.user),
             pk=pk,
         )
-        expense.delete()
-        messages.success(request, "Expense deleted.")
+        try:
+            expense.delete()
+        except ProtectedError:
+            messages.error(request, "Cannot delete this expense because related records are linked to it.")
+        else:
+            messages.success(request, "Expense deleted.")
         return redirect("finance:expenses")
 
 

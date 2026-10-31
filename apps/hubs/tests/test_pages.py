@@ -138,3 +138,79 @@ def test_hub_performance_uses_selected_date_period(client, make_user):
     assert response.context["active_agents"] == 1
     assert response.context["period_start"] == selected_date
     assert response.context["period_end"] == selected_date
+
+
+def test_super_admin_can_create_hub_with_manager_password(client, make_user, roles):
+    super_admin = make_user(role=Role.SUPER_ADMIN)
+    manager_user = make_user(role=Role.HUB_MANAGER, username="hubmgr")
+    client.force_login(super_admin)
+
+    response = client.post(
+        reverse("hubs:create"),
+        {
+            "code": "HUB-NEW",
+            "name": "New Hub",
+            "region": "West",
+            "address": "New street",
+            "phone_number": "0798765432",
+            "manager": str(manager_user.pk),
+            "manager_password": "NewManagerPass!23",
+            "status": Hub.Status.ACTIVE,
+        },
+    )
+    assert response.status_code == 302
+    hub = Hub.objects.get(code="HUB-NEW")
+    assert hub.manager == manager_user
+    manager_user.refresh_from_db()
+    assert manager_user.check_password("NewManagerPass!23")
+
+
+def test_super_admin_can_create_hub_with_new_manager_account(client, make_user, roles):
+    super_admin = make_user(role=Role.SUPER_ADMIN)
+    client.force_login(super_admin)
+
+    response = client.post(
+        reverse("hubs:create"),
+        {
+            "code": "HUB-NEW-MGR",
+            "name": "Nakuru Hub",
+            "region": "Rift Valley",
+            "address": "Kenyatta Ave",
+            "phone_number": "0711223344",
+            "new_manager_username": "davidbrian",
+            "new_manager_email": "brian@gmail.com",
+            "new_manager_first_name": "David",
+            "new_manager_last_name": "Brian",
+            "new_manager_phone": "0711223344",
+            "manager_password": "password123",
+            "status": Hub.Status.ACTIVE,
+        },
+    )
+    assert response.status_code == 302
+    hub = Hub.objects.get(code="HUB-NEW-MGR")
+    assert hub.manager is not None
+    assert hub.manager.username == "davidbrian"
+    assert hub.manager.email == "brian@gmail.com"
+    assert hub.manager.check_password("password123")
+    assert HubMembership.objects.filter(hub=hub, user=hub.manager, is_active=True).exists()
+
+
+def test_super_admin_can_delete_hub(client, make_user, roles):
+    super_admin = make_user(role=Role.SUPER_ADMIN)
+    hub = Hub.objects.create(code="HUB-DEL", name="Delete me")
+    client.force_login(super_admin)
+
+    response = client.post(reverse("hubs:delete", kwargs={"pk": hub.pk}))
+    assert response.status_code == 302
+    assert not Hub.objects.filter(pk=hub.pk).exists()
+
+
+def test_non_super_admin_cannot_delete_hub(client, make_user, roles):
+    manager = make_user(role=Role.HUB_MANAGER)
+    hub = Hub.objects.create(code="HUB-NODEL", name="Do not delete")
+    client.force_login(manager)
+
+    response = client.post(reverse("hubs:delete", kwargs={"pk": hub.pk}))
+    assert response.status_code == 403
+    assert Hub.objects.filter(pk=hub.pk).exists()
+

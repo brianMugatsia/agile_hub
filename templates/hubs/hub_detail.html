@@ -95,7 +95,15 @@
       <div class="card__body">
         <div class="dashboard-section__heading">
           <h2 class="card__title">Hub details</h2>
-          {% if can_edit_hub %}<a class="btn btn--secondary btn--sm" href="{% url 'hubs:edit' hub.pk %}">Edit hub</a>{% endif %}
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            {% if can_edit_hub %}<a class="btn btn--secondary btn--sm" href="{% url 'hubs:edit' hub.pk %}">Edit hub</a>{% endif %}
+            {% if request.user.role == "SUPER_ADMIN" %}
+              <form method="post" action="{% url 'hubs:delete' hub.pk %}" style="display:inline; margin:0;" onsubmit="return confirm('Are you sure you want to delete hub {{ hub.name }}?');">
+                {% csrf_token %}
+                <button class="btn btn--danger btn--sm" type="submit">Delete hub</button>
+              </form>
+            {% endif %}
+          </div>
         </div>
         <dl class="hub-facts">
           <div class="hub-fact">

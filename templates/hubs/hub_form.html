@@ -66,11 +66,20 @@
             <span class="hub-form__step">3</span>
             <div>
               <h2 class="card__title">Management</h2>
-              <p class="hub-form__hint">Who runs the hub and whether it is open for business.</p>
+              <p class="hub-form__hint">Assign an existing manager or create a brand-new manager account.</p>
             </div>
           </header>
           <div class="hub-form__fields">
             {% include "hubs/_field.html" with field=form.manager css="select" %}
+            {% include "hubs/_field.html" with field=form.manager_password css="input" %}
+            <div class="hub-form__wide" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 1rem; margin-top: 1rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Or Create New Manager Account</h3>
+            </div>
+            {% include "hubs/_field.html" with field=form.new_manager_username css="input" %}
+            {% include "hubs/_field.html" with field=form.new_manager_email css="input" %}
+            {% include "hubs/_field.html" with field=form.new_manager_first_name css="input" %}
+            {% include "hubs/_field.html" with field=form.new_manager_last_name css="input" %}
+            {% include "hubs/_field.html" with field=form.new_manager_phone css="input" %}
             {% include "hubs/_field.html" with field=form.status css="select" %}
           </div>
         </div>
@@ -79,6 +88,12 @@
       <div class="form-actions">
         <button class="btn btn--primary" type="submit">{{ submit_label|default:"Save" }}</button>
         <a class="btn btn--secondary" href="{% if cancel_url %}{{ cancel_url }}{% else %}{% url 'hubs:list' %}{% endif %}">Cancel</a>
+        {% if object and request.user.role == "SUPER_ADMIN" %}
+          <form method="post" action="{% url 'hubs:delete' object.pk %}" style="margin-left: auto; display: inline;" onsubmit="return confirm('Are you sure you want to delete hub {{ object.name }}?');">
+            {% csrf_token %}
+            <button class="btn btn--danger" type="submit">Delete hub</button>
+          </form>
+        {% endif %}
       </div>
     </div>
   </div>
